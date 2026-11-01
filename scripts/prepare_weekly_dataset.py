@@ -332,15 +332,15 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     # Gate AG-TS-04: Enforce physical upper limit on daily CWC streamflow to eliminate clerical data entry errors
     n_outliers = int((s_cwc > 50000.0).sum())
     if n_outliers > 0:
-        print(f"      [!] AG-TS-04: Masked {n_outliers} daily CWC discharge observation(s) > 50,000 m³/s as NaN")
-        s_cwc = s_cwc.mask(s_cwc > 50000.0, np.nan)
+        print(f"      [!] AG-TS-04: Masked {n_outliers} daily CWC discharge observation(s) > 50,000 m³/s as NaN (temporal linear interpolation, limit=2d)")
+        s_cwc = s_cwc.mask(s_cwc > 50000.0, np.nan).interpolate(method='linear', limit=2)
     
     lat = float(sub_cwc['Latitude'].iloc[0])
     lon = float(sub_cwc['Longitude'].iloc[0])
     
     # 3. Stitch streamflow
     stitched_q = s_cwc.combine_first(s_camels).reindex(timeline)
-    stitched_q = stitched_q.mask(stitched_q > 50000.0, np.nan)
+    stitched_q = stitched_q.mask(stitched_q > 50000.0, np.nan).interpolate(method='linear', limit=2)
 
     
     # Missingness check

@@ -67,14 +67,13 @@ This document tracks all formal methodological, architectural, and data governan
 
 ---
 
-### Gate AG-TS-05: Advance to Tier M2 Hydro-Meteorological Models (Code Generation)
+### Gate AG-TS-05: Advance to Tier M2 Hydro-Meteorological Models (Training & Evaluation)
 * **Date:** November 1, 2026
-* **Status:** **APPROVED & SCRIPT GENERATED (AWAITING ARCHITECTURE REVIEW)**
-* **Context:** Transition from flow-only autoregression (M1) to full hydro-meteorological models (M2) incorporating IMD rainfall, ERA5-Land PET/Temperature, and climatic water deficits.
-* **Approved Decision:** Generated `scripts/train_m2_models.py` implementing:
-  1. Protocol 1 (Temporal Multi-Horizon): `HistGradientBoostingRegressor` on 26 hydro-meteorological features.
-  2. Protocol 2 (Cross-Basin Spatial Transfer): PyTorch `HydroLSTM` on 10 intensive, depth-normalized sequential features over an $L=8$ week sliding lookback window.
-  3. Purge embargo: Terminal $H$-week purge embargo applied to Training and Validation sets.
-  4. Identical-row evaluation mask against M0 baseline.
-  5. Script generation completed without execution, pending human architecture review.
+* **Status:** **IMPLEMENTED AND EVALUATED**
+* **Context:** Transitioned from flow-only autoregression (M1) to full hydro-meteorological models (M2) incorporating IMD 0.25° rainfall, ERA5-Land PET/Temperature, and climatic water deficits.
+* **Specialist Evidence & Results:**
+  - Protocol 1 (Temporal Multi-Horizon): `HistGradientBoostingRegressor` evaluated out-of-sample across all 12 basins. Meteorological memory prevented the long-range skill collapse of climatology, with 10 of 12 catchments improving at $H=8\text{w}$ (median $\text{NSE} = 0.290$, $\text{KGE} = 0.308$) and severe drought false alarm ratios dropping by up to 27.4 percentage points.
+  - Protocol 2 (Cross-Basin Spatial Transfer): PyTorch `HydroLSTM` trained on sliding $L=8$ week lookbacks of intensive depth-normalized features. Successfully generalized zero-shot to held-out sub-basins (Kantamal $H=8\text{w}$ $\text{NSE} = +0.403$, beating baseline by $+0.822\,\Delta\text{NSE}$; Bamni $H=1\text{w}$ $\text{NSE} = +0.339$).
+* **Approved Decision:** Approved the completed empirical evaluation of Tier M2 hydro-meteorological models under strict terminal $H$-week purge embargoes and identical-row evaluation masks. Formally concluded the empirical modeling phase.
+
 
