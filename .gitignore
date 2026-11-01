@@ -34,3 +34,17 @@ data/raw/
 
 # Temporary files
 *.tmp
+# --- Added by sync.py ---
+# Keep raw input datasets local; synchronize processed outputs.
+!data/
+data/raw/
+!data/processed/
+!models/
+
+# Machine-specific and temporary files
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.log
