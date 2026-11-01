@@ -1,10 +1,10 @@
-# 🌊 Streamflow & Drought Forecasting ML Project (1980–2025)
+# Streamflow & Drought Forecasting ML Project (1980–2025)
 
 An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning across 12 diverse, non-overlapping river basins in India.
 
 ---
 
-## 🎯 Core Research Question & Objectives
+## Core Research Question & Objectives
 
 > **Central Scientific Question:**  
 > *How much does adding meteorological information to historical streamflow improve 1-, 2-, 4-, and 8-week-ahead streamflow forecasts compared with streamflow history alone and a persistence baseline? Does this additional information improve the reliability of drought warnings, and how do these benefits change with forecast horizon and drought severity?*
@@ -17,7 +17,7 @@ An empirical machine learning framework evaluating the predictive value of India
 
 ---
 
-## 🔬 Experimental Design Matrix
+## Experimental Design Matrix
 
 | Factor | Configurations | Description |
 | :--- | :--- | :--- |
@@ -29,7 +29,7 @@ An empirical machine learning framework evaluating the predictive value of India
 
 ---
 
-## ⛅ Multi-Source Hydro-Meteorological Forcing Pipeline
+## Multi-Source Hydro-Meteorological Forcing Pipeline
 
 Meteorological inputs are harmonized across two continuous observation epochs to ensure physical consistency without artificial structural breaks at the 2020/2021 train/test seam:
 
@@ -57,7 +57,7 @@ Meteorological inputs are harmonized across two continuous observation epochs to
 
 ---
 
-## 🗺️ 12-Station Independent Sub-Basin Portfolio (0 Sub-Basin Overlap)
+## 12-Station Independent Sub-Basin Portfolio (0 Sub-Basin Overlap)
 
 To eliminate **spatial autocorrelation** and prevent upstream-downstream data leakage, we enforce a strict **zero sub-basin overlap rule** across all three target states (Maharashtra, Odisha, Karnataka). While macro-basins (such as the Krishna or Godavari) cover vast continental expanses spanning divergent climatic zones, their distinct sub-basins represent hydrologically decoupled catchments with unique drainage geometries, geology, and elevation gradients.
 
@@ -86,7 +86,7 @@ Following formal approval gate review, the macro-basin zero-overlap constraint w
 └─────────────────┴────────────────────────┴──────────────────────┴─────────────┴───────────┴──────────┴────────────────┘
 ```
 
-### 🛡️ Data Continuity & Gap Handling Protocol
+### Data Continuity & Gap Handling Protocol
 To uphold scientific integrity without fabricating streamflow observations:
 1. **Missingness Retention Threshold**: Stations with total 46-year streamflow missingness $< 10.0\%$ are retained. All 12 stations qualify (ranging from 0.00% to 7.52% missingness).
 2. **Small Gap Interpolation ($\le 35$ days)**: Minor recording breaks (such as dry-season low-flow cessations or the nationwide May 2020 COVID-19 lockdown) are linearly interpolated to preserve weekly inertia.
@@ -94,7 +94,7 @@ To uphold scientific integrity without fabricating streamflow observations:
 
 ---
 
-## 📊 Dual Evaluation Protocol
+## Dual Evaluation Protocol
 
 ```text
 45-Year Timeline (1980 - 2025):
@@ -113,7 +113,7 @@ To uphold scientific integrity without fabricating streamflow observations:
 
 ---
 
-## 📈 Empirical Benchmark Results: Baseline M0 vs Flow-Only M1 vs Hydro-Met M2 (Audited)
+## Empirical Benchmark Results: Baseline M0 vs Flow-Only M1 vs Hydro-Met M2 (Audited)
 
 Full out-of-sample evaluation on the 10-year Test block (2016–2025: 522 weeks) under the terminal $H$-week purge embargo (AG-TS-02) and sanitized raw CWC gauge limits (AG-TS-04). Detailed reports are pre-compiled in [`docs/PROJECT_REPORT_DOCUMENTATION.md`](file:///Users/abhitej/Downloads/ML%20Project/docs/PROJECT_REPORT_DOCUMENTATION.md).
 
@@ -140,7 +140,7 @@ Full out-of-sample evaluation on the 10-year Test block (2016–2025: 522 weeks)
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 
 ```text
@@ -183,7 +183,7 @@ ML Project/
 
 ---
 
-## 📚 Technical Report & Decision Documentation
+## Technical Report & Decision Documentation
 
 For submission in academic and course project reports, complete technical specifications, mathematical derivations, and audit trails are pre-compiled in `docs/`:
 
@@ -199,7 +199,7 @@ For submission in academic and course project reports, complete technical specif
 
 ---
 
-## ⚡ Quickstart Commands
+## Quickstart Commands
 
 ### 1. Browse Stations by State & River Basin
 ```bash
