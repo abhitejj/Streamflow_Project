@@ -100,7 +100,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 5. Branch Switch to 'gh-pages'
+# 5. Branch Switch & Sync 'gh-pages'
 # ------------------------------------------------------------------------------
 echo -e "${YELLOW}[5/8] Checking out 'gh-pages' branch...${NC}"
 if ! git checkout gh-pages; then
@@ -111,6 +111,14 @@ if ! git checkout gh-pages; then
     rm -rf "${TEMP_DIR}"
     exit 1
 fi
+
+echo -e "${YELLOW}Pulling latest UI changes from origin...${NC}"
+if ! git pull origin gh-pages; then
+    echo -e "${RED}[ERROR] Failed to pull from origin/gh-pages. You may have a merge conflict.${NC}"
+    echo -e "${RED}Temp artifacts are preserved in ${TEMP_DIR}. Resolve the conflict manually.${NC}"
+    exit 1
+fi
+
 
 # ------------------------------------------------------------------------------
 # 6. Asset Porting to Root 'visualizations/'
