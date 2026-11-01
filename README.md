@@ -169,8 +169,10 @@ ML Project/
 ├── docs/
 │   ├── PROJECT_REPORT_DOCUMENTATION.md   # Complete publication-grade technical report reference
 │   ├── DECISION_LOG.md                   # Formal approval gates and strategic decision trail
+│   ├── PROGRESS.md                       # Automated deployment and progress tracking log
 │   └── 00_CAMELS_IND_Data_Description.pdf# Official CAMELS-IND documentation
 ├── README.md                             # This guide
+├── deploy.sh                             # Automated artifact porting and gh-pages deployment script
 └── scripts/
     ├── station_explorer.py               # CLI tool to browse, search, and select stations
     ├── imd_cwc_alignment_test.py         # Parametric meteorological alignment test suite
@@ -251,3 +253,9 @@ python3 "scripts/train_m2_models.py" --protocol 2 --seq-len 8 --hidden-dim 64 --
 python3 "scripts/train_m2_models.py" --protocol all --horizons 1 2 4 8
 ```
 
+### 6. Deploy Interactive Visualizations to GitHub Pages
+The deployment script enforces a strict one-way port of Plotly `.html` widgets from the backend to the orphaned `gh-pages` branch, simultaneously logging the update to `PROGRESS.md`.
+```bash
+# Execute from the main branch; requires a progress update message
+./deploy.sh "Regenerated KGE component plots and updated index.html iframe layouts"
+```

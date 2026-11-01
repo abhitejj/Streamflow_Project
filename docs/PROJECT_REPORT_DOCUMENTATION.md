@@ -472,3 +472,21 @@ Tier M2 benchmarks evaluate whether adding multi-source meteorological memory (I
 3. **Regional Zero-Shot Deployability**:
    - Area-normalized specific runoff ($q = Q \cdot 604.8 / A$) enables uncalibrated zero-shot hydrological forecasting on completely unseen river basins, achieving positive transfer across diverse geographical regimes when raw data clerical anomalies are sanitized.
 
+
+---
+
+## 13. Interactive Visualization & Web Deployment Architecture
+
+To communicate the multi-horizon forecasts and spatial transfer results without exposing the Python backend or raw datasets, the project utilizes a static web architecture that is completely isolated from the computational pipeline.
+
+### 13.1 Standalone Interactive Widgets
+Instead of static PNGs, the evaluation pipeline generates self-contained, interactive Plotly `.html` widgets. These include:
+* **Interactive Hydrographs:** Featuring zoom sliders to isolate specific drought events (e.g., the 2018–2019 monsoon failure).
+* **Precision-Recall (PR) Curves:** Featuring hover data mapping the tradeoff dynamics for Severe Drought ($Q_{95}$) thresholds.
+* **KGE Component Decomposition:** Visualizing the trajectories of correlation ($r$), variability ($\alpha$), and bias ($\beta$) across the $H$-week horizons.
+
+### 13.2 Orphaned Branch Deployment Isolation
+The project website is hosted on GitHub Pages via an orphaned `gh-pages` branch containing strictly frontend web assets (a Tailwind CSS `index.html` and the generated Plotly widgets). This architectural isolation guarantees that:
+1. **Zero Backend Leakage:** Training scripts, PyTorch model weights, and raw CAMELS-IND/CWC datasets remain secured on the `main` branch.
+2. **Client-Side Optimization:** The static `index.html` embeds the Plotly widgets via lazy-loaded `<iframe>` tags (`loading="lazy" width="100%"`), preventing bandwidth freezing and eliminating the need for dynamic client-side CSV parsing.
+3. **One-Way Artifact Sync:** A gated deployment bash script (`deploy.sh`) manages the transition of generated widgets from the backend `data/processed/visualizations/` directory to the root `visualizations/` directory on `gh-pages`, ensuring clean git working trees and synchronized progress tracking.

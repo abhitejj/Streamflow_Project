@@ -77,3 +77,12 @@ This document tracks all formal methodological, architectural, and data governan
 * **Approved Decision:** Approved the completed empirical evaluation of Tier M2 hydro-meteorological models under strict terminal $H$-week purge embargoes and identical-row evaluation masks. Formally concluded the empirical modeling phase.
 
 
+
+---
+
+### Gate AG-04: Isolated Web Deployment & Visualization Architecture
+* **Date:** November 2, 2026
+* **Status:** **APPROVED & IMPLEMENTED**
+* **Context:** Deploying the interactive project website required hosting Plotly widgets without exposing the underlying Python training pipeline, raw datasets, or incurring browser-side latency from parsing 46-year CSVs.
+* **Specialist Evidence:** Software engineering audit confirmed that merging the backend main branch into a GitHub Pages deployment branch would leak sensitive data and bloat the repository. Generating dynamic plots client-side from raw CSVs would severely degrade mobile browser performance.
+* **Approved Decision:** Created an orphaned gh-pages branch serving a static Tailwind CSS site. Plots are pre-rendered in Python as standalone Plotly .html files and embedded via lazy-loaded <iframe> tags. Implemented deploy.sh to enforce a one-way, automated artifact transition from main to gh-pages, ensuring absolute separation of computation and presentation while forcing automated documentation updates.
