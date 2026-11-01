@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Execution logs
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# OS-specific files (macOS & Linux interoperability)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large Raw Datasets (Exceeds GitHub 100MB limit; total ~2.6GB)
+# Raw IMD NetCDF/GRD, CAMELS zip archives, CWC raw discharge tables
+data/raw/

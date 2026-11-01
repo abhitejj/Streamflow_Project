@@ -1,0 +1,286 @@
+State,Station,River,Basin,District,Latitude,Longitude,Record_Count,Min_Date,Max_Date,Source_File,CAMELS_Gauge_ID,CAMELS_STN_ID,CAMELS_Site_Name,CAMELS_Flow_Avail_Pct
+Maharashtra, Purna at Yerli,Tapi,Tapi,Buldana,20.93777778,76.47388889,184,01-06-2001 09:00,01-11-2015 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13025.0,tapi_yerli,Yerli,86.2
+Maharashtra,Aheri (Gudem Bridge) ,Godavari,Godavari,Gadchiroli,19.41666667,79.97222222,1179,13-06-2022 14:00,24-12-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Ambgaon (Bagdi),Godavari,Godavari,Bhandara,20.77833333,79.85138889,553,18-10-2019 08:45,04-09-2022 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Anjanari,Kajvi,West flowing rivers from Tapi to Tadri,Ratnagiri,16.93472222,73.51416667,2517,01-01-2014 08:00,21-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Arjunwad (Seasonal),Krishna,Krishna,Kolhapur,16.78194444,74.63222222,7943,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4003.0,kris_arjun,Arjunwad (Seasonal),87.35
+Maharashtra,Asegaon,Godavari,Godavari,Washim,20.03361111,76.95833333,215,22-09-2022 08:00,30-09-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Ashti,Godavari,Godavari,Gadchiroli,19.68472222,79.78861111,8724,01-01-2001 08:30,31-12-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3005.0,goda_ashti,Ashti,95.16
+Maharashtra,BAMRUL,Tapi,Tapi,Jalgaon,20.6625,75.27027778,86,26-08-2021 08:00,09-11-2022 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,BHUSAWAL,Tapi,Tapi,Jalgaon,21.06833333,75.78027778,1,22-09-2017 10:00,22-09-2017 10:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Badlapur,Ulhas,West flowing rivers from Tapi to Tadri,Thane,19.16222222,73.25416667,4110,01-06-2013 08:30,30-11-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14001.0,wfrn_badla,Badlapur,73.58
+Maharashtra,Bamni (Ballarsha),Godavari,Godavari,Chandrapur,19.81444444,79.37916667,8680,01-01-2001 08:37,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3008.0,goda_bamni,Bamni,94.88
+Maharashtra,Belne Bridge,Gad,West flowing rivers from Tapi to Tadri,Sindudurg,16.22083333,73.59472222,2011,01-06-2016 08:00,31-10-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Betmogra,Godavari,Godavari,Nanded,18.71222222,77.525,7772,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3009.0,goda_betmo,Betmogrra,47.37
+Maharashtra,Bhandara,Godavari,Godavari,Bhandara,21.14916667,79.66861111,1,22-09-2018 08:30,22-09-2018 08:30,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,DAHIGAON,Tapi,Tapi,Jalgaon,20.83361111,75.42388889,376,23-03-2019 09:15,31-01-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,DHUPESHWAR,Tapi,Tapi,Buldana,20.9575,76.27916667,284,20-08-2019 09:00,23-10-2024 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,DURVESH,Vaitarna,West flowing rivers from Tapi to Tadri,Thane,19.7125,72.93055556,6706,15-06-2001 09:00,24-07-2024 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14003.0,wfrn_durve,Durvesh,73.67
+Maharashtra,Degloor,Godavari,Godavari,Nanded,18.54555556,77.5775,7893,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3019.0,goda_deglo,Degloor,72.87
+Maharashtra,Dhalegaon,Godavari,Godavari,Parbhani,19.19972222,76.36638889,6743,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3020.0,goda_dhale,Dhalegaon,87.45
+Maharashtra,Dhanora (Wardha),Godavari,Godavari,Chandrapur,19.90444444,79.18361111,1951,15-02-2020 14:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Dhond,Krishna,Krishna,Pune,18.47388889,74.57638889,2461,01-01-2001 08:00,22-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,G.R.BRIDGE,Godavari,Godavari,Parbhani,19.01638889,76.71638889,7398,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3029.0,goda_grbri,G.R.Bridge,89.41
+Maharashtra,GIDHADE,Tapi,Tapi,Dhule,21.29472222,74.80916667,432,01-01-2001 08:00,30-10-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13008.0,tapi_gidha,Gidhade,56.0
+Maharashtra,GOPALKHEDA,Tapi,Tapi,Akola,20.87416667,76.99138889,5642,01-01-2001 08:00,19-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13010.0,tapi_gopal,Gopalkheda,81.34
+Maharashtra,Ghugus,Godavari,Godavari,Chandrapur,19.95583333,79.10083333,1757,01-01-2001 08:30,31-10-2005 08:45,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3028.0,goda_ghugu,Ghugus,63.05
+Maharashtra,Hivra,Godavari,Godavari,Wardha,20.54722222,78.325,7126,01-01-2001 08:30,19-11-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3030.0,goda_hivra,Hivra,73.06
+Maharashtra,Jogisakhra,Godavari,Godavari,Gadchiroli,20.49527778,80.02111111,1426,17-10-2019 10:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,KURANKHEDA,Tapi,Tapi,Akola,20.70305556,77.24277778,517,08-08-2019 09:00,30-10-2024 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,KURUNDWAD,Krishna,Krishna,Kolhapur,16.68444444,74.60222222,9017,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4026.0,kris_kurun,Kurundwad,95.54
+Maharashtra,Kanhargaon,Godavari,Godavari,Hingoli,19.96166667,77.14833333,5873,01-01-2001 08:00,30-09-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3038.0,goda_kanha,Kanhargaon,57.95
+Maharashtra,Karad,Krishna,Krishna,Satara,17.29361111,74.19,9048,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4021.0,kris_karad,Karad,95.04
+Maharashtra,Kopergaon,Godavari,Godavari,Ahmadnagar,19.89,74.49,2278,01-06-2014 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Koyna,Krishna,Krishna,Satara,17.4,73.75,2342,01-01-2001 08:00,31-05-2007 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,LAKHPURI,Tapi,Tapi,Amravati,20.84555556,77.36055556,34,01-01-2001 08:00,01-05-2005 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13012.0,tapi_lakhp,Lakhpuri,46.33
+Maharashtra,LOHARA,Tapi,Tapi,Buldana,20.81638889,76.76388889,368,31-08-2019 08:00,09-11-2024 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Lasur,Godavari,Godavari,Aurangabad,19.9375,74.025,305,01-06-2014 08:00,01-09-2016 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,MORANE,Tapi,Tapi,Dhule,20.90944444,74.71333333,414,20-09-2001 09:00,07-12-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13013.0,tapi_moran,Morane,31.74
+Maharashtra,Mahagaon (Pus),Godavari,Godavari,Yavatmal,19.79611111,77.77305556,1223,25-08-2019 14:00,30-11-2025 13:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Mahalgaon,Godavari,Godavari,Gondia,21.55055556,80.02666667,1974,02-12-2019 14:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Mangaon,Savitri,West flowing rivers from Tapi to Tadri,Raigad,18.23138889,73.28333333,3591,01-07-2013 09:15,31-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14009.0,wfrn_manga,Mangaon (Seasonal),67.4
+Maharashtra,Mangrul,Godavari,Godavari,Yavatmal,20.18888889,77.98666667,6977,01-01-2001 08:30,30-11-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3056.0,goda_mangr,Mangrul,59.98
+Maharashtra,Markhandadeo,Godavari,Godavari,Gadchiroli,19.99166667,79.87,687,01-06-2020 14:00,04-09-2022 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Mirawadi,Krishna,Krishna,Pune,18.535,74.17472222,1526,01-07-2018 08:00,31-05-2023 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Mirdapalli,Godavari,Godavari,Gadchiroli,19.38333333,80.55,1977,01-01-2001 08:00,31-05-2006 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3057.0,goda_mirda,Mirdapalli,56.17
+Maharashtra,Mouda,Godavari,Godavari,Nagpur,21.14083333,79.38972222,2018,16-12-2019 14:00,31-10-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Mungoli (Township),Godavari,Godavari,Yavatmal,19.86444444,79.125,2069,11-12-2019 14:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Muradpur,Vashisti,West flowing rivers from Tapi to Tadri,Ratnagiri,17.53972222,73.52388889,2227,01-06-2018 08:00,28-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,NANDRE,Krishna,Krishna,Sangli,16.94916667,74.52972222,2616,07-08-2018 09:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Nagari,Godavari,Godavari,Chandrapur,20.42555556,78.87444444,1697,19-11-2019 14:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Nagothane,Amba,West flowing rivers from Tapi to Tadri,Raigad,18.51888889,73.15638889,1649,01-05-2016 08:00,26-04-2022 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14011.0,wfrn_nagot,Nagothane,31.24
+Maharashtra,Nanded,Godavari,Godavari,Nanded,19.15,77.31,3053,01-06-2014 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Nandgaon,Godavari,Godavari,Wardha,20.52555556,78.80888889,7948,01-01-2001 08:30,30-11-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3064.0,goda_nandg,Nandgaon,78.42
+Maharashtra,Narsingpur,Krishna,Krishna,Solapur,17.97138889,75.13916667,9025,01-01-2001 08:00,25-10-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4038.0,kris_narsi,Narsingpur,95.3
+Maharashtra,OZERKHEDA,Daman Ganga,West flowing rivers from Tapi to Tadri,Nashik,20.10027778,73.27111111,6493,01-01-2001 08:00,21-06-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14014.0,wfrn_ozerk,Ozerkheda,70.34
+Maharashtra,P.G. Bridge,Godavari,Godavari,Yavatmal,19.82083333,78.56083333,2921,01-01-2001 08:45,30-11-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3074.0,goda_pgbri,P.G.Bridge,84.11
+Maharashtra,PRAKASHA(DAMARKHEDA),Tapi,Tapi,Nandurbar,21.51777778,74.39694444,94,05-07-2017 09:00,19-09-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Pachegaon,Godavari,Godavari,Ahmadnagar,19.53527778,74.83361111,1952,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3069.0,goda_pache,Pachegaon,38.09
+Maharashtra,Paragaon,Krishna,Krishna,Pune,18.56833333,74.38055556,3286,01-09-2015 08:00,31-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Patala,Godavari,Godavari,Chandrapur,20.12694444,79.00138889,1928,20-12-2019 14:15,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Patansaongi,Godavari,Godavari,Nagpur,21.32083333,79.02444444,1758,24-08-2019 08:15,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Pauni,Godavari,Godavari,Bhandara,20.795,79.64944444,1764,01-01-2001 08:30,25-06-2018 08:30,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3072.0,goda_pauni,Pauni,63.11
+Maharashtra,Pen,Bhogeshwari,West flowing rivers from Tapi to Tadri,Raigad,18.7375,73.11083333,1053,01-05-2016 08:00,04-11-2020 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,14015.0,wfrn_penxx,Pen,31.36
+Maharashtra,Phulgaon,Krishna,Krishna,Pune,18.66638889,74.00166667,6860,01-01-2001 08:00,31-10-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4044.0,kris_phulg,Phulgaon (Seasonal),54.59
+Maharashtra,Pratappur,Godavari,Godavari,Ahmadnagar,19.51944444,74.38277778,1536,02-06-2017 09:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Purad,Godavari,Godavari,Yavatmal,19.96444444,79.02666667,1559,21-08-2019 09:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Purna,Godavari,Godavari,Parbhani,19.18333333,77.03305556,2798,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3079.0,goda_purna,Purna,73.87
+Maharashtra,Purna at Gopalkheda,Tapi,Tapi,Akola,20.87338361,76.99739444,4261,01-01-2001 08:00,01-05-2016 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13010.0,tapi_gopal,Gopalkheda,81.34
+Maharashtra,Rahu,Krishna,Krishna,Pune,18.57222222,74.27361111,727,01-06-2023 08:00,31-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Rajoli,Godavari,Godavari,Chandrapur,20.19361111,79.66611111,6923,01-01-2001 08:15,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3082.0,goda_rajol,Rajoli,74.01
+Maharashtra,SARANGKHEDA,Tapi,Tapi,Nandurbar,21.42833333,74.52722222,5637,01-01-2001 08:00,02-11-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13016.0,tapi_saran,Sarangkheda,84.27
+Maharashtra,SAVKHEDA,Tapi,Tapi,Jalgaon,21.14944444,75.23194444,28,30-05-2001 08:30,01-11-2004 08:45,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13017.0,tapi_savkh,Savkheda,52.49
+Maharashtra,SAYGAON,Tapi,Tapi,Jalgaon,20.50777778,74.795,79,21-08-2021 09:00,07-11-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,SHINDKHEDA,Tapi,Tapi,Dhule,21.27472222,74.75166667,147,07-08-2022 08:00,30-10-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,SHIRPUR,Tapi,Tapi,Dhule,21.33944444,74.89,202,01-09-2021 16:00,07-11-2024 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Sakhra (Wadsa),Godavari,Godavari,Gadchiroli,20.62138889,79.93722222,1907,06-02-2020 16:15,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Sakmur,Godavari,Godavari,Chandrapur,19.55916667,79.61166667,8300,01-01-2001 08:45,31-12-2025 08:15,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3087.0,goda_sakmu,Sakmur,60.46
+Maharashtra,Salebardi,Godavari,Godavari,Bhandara,20.9125,79.92722222,6623,01-01-2001 08:00,05-12-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3089.0,goda_saleb,Salebardi,73.16
+Maharashtra,Samdoli (Seasonal),Krishna,Krishna,Sangli,16.85638889,74.49666667,7570,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4048.0,kris_samdo,Samdoli (Seasonal),86.44
+Maharashtra,Sarati,Krishna,Krishna,Pune,17.91194444,75.0075,6880,01-01-2001 08:00,30-09-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4049.0,kris_sarat,Sarati,87.93
+Maharashtra,Satrapur,Godavari,Godavari,Nagpur,21.21638889,79.23305556,8421,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3094.0,goda_satra,Satrapur,79.85
+Maharashtra,Sitekasa,Godavari,Godavari,Bhandara,21.58111111,79.8,1,11-12-2017 09:15,11-12-2017 09:15,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,TARGAON,Krishna,Krishna,Satara,17.51611111,74.14972222,64,07-08-2018 09:00,25-07-2019 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Takli,Krishna,Krishna,Solapur,17.41416667,75.84777778,8961,01-01-2001 08:00,30-09-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4054.0,kris_takli,Takli,95.46
+Maharashtra,Targaon,Krishna,Krishna,Satara,17.51777778,74.14611111,2566,07-08-2018 09:00,31-08-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Tekra,Godavari,Godavari,Gadchiroli,18.98583333,79.945,6231,01-01-2001 08:30,01-07-2019 08:30,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3103.0,goda_tekra,Tekra,92.87
+Maharashtra,Terwad (Seasonal),Krishna,Krishna,Kolhapur,16.67638889,74.57416667,6609,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4056.0,kris_terwa,Terwad (Seasonal),83.18
+Maharashtra,WANKHED,Tapi,Tapi,Buldana,20.98833333,76.71666667,244,29-07-2019 08:15,26-10-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,,,,
+Maharashtra,Wadakbal,Krishna,Krishna,Solapur,17.53416667,75.88472222,9047,01-01-2001 08:00,30-09-2025 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4061.0,kris_wadak,Wadakbal,95.34
+Maharashtra,Wairagarh,Godavari,Godavari,Gadchiroli,20.42194444,80.09166667,6970,01-01-2001 08:00,27-11-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3107.0,goda_waira,Wairagarh,58.37
+Maharashtra,Warunji,Krishna,Krishna,Satara,17.27277778,74.16472222,9083,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,4063.0,kris_warun,Warunjli,95.35
+Maharashtra,YERLI,Tapi,Tapi,Buldana,20.93638889,76.47416667,6059,01-06-2001 09:00,26-10-2024 09:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,13025.0,tapi_yerli,Yerli,86.2
+Maharashtra,Yelli,Godavari,Godavari,Nanded,19.03527778,77.46666667,7324,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3109.0,goda_yelli,Yelli,89.67
+Maharashtra,Zari,Godavari,Godavari,Parbhani,19.39472222,76.77333333,2855,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_mh_2001_2025.csv,3110.0,goda_zarix,Zari,36.89
+Odisha,Altuma,Brahmani,Brahmani and Baitarni,DHENKANAL,20.93083333,85.51916667,9043,01-01-2001 09:35,10-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,7001.0,brba_altum,Altuma,64.33
+Odisha,Anandpur,Baitarani,Brahmani and Baitarni,KENDUJHAR,21.21111111,86.12055556,8886,01-01-2001 09:00,31-12-2025 08:30,river_discharge_manual_daily_cwc_od_2001_2025.csv,7002.0,brba_anand,Anandpur,95.27
+Odisha,Bolani,Brahmani,Brahmani and Baitarni,SUNDARGARH,22.10527778,84.85055556,1881,15-04-2019 08:30,20-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Bonaigarh,Brahmani,Brahmani and Baitarni,SUNDARGARH,21.8475,84.87583333,1823,15-04-2019 08:30,10-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Boudh,Mahanadi,Mahanadi,ANUGUL,20.865,84.31555556,3864,01-06-2015 00:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Champua,Baitarani,Brahmani and Baitarni,KENDUJHAR,22.06888889,85.67055556,8771,01-01-2001 09:30,31-12-2025 08:30,river_discharge_manual_daily_cwc_od_2001_2025.csv,7005.0,brba_champ,Champua,69.5
+Odisha,Gomlai,Brahmani,Brahmani and Baitarni,SUNDARGARH,21.83444444,84.91277778,9014,01-01-2001 08:30,10-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,7007.0,brba_gomla,Gomlai,95.33
+Odisha,Govindpur (NH5 Road Bridge),Burhabalang,Subernarekha,Baleshwar,21.54777778,86.91805556,9014,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,6007.0,sube_govin,Govindapur,65.83
+Odisha,Gunupur,Vamsadhara,East flowing rivers between Mahanadi and Pennar,RAYAGADA,19.08333333,83.80555556,8973,01-01-2001 08:15,31-12-2025 09:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,16004.0,efrn_gunup,Gunupur,55.49
+Odisha,Jamsholaghat,Subarnarekha,Subernarekha,MAYURBHANJ,22.21972222,86.71666667,2915,17-06-2004 15:15,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Jaraikela,Koel,Brahmani and Baitarni,SUNDARGARH,22.32611111,85.08,8822,01-01-2001 08:45,23-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,7008.0,brba_jarai,Jaraikela,95.33
+Odisha,Jeeraguda,Sabari,Godavari,KORAPUT,18.94916667,82.40611111,2212,01-09-2019 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Jenapur,Brahmani,Brahmani and Baitarni,JAJAPUR,20.87888889,86.01444444,8958,01-01-2001 09:00,10-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,7009.0,brba_jenap,Jenapur,95.32
+Odisha,Kanas (S),Mahanadi,Mahanadi,PURI,20.00388889,85.64361111,2,21-03-2019 08:00,29-03-2019 08:45,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Kantamal,Mahanadi,Mahanadi,BAUDH,20.655,83.7275,8980,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,8013.0,maha_kanta,Kantamal,94.72
+Odisha,Kashinagar,Vamsadhara,East flowing rivers between Mahanadi and Pennar,GAJAPATI,18.84833333,83.87305556,8998,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,16007.0,efrn_kashi,Kashinagar,93.21
+Odisha,Kesinga,Mahanadi,Mahanadi,KALAHANDI,20.19861111,83.21944444,8949,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,8016.0,maha_kesin,Kesinga,94.42
+Odisha,Kosagumda (Bhaskel),Godavari,Godavari,Nabarangapur,19.27722222,82.23305556,3036,01-06-2016 08:00,29-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,3047.0,goda_kosag,Kosagumda,43.04
+Odisha,Murthahandi (Journala),Godavari,Godavari,KORAPUT,19.05944444,82.27583333,8151,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Nowrangpur,Godavari,Godavari,Nabarangapur,19.1975,82.51194444,7954,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,3068.0,goda_nowra,Nowrangpur,90.34
+Odisha,Padampur,Mahanadi,Mahanadi,BARGARH,21.01583333,83.10305556,2870,01-07-2015 09:00,30-11-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Panposh,Brahmani,Brahmani and Baitarni,SUNDARGARH,22.22638889,84.80611111,9027,01-01-2001 08:30,20-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,7011.0,brba_panpo,Panposh,40.32
+Odisha,Parmanpur,Mahanadi,Mahanadi,JHARSUGUDA,21.78944444,84.10611111,3462,01-07-2001 08:00,21-11-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Potteru (Potteruvagu),Godavari,Godavari,MALKANGIRI,18.18944444,81.79805556,6266,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,3076.0,goda_potte,Potteru (Seasonal),38.78
+Odisha,Purunagarh,Brahmani,Brahmani and Baitarni,DEBAGARH,21.52638889,84.7125,1866,15-04-2019 08:30,10-10-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Purusottampur,Duplicate-Rushikulya,East flowing rivers between Mahanadi and Pennar,GANJAM,19.51666667,84.88333333,8948,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,16012.0,efrn_purus,Purushottampur,66.46
+Odisha,Rajghat,Subarnarekha,Subernarekha,Baleshwar,21.76777778,87.16416667,3692,01-06-2015 08:30,31-12-2025 09:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Salebhata,Mahanadi,Mahanadi,BALANGIR,20.98305556,83.53694444,8449,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,8031.0,maha_saleb,Salebhata,94.81
+Odisha,Saradaput,Godavari,Godavari,MALKANGIRI,18.6125,82.14277778,7781,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,3092.0,goda_sarad,Saradaput,89.98
+Odisha,Sirimoda,Sabari,Godavari,KORAPUT,18.62027778,82.87166667,2238,01-12-2019 09:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,,,,
+Odisha,Sundergarh,Mahanadi,Mahanadi,SUNDARGARH,22.11527778,83.39916667,8784,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_od_2001_2025.csv,8036.0,maha_sunde,Sundergarh,94.66
+Odisha,Tikarpara,Mahanadi,Mahanadi,ANUGUL,20.59888889,84.78138889,4441,01-01-2001 09:10,31-12-2025 09:15,river_discharge_manual_daily_cwc_od_2001_2025.csv,8038.0,maha_tikar,Tikarapara,92.01
+Karnataka,ADDOOR,Gurpur,West flowing rivers from Tadri to Kanyakumari,Dakshin Kannada,12.92888889,74.95388889,6197,17-07-2003 10:00,30-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,15001.0,wfrs_addoo,Addoor,34.46
+Karnataka,AKKIHEBBAL,Cauvery,Cauvery,Mandya,12.59861111,76.40055556,7404,24-01-2002 08:00,31-10-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5001.0,cauv_akkih,Akkihebbal,40.46
+Karnataka,AVERSHE,Sita,West flowing rivers from Tadri to Kanyakumari,Udupi,13.52138889,74.88,7348,25-06-2002 08:30,30-09-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,15006.0,wfrs_avers,Avershe,39.0
+Karnataka,Airani,Krishna,Krishna,Haveri,14.60583333,75.80527778,1791,28-12-2018 08:45,04-06-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,BANTWAL,Netravathi,West flowing rivers from Tadri to Kanyakumari,Dakshin Kannada,12.88083333,75.04111111,7036,01-01-2001 08:45,29-09-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,15008.0,wfrs_bantw,Bantwal,92.22
+Karnataka,BELUR,Cauvery,Cauvery,Hassan,13.16972222,75.87194444,1673,01-11-2018 08:30,22-07-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,BENDRAHALLI,Cauvery,Cauvery,Chamarajanagara,12.12888889,77.08305556,5288,18-08-2005 13:00,31-07-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,BETTADAMANE,Cauvery,Cauvery,Chikkamagaluru,13.06916667,75.68,1925,27-04-2018 08:30,31-05-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,BYALADAHALLI,Krishna,Krishna,Davanagere,14.43388889,75.77972222,7373,01-01-2001 08:00,31-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4005.0,kris_byala,Byaladahalli,69.66
+Karnataka,CHIKKAMALUR,Cauvery,Cauvery,Mandya,12.59555556,77.05666667,955,10-11-2018 08:30,31-05-2023 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,CHIKKARASINAKERE,Cauvery,Cauvery,Mandya,12.51027778,77.03666667,2033,17-03-2018 08:30,07-11-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,CHUNCHUNAKATTE,Cauvery,Cauvery,Mysore,12.51111111,76.30305556,4467,01-06-2008 08:00,22-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Cholachagudda,Krishna,Krishna,Bagalkote,15.87222222,75.72333333,4198,01-01-2001 08:45,01-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4006.0,kris_chola,Cholachugudda,72.42
+Karnataka,Deosugur,Krishna,Krishna,Raichur,16.38222222,77.35722222,1,29-11-2019 08:45,29-11-2019 08:45,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Gokak falls,Krishna,Krishna,Belgaum,16.18138889,74.80111111,3670,01-01-2001 08:45,25-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,HALADI,Haladi,West flowing rivers from Tadri to Kanyakumari,Udupi,13.58166667,74.85777778,8836,01-01-2001 08:30,29-09-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,15010.0,wfrs_halad,Halady,80.76
+Karnataka,HARIHARAPURA,Krishna,Krishna,Chikkamagaluru,13.5225,75.30361111,2166,14-12-2018 09:00,17-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,HOLEHONNUR,Krishna,Krishna,Shivamogga,13.97638889,75.68527778,7007,01-07-2003 13:15,09-12-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4015.0,kris_holeh,Holehonnur,35.04
+Karnataka,HOMMARAGALLI,Cauvery,Cauvery,Mysore,12.11416667,76.46305556,1946,07-06-2019 09:30,12-08-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,HOOVINAHOLE,Krishna,Krishna,Chitradurga,13.9825,76.74916667,5221,02-10-2001 13:30,01-11-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Haralahalli,Krishna,Krishna,Haveri,14.83055556,75.67444444,7756,01-01-2001 08:45,12-11-2025 09:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4013.0,kris_haral,Haralahalli,92.89
+Karnataka,Hemavathy Reservoir,Cauvery,Cauvery,Hassan,12.82196111,76.05423333,2,01-09-2018 09:00,03-09-2018 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Honnali,Krishna,Krishna,Davanagere,14.23722222,75.6625,7876,01-01-2001 09:00,31-10-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4016.0,kris_honna,Honnali,78.74
+Karnataka,Huvinhedigi,Krishna,Krishna,Raichur,16.49027778,76.92305556,8961,01-01-2001 09:00,31-12-2025 08:25,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4017.0,kris_huvin,Huvinhedigi,94.32
+Karnataka,JANNAPURA,Cauvery,Cauvery,Hassan,13.05638889,75.96138889,1801,01-11-2018 08:00,31-05-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,JANWADA,Godavari,Godavari,Bidar,18.0325,77.4725,1540,03-01-2019 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,K.M. VADI,Cauvery,Cauvery,Mysore,12.34722222,76.29222222,7022,01-01-2001 08:30,31-07-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5007.0,cauv_kmvad,K.M.Vadi,91.65
+Karnataka,KELLODU,Krishna,Krishna,Chitradurga,13.75416667,76.31972222,6874,01-01-2001 08:00,25-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4023.0,kris_kello,Kellodu,61.99
+Karnataka,KOKKEDODDY,Cauvery,Cauvery,Ramanagar,12.29611111,77.44083333,2192,02-11-2018 11:15,29-11-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,KOLLEGAL,Cauvery,Cauvery,Chamarajanagara,12.18944444,77.10194444,7745,01-01-2001 08:45,31-07-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,KUDIGE,Cauvery,Cauvery,Kodagu,12.5025,75.96083333,8341,01-01-2001 08:45,29-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5010.0,cauv_kudig,Kudige,94.87
+Karnataka,KUDLUR,Cauvery,Cauvery,Chamarajanagara,11.84055556,77.46277778,7381,01-01-2001 08:30,16-11-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,KUPPELUR,Krishna,Krishna,Haveri,14.5,75.63388889,6714,01-01-2001 08:00,19-11-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4025.0,kris_kuppe,Kuppellur,58.87
+Karnataka,Kalmane,Krishna,Krishna,Shivamogga,13.65222222,75.17916667,1824,17-12-2018 08:45,29-11-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Kokangaon,Krishna,Krishna,Bijapur,17.28638889,75.63722222,2337,01-01-2001 08:00,10-09-2020 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4024.0,kris_kokan,Kokangaon,66.53
+Karnataka,LAKKAVALLI,Krishna,Krishna,Chikkamagaluru,13.70638889,75.64472222,1929,13-12-2018 13:30,30-06-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,M.H. HALLI,Cauvery,Cauvery,Hassan,12.82,76.14111111,7137,01-01-2001 08:45,29-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,MAHISHI,Krishna,Krishna,Shivamogga,13.69722222,75.33555556,1899,21-11-2018 08:00,31-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,MUKKODLU,Cauvery,Cauvery,Kodagu,12.49055556,75.77222222,2043,01-11-2018 09:00,06-06-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Malkhed,Krishna,Krishna,Kalaburagi,17.20333333,77.15638889,8605,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4030.0,kris_malkh,Malkhed,69.54
+Karnataka,Marol,Krishna,Krishna,Haveri,14.93888889,75.61805556,6622,01-01-2001 08:00,30-09-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4032.0,kris_marol,Marol,67.39
+Karnataka,Mudhol,Krishna,Krishna,Bagalkote,16.32333333,75.28111111,4091,01-01-2001 08:00,30-09-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,NAPOKLU,Cauvery,Cauvery,Kodagu,12.31444444,75.69861111,2006,01-11-2018 09:15,30-06-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Nagalamedike,Pennar,Pennar,Tumkur,14.18888889,77.37222222,6435,01-01-2001 08:00,10-11-2024 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Narayanapur Reservoir,Krishna,Krishna,Bagalkote,16.2,76.36,3,16-12-2016 08:45,21-12-2016 08:45,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Navalgund,Krishna,Krishna,Dharwad,15.57305556,75.37305556,1981,01-01-2001 08:30,26-07-2017 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4039.0,kris_naval,Navalagund,36.71
+Karnataka,Oollenur,Krishna,Krishna,Raichur,15.49194444,76.7175,804,01-01-2001 09:00,15-03-2003 08:45,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4040.0,kris_oolle,Oollenur,56.64
+Karnataka,PUDUNAGARA,Cauvery,Cauvery,Mysore,12.06944444,77.40944444,662,03-11-2018 08:30,18-11-2023 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,PULIKUKKU,Kumaradhara,West flowing rivers from Tadri to Kanyakumari,Dakshin Kannada,12.71111111,75.46916667,2064,02-06-2019 08:00,29-09-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,SAKLESHPUR,Cauvery,Cauvery,Hassan,12.94333333,75.79388889,7682,05-04-2002 15:00,31-10-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5017.0,cauv_sakle,Sakleshpur,40.63
+Karnataka,SANOOR,Shambhavi,West flowing rivers from Tadri to Kanyakumari,Udupi,13.18083333,74.99444444,1358,07-05-2018 00:00,28-09-2025 12:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,SANTEGULI,Aghanashini,West flowing rivers from Tadri to Kanyakumari,Uttara Kannada,14.43444444,74.58888889,8497,02-01-2001 08:00,02-10-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Sadalga (Seasonal),Krishna,Krishna,Belgaum,16.56361111,74.5275,6534,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4047.0,kris_sadal,Sadalga (Seasonal),69.89
+Karnataka,Saigaon,Godavari,Godavari,Bidar,18.05,77.04972222,2323,01-01-2001 08:00,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,3085.0,goda_saiga,Saigaon,56.14
+Karnataka,Shimoga,Krishna,Krishna,Shivamogga,13.92694444,75.585,7211,01-01-2001 08:45,29-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4050.0,kris_shimo,Shimoga,90.75
+Karnataka,Shirdhon,Krishna,Krishna,Bijapur,17.36861111,75.59416667,2342,01-01-2001 08:00,31-05-2007 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4051.0,kris_shird,Shirdhon,66.91
+Karnataka,T. BEKKUPE,Cauvery,Cauvery,Ramanagar,12.50722222,77.42805556,6488,29-09-2003 08:30,31-12-2025 08:15,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5021.0,cauv_tbeku,T.Bekuppe,31.87
+Karnataka,T. NARASIPUR,Cauvery,Cauvery,Mysore,12.23027778,76.89444444,3587,01-01-2001 09:00,29-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5028.0,cauv_tnara,T.Narasipur,91.59
+Karnataka,T. Ramapuram,Krishna,Krishna,Bellary,15.66111111,76.96555556,7178,01-01-2001 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4057.0,kris_trama,T. Ramapuram (Seasonal),84.89
+Karnataka,T.K.HALLI,Cauvery,Cauvery,Mandya,12.41194444,77.19277778,6552,01-01-2001 08:30,31-10-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5027.0,cauv_tkhal,T.K.Halli,90.11
+Karnataka,THIMMANAHALLI,Cauvery,Cauvery,Hassan,12.98527778,76.03777778,7502,01-01-2001 12:30,21-08-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,5024.0,cauv_thimm,Thimmanahalli,41.25
+Karnataka,THORESHETTAHALLI,Cauvery,Cauvery,Mandya,12.66833333,77.04055556,1021,05-11-2018 08:30,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,,,,
+Karnataka,Talikot,Krishna,Krishna,Bijapur,16.48361111,76.28444444,4503,01-01-2001 08:00,29-11-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4055.0,kris_talik,Talikot,39.85
+Karnataka,YENNEHOLE,Swarna,West flowing rivers from Tadri to Kanyakumari,Udupi,13.29416667,74.98083333,8384,01-01-2001 08:30,14-11-2025 09:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,15032.0,wfrs_yenne,Yennehole,70.67
+Karnataka,Yadgir,Krishna,Krishna,Yadgir,16.7375,77.12527778,8949,01-01-2001 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_ka_2001_2025.csv,4064.0,kris_yadgi,Yadgir,95.48
+West Bengal,Fekoghat,Subarnarekha,Subernarekha,MEDINIPUR,22.30861111,86.91638889,3214,15-06-2001 15:30,31-10-2025 08:00,river_discharge_manual_daily_cwc_wb_2001_2025.csv,,,,
+West Bengal,Gopiballavpur,Subarnarekha,Subernarekha,MEDINIPUR,22.21972222,86.90472222,3692,04-06-2015 08:45,31-12-2025 08:00,river_discharge_manual_daily_cwc_wb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD-114750_SB,-,-,AMRITSAR,31.63861,75.29722,245,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD-127250_SB,-,-,AMRITSAR,31.60778,75.27833,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD-94527_SB,-,-,GURDASPUR,31.68333,75.33528,244,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD108260_KBL,-,-,AMRITSAR,31.69222,75.18244,208,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD134070_KBL,-,-,AMRITSAR,31.64389,75.12222,255,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD150_Khemkaran_Distributory,-,-,TARN TARAN,31.37013,74.88972,243,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD150_Tarntaran_Distributory,-,-,TARN TARAN,31.42791,74.94874,185,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD168400_KBL,-,-,AMRITSAR,31.56556,75.06083,152,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD229606_KBL,-,-,TARN TARAN,31.37013,74.88972,149,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_150_Jamarai_Distributory_,-,-,AMRITSAR,31.54253,75.2291,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_300_Patti_Distributory_SB,-,-,TARN TARAN,31.44712,75.14354,238,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Atwal_Distbtry,-,-,GURDASPUR,31.68302,75.33541,229,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Babowal_Disttry,-,-,GURDASPUR,31.75628,75.2566,255,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Khemkarn_Minor,-,-,TARN TARAN,31.26213,74.69328,209,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Raipur_Disttry,-,-,AMRITSAR,31.69252,75.18247,225,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Rasulpur_Distributory_,-,-,TARN TARAN,31.37013,74.88972,254,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_50_Tangra_Disttry,-,-,GURDASPUR,31.73333,75.37944,248,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Jandiala_RD_750_Bhinder_Distributory,-,-,AMRITSAR,31.54176,75.22704,244,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_Div_RD_0_Majitha_Distributory_MBU,-,-,GURDASPUR,31.83488,75.11071,248,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Aliwal_Distributory_MBU,-,-,GURDASPUR,31.83478,75.11493,235,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Chabal_Distributory_MBL,-,-,AMRITSAR,31.59242,74.87951,223,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Chheharta_Distributory_,-,-,AMRITSAR,31.76197,74.82966,213,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Fatehgarh_Distributory_,-,-,GURDASPUR,31.90369,75.06356,251,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Hardowal_Minor,-,-,GURDASPUR,31.92954,75.05176,243,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Kohali_Distributory_MBL,-,-,AMRITSAR,31.72708,74.70958,251,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Pull_Distty_MBU_,-,-,AMRITSAR,31.72906,74.71458,123,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_00_Theriwal_Distry_,-,-,GURDASPUR,31.83467,75.1106,220,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_0_Amritsar_Distributory MBL,-,-,AMRITSAR,31.59269,74.87875,204,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_0_Baserke_Distributory_MBL,-,-,TARN TARAN,31.47008,74.69758,184,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_0_Dhianpur_Distributory_MBU,-,-,GURDASPUR,31.92319,75.21908,259,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_0_Doburji_Distributory_MBL,-,-,AMRITSAR,31.66862,74.97016,260,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RD_0_Main_Branch_Lower,-,-,GURDASPUR,31.83506,75.11061,230,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_RS_00_Ajnala_Distributory_MBU,-,-,GURDASPUR,31.82639,75.04269,260,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Amritsar_Majitha_R_D_00_Udhowali_Distributory_,-,-,GURDASPUR,31.90378,75.06364,139,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_GWD_Banga_Distributory_RD_85000,-,-,SBS NAGAR,31.21586,75.94127,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_GWD_Goraya_Distributory_RD_35290,-,-,JALANDHAR,31.11464,75.77131,151,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_GWD_Nawanshahr_Branch_RD_0,-,-,SBS NAGAR,31.07893,76.10305,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_GWD_Phillaur_DistributoryRD_44382,-,-,JALANDHAR,31.06656,75.73145,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_GWD_Sarih_Distributry_RD_0,-,-,JALANDHAR,31.06656,75.73145,257,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_Distributory_RD_114500,-,-,JALANDHAR,31.2621,75.47901,257,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_Distributory_RD_127500,-,-,HOSHIARPUR,31.28495,75.97355,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_Distributory_RD_66054,-,-,HOSHIARPUR,31.20702,76.14129,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_Distributory_RD_90000,-,-,JALANDHAR,31.3127,75.52761,257,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_distributry_RD_0,-,-,JALANDHAR,31.43786,75.71641,257,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Jalandhar_distry_RD_46500_,-,-,JALANDHAR,31.4126,75.59624,255,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Nawanshahr_Branch_RD_31050,-,-,SBS NAGAR,31.08213,76.00321,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,BDC_Nawanshahr_Branch_RD_75000,-,-,JALANDHAR,31.07005,75.86477,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_Banga_Distributory_RD_0,-,-,SBS NAGAR,31.07887,76.10304,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_Mukundpur_Disttry_RD_00,-,-,SBS NAGAR,31.07887,76.10304,255,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_RD_11100_,-,-,GURDASPUR,30.9866681,75.48423746,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_RD_122050,-,-,SBS NAGAR,31.07526,76.16201,256,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_RD_141070,-,-,SBS NAGAR,31.07887,76.10304,196,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Bist_Doab_Canal_RD_93487_,-,-,SBS NAGAR,31.05748,76.24423,257,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_GWD_Salampur_Feeder,-,-,PATHANKOT,32.36291,75.58862,235,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_Gulpur_Escape_RD1500,-,-,PATHANKOT,32.17593,75.57098,236,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_Hydel_Channel_Head_R,-,-,PATHANKOT,32.36704,75.59958,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_MB_Link_AT_RD-31500,-,-,PATHANKOT,32.26365,75.62129,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_M_LineUBDC_Rapid_No2,-,-,PATHANKOT,32.3375,75.59265,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_MainBranchUpper_RD-0,-,-,GURDASPUR,32.00324,75.44833,253,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_Main_Line_UBDC_Head,-,-,PATHANKOT,32.36687,75.60007,251,24-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_MainlineUBDC_RD72720,-,-,PATHANKOT,32.17535,75.56522,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_MainlineUBDC_RD92000,-,-,PATHANKOT,32.14876,75.52308,255,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Gurdaspur_RD186KasurBranchUper,-,-,GURDASPUR,32.00253,75.4488,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_01_GWD_RD_00.000KM,-,-,HOSHIARPUR,31.95438939,75.84399182,259,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_01_GWD_RD_29.166KM,-,-,HOSHIARPUR,31.81023633,75.79206225,259,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_01_GWD_RD_59.465KM,-,-,HOSHIARPUR,31.57583505,75.91557227,258,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_03_GWD_RD_59.500KM,-,-,HOSHIARPUR,31.57483816,75.91659755,254,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_03_GWD_RD_71.084KM,-,-,HOSHIARPUR,31.490359,75.973966,258,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Kandi_Canal_03_GWD_RD_88.900KM,-,-,HOSHIARPUR,31.36822,76.074325,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal & GWD_Kalanaur_Distributory_Galhari_Head,-,-,GURDASPUR,32.13296,75.33445,258,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_Batala_Distributory_Head,-,-,GURDASPUR,31.81447,75.32004,259,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_GWD_Harindra_Feeder_Head,-,-,GURDASPUR,31.97689,75.02946,258,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_Harpur_Distributory_Head,-,-,GURDASPUR,31.8266,75.45216,251,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_Kasoor_Branch_Lower_Head,-,-,GURDASPUR,31.90561,75.42457,260,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_Ramdas_Distributory_Head,-,-,GURDASPUR,31.98774,75.00784,196,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Madhopur_Canal_Riarki_Distributory_Head,-,-,GURDASPUR,31.81891,75.45063,183,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 0 of LB at Aliwal D,-,-,GURDASPUR,31.83444,75.10833,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 0 of MBL at Aliwal,-,-,GURDASPUR,31.83306,75.11056,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 0 of MBU at Tibri D,-,-,GURDASPUR,32.00306,75.44913,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 1000 of KBL at Sathiali,-,-,GURDASPUR,31.90444,75.42139,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 1100 of Gulpur escape,-,-,PATHANKOT,32.17556,75.56972,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 1525 of KN at Aliwal,-,-,GURDASPUR,31.83528,75.11056,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,"RD 31500 of MB Link , Bharfani Mandir",-,-,PATHANKOT,32.26333,75.62167,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 77060 at Bhimpur,-,-,PATHANKOT,32.16389,75.56278,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,"RD 796 of Hyd, Madhpour D",-,-,PATHANKOT,32.36611,75.5975,195,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 8500 of ML UBDC,-,-,PATHANKOT,32.34389,75.59278,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 8939 of SB at Nainokot,-,-,GURDASPUR,31.90528,75.42417,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,RD 92000 at Tughial Fall,-,-,GURDASPUR,32.14861,75.52278,191,01-03-2025 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Talwara_Div_FeederNo1_RD18.624,-,-,HOSHIARPUR,31.95682,75.71521,245,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Talwara_Div_FeederNo2_RD6700KM,-,-,HOSHIARPUR,31.94303,75.70497,215,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Talwara_Div_Head_Shah_Nehar_Major_Distributory_Lower,-,-,HOSHIARPUR,31.985,75.66027,224,01-01-2004 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Talwara_Div_NalaSingh_Distributory_Head,-,-,HOSHIARPUR,31.98409,75.65979,256,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
+Punjab,Talwara_Divsn_Tail_RD_8.430_KM,-,-,HOSHIARPUR,32.02562,75.72119,192,23-12-2024 08:00,22-09-2025 08:00,river_discharge_manual_daily_cwc_pb_2001_2025.csv,,,,
