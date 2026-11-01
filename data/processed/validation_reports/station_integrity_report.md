@@ -1,6 +1,6 @@
 # 📋 Data Pipeline Integrity & Missingness Report (1980–2025)
 
-- **Generated:** 2026-11-01T19:04:56.538483
+- **Generated:** 2026-11-01T22:41:05.855434
 - **Timeline Array:** 1980-01-01 to 2025-12-31 (16802 days)
 - **Missingness Limit:** < 10.0%
 - **Small Gap Interpolation Limit:** <= 35 consecutive days
