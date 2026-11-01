@@ -237,3 +237,130 @@ Every strategic, architectural, and data alteration was paused at a formal Human
 | **5. Dual-Track Metric Evaluation** | Evaluated on continuous hydrograph accuracy (NSE, KGE, RMSE, MAE) and categorical drought early warning (CSI, POD, FAR). |
 | **6. Reproducibility & Traceability** | Static parameterizations, deterministic seed setting, pre-cached tensor pipelines, and fully logged validation reports. |
 
+---
+
+## 10. Empirical Benchmarking Results: Baseline Tier M0 vs Autoregressive Tier M1
+
+The benchmark was executed across the **10-year out-of-sample Test fold (2016–2025: 522 weekly timesteps)** under strict identical-row evaluation masks ($\mathcal{M}_{\text{eval}}$).
+
+*Artifact References:*  
+- Full Technical Report: [`data/processed/validation_reports/forecast_models_m0_m1_benchmarking_report.md`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/validation_reports/forecast_models_m0_m1_benchmarking_report.md)  
+- Protocol 1 Ridge CSV: [`data/processed/model_results/protocol1_temporal_results_ridge.csv`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/model_results/protocol1_temporal_results_ridge.csv)  
+- Protocol 1 GBT CSV: [`data/processed/model_results/protocol1_temporal_results_gbt.csv`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/model_results/protocol1_temporal_results_gbt.csv)  
+- Protocol 2 Ridge CSV: [`data/processed/model_results/protocol2_spatial_results_ridge.csv`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/model_results/protocol2_spatial_results_ridge.csv)  
+- Protocol 2 GBT CSV: [`data/processed/model_results/protocol2_spatial_results_gbt.csv`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/model_results/protocol2_spatial_results_gbt.csv)
+
+### 10.1 Protocol 1: 12-Basin Portfolio Medians across Lead Times
+
+| Horizon ($H$) | Metric Tier | M0 Baseline | M1: Ridge | M1: HistGradientBoosting | Δ(GBT - M0) Skill Gain |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **1-Week** | **Continuous NSE** | 0.265 | 0.455 | **0.458** | **+0.193** |
+| | **Continuous KGE** | 0.633 | 0.534 | **0.497** | -0.135 |
+| | Mild Drought ($Q_{80}$) CSI | **0.651** | 0.245 | 0.000 | -0.651 (Persist dominates short) |
+| | Moderate Drought ($Q_{90}$) CSI | **0.642** | 0.180 | 0.000 | -0.642 |
+| | Severe Drought ($Q_{95}$) CSI | **0.578** | 0.118 | 0.000 | -0.578 |
+| **2-Week** | **Continuous NSE** | -0.339 | 0.192 | **0.259** | **+0.598** |
+| | **Continuous KGE** | 0.331 | 0.221 | **0.298** | -0.033 |
+| | Mild Drought ($Q_{80}$) CSI | **0.541** | 0.212 | 0.063 | -0.478 |
+| | Moderate Drought ($Q_{90}$) CSI | **0.501** | 0.137 | 0.032 | -0.468 |
+| | Severe Drought ($Q_{95}$) CSI | **0.439** | 0.079 | 0.026 | -0.412 |
+| **4-Week** | **Continuous NSE** | 0.090 (Climatology) | 0.206 | **0.282** | **+0.192** |
+| | **Continuous KGE** | 0.146 | 0.161 | **0.264** | **+0.118** |
+| | Mild Drought ($Q_{80}$) CSI | 0.130 | **0.214** | 0.071 | -0.059 |
+| | Moderate Drought ($Q_{90}$) CSI | 0.000 (No Skill) | **0.130** | 0.040 | **+0.040 (Climatology fails)** |
+| | Severe Drought ($Q_{95}$) CSI | 0.000 (No Skill) | **0.064** | **0.031** | **+0.031 (Climatology fails)** |
+| **8-Week** | **Continuous NSE** | -0.207 (Climatology) | 0.159 | **0.222** | **+0.429** |
+| | **Continuous KGE** | -0.088 | 0.080 | **0.222** | **+0.309** |
+| | Mild Drought ($Q_{80}$) CSI | 0.074 | 0.171 | **0.189** | **+0.114** |
+| | Moderate Drought ($Q_{90}$) CSI | 0.000 (No Skill) | 0.078 | **0.196** | **+0.196** |
+| | Severe Drought ($Q_{95}$) CSI | 0.000 (No Skill) | 0.038 | **0.148** | **+0.148** |
+
+---
+
+### 10.2 Station-by-Station Continuous Tracking Matrix (Out-of-Sample Test Split)
+
+| Station Name | State | Area (km²) | Horizon | M0 Baseline NSE | M1 GBT NSE | ΔNSE Gain | M0 KGE | M1 GBT KGE | ΔKGE Gain |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Karad** | MH | 5,462 | 1-week | 0.114 | **0.489** | +0.375 | 0.557 | 0.535 | -0.022 |
+| | | | 2-week | -0.573 | **0.249** | +0.822 | 0.213 | 0.373 | +0.160 |
+| | | | 4-week | -0.005 | **0.268** | +0.274 | 0.147 | 0.356 | +0.209 |
+| | | | 8-week | -0.376 | **0.217** | +0.593 | -0.105 | 0.275 | +0.380 |
+| **Warunji** | MH | 1,890 | 1-week | 0.091 | **0.456** | +0.365 | 0.546 | 0.472 | -0.073 |
+| | | | 2-week | -0.665 | **0.243** | +0.908 | 0.176 | 0.315 | +0.139 |
+| | | | 4-week | 0.095 | **0.306** | +0.211 | 0.101 | 0.302 | +0.200 |
+| | | | 8-week | -0.172 | **0.241** | +0.413 | -0.164 | 0.207 | +0.371 |
+| **Anandpur** | OD | 8,570 | 1-week | 0.410 | **0.558** | +0.148 | 0.705 | 0.659 | -0.046 |
+| | | | 2-week | 0.157 | **0.336** | +0.180 | 0.578 | 0.526 | -0.052 |
+| | | | 4-week | 0.144 | **0.310** | +0.166 | 0.396 | 0.508 | +0.112 |
+| | | | 8-week | -0.317 | **0.254** | +0.571 | 0.105 | 0.535 | +0.430 |
+| **Kashinagar**| OD | 7,820 | 1-week | 0.298 | **0.473** | +0.175 | 0.649 | 0.675 | +0.026 |
+| | | | 2-week | -0.069 | **0.418** | +0.487 | 0.466 | 0.596 | +0.130 |
+| | | | 4-week | 0.141 | **0.413** | +0.272 | 0.445 | 0.594 | +0.149 |
+| | | | 8-week | -0.348 | **0.348** | +0.696 | 0.159 | 0.584 | +0.425 |
+| **Gomlai** | OD | 21,950 | 1-week | 0.469 | **0.578** | +0.109 | 0.734 | 0.599 | -0.135 |
+| | | | 2-week | 0.275 | **0.444** | +0.169 | 0.638 | 0.528 | -0.110 |
+| | | | 4-week | 0.207 | **0.457** | +0.251 | 0.317 | 0.454 | +0.136 |
+| | | | 8-week | -0.244 | **0.453** | +0.697 | -0.003 | 0.435 | +0.438 |
+| **Kantamal** | OD | 19,600 | 1-week | 0.388 | **0.444** | +0.056 | 0.694 | 0.626 | -0.068 |
+| | | | 2-week | -0.030 | **0.274** | +0.304 | 0.485 | 0.434 | -0.051 |
+| | | | 4-week | 0.093 | **0.319** | +0.226 | 0.370 | 0.542 | +0.172 |
+| | | | 8-week | -0.419 | **0.402** | +0.821 | 0.016 | 0.573 | +0.557 |
+| **Yadgir** | KA | 69,863 | 1-week | 0.351 | **0.460** | +0.109 | 0.676 | 0.489 | -0.186 |
+| | | | 2-week | -0.256 | **0.297** | +0.553 | 0.372 | 0.282 | -0.090 |
+| | | | 4-week | 0.039 | **0.295** | +0.256 | -0.044 | 0.194 | +0.238 |
+| | | | 8-week | -0.114 | **0.225** | +0.339 | -0.214 | 0.157 | +0.371 |
+| **Huvinhedigi**| KA | 55,150 | 1-week | 0.280 | **0.477** | +0.197 | 0.640 | 0.505 | -0.135 |
+| | | | 2-week | -0.421 | **0.262** | +0.683 | 0.289 | 0.269 | -0.020 |
+| | | | 4-week | 0.021 | **0.238** | +0.217 | 0.145 | 0.227 | +0.082 |
+| | | | 8-week | -0.241 | **0.207** | +0.448 | -0.071 | 0.236 | +0.307 |
+| **Haralahalli**| KA | 14,582 | 1-week | -0.149 | **0.298** | +0.448 | 0.425 | 0.306 | -0.119 |
+| | | | 2-week | -0.469 | **0.183** | +0.651 | 0.265 | 0.179 | -0.086 |
+| | | | 4-week | 0.086 | **0.204** | +0.118 | 0.076 | 0.214 | +0.138 |
+| | | | 8-week | -0.118 | **0.219** | +0.338 | -0.166 | 0.198 | +0.364 |
+
+---
+
+### 10.3 Protocol 2: Cross-Basin Zero-Shot Spatial Generalization Performance
+
+Models are trained on Stations 1, 2, and 3 using specific runoff $q = Q \cdot 604.8 / A$ (mm/week) alongside Fourier seasonality, and evaluated **zero-shot** on held-out Station 4. Volumetric discharge is recovered via $Q = q \cdot A / 604.8$.
+
+| State | Holdout Station | Area (km²) | Horizon | M0 Baseline NSE | Zero-Shot M1 NSE | ΔNSE Skill Gain | M0 Baseline KGE | Zero-Shot M1 KGE | ΔKGE Skill Gain |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Odisha** | **Kantamal** | 19,600 | 1-week | 0.388 | **0.536 (GBT)** | **+0.149** | 0.694 | 0.580 | -0.114 |
+| | (Mahanadi) | | 2-week | -0.030 | **0.437 (GBT)** | **+0.466** | 0.485 | 0.485 | -0.000 |
+| | | | 4-week | 0.093 | **0.459 (GBT)** | **+0.366** | 0.370 | 0.469 | **+0.099** |
+| | | | 8-week | -0.419 | **0.432 (GBT)** | **+0.850** | 0.016 | 0.429 | **+0.413** |
+| **Karnataka** | **Haralahalli** | 14,582 | 1-week | -0.149 | **0.154 (Ridge)** | **+0.303** | 0.425 | 0.393 | -0.032 |
+| | (Tungabhadra)| | 2-week | -0.469 | **0.072 (Ridge)** | **+0.541** | 0.265 | 0.238 | -0.027 |
+| | | | 4-week | 0.086 | **0.255 (Ridge)** | **+0.169** | 0.076 | 0.295 | **+0.218** |
+| | | | 8-week | -0.118 | **0.152 (Ridge)** | **+0.270** | -0.166 | 0.136 | **+0.302** |
+| **Maharashtra**| **Bamni** | 46,020 | 1-week | 0.250 | 0.244 (Ridge) | -0.005 | 0.625 | 0.340 | -0.285 |
+| | (Wardha) | | 2-week | -0.256 | -0.241 (Ridge) | +0.015 | 0.372 | -0.127 | -0.499 |
+| | | | 4-week | 0.177 | -0.376 (GBT) | -0.553 | 0.188 | -0.000 | -0.188 |
+| | | | 8-week | -0.116 | -0.260 (GBT) | -0.144 | -0.064 | 0.044 | +0.107 |
+
+---
+
+### 10.4 Key Hydrological & Machine Learning Syntheses
+
+#### 1. The Persistence Horizon Decay Cliff ($H=1\text{w} \to H=2\text{w}$)
+At $H=1$ week, persistence ($Q_t$) functions effectively in continuous flow correlation ($r \approx 0.63$), but drops abruptly from median $\text{NSE} = +0.265$ to **$\text{NSE} = -0.339$** at $H=2$ weeks. In flashier monsoonal catchments (e.g. Warunji, $1,890\,\text{km}^2$), persistence collapses to $\text{NSE} = -0.665$. The hydrograph memory half-life in peninsular Indian rivers is approximately 5 to 9 days; beyond this window, autoregressive inertia alone requires non-linear regression on recession dynamics to prevent catastrophic error amplification.
+
+#### 2. The Drought Warning Climatology Blindspot
+At lead times of $H \ge 4$ weeks, operational hydrologists frequently revert to calendar climatology ($\bar{Q}_{\text{week}}$). While climatology yields a modest positive continuous NSE ($+0.090$ at $H=4\text{w}$), its categorical drought early warning skill is **identically zero** ($\text{CSI} = 0.000, \text{POD} = 0.000$ for Moderate and Severe tiers). Because the multi-year weekly mean discharge sits near the median of the distribution, climatology **never predicts flows below the 5th or 10th percentile**. In operational emergency management, reliance on climatology produces 100% missed drought emergencies at 1- to 2-month horizons.
+
+#### 3. Long-Horizon Drought Recovery via Non-Linear Memory
+At $H=8$ weeks, M1 HistGradientBoosting recovers actionable drought early warning capability, achieving **$\text{CSI} = 0.148$** (with $\text{POD} = 0.219$ and $\text{FAR} = 0.519$) for Severe Droughts, where Climatology has zero detection capability. By combining the 7-week hydrograph recession slope ($Q_t - Q_{t-1}$) with annual Fourier calendar harmonics, tree splits successfully differentiate an ephemeral post-monsoon baseflow recession from sustained drought drawdown.
+
+#### 4. Specific Discharge Normalization for Zero-Shot Spatial Transfer
+In hydrologically coherent macro-regions (Odisha and Karnataka), area-normalized specific discharge ($q = Q \cdot 604.8 / A$) successfully eliminates scale disparities between small headwater catchments ($1,890\,\text{km}^2$) and large trunk streams ($69,863\,\text{km}^2$). Zero-shot models transfer without retraining, providing large skill gains over baseline on Kantamal ($\Delta\text{NSE} = +0.850$ at $H=8\text{w}$) and Haralahalli ($\Delta\text{NSE} = +0.541$ at $H=2\text{w}$).
+
+#### 5. Data Entry Anomaly Analysis (Approval Gate AG-TS-04)
+The breakdown of spatial transfer in Maharashtra (Bamni $\text{NSE} = -0.376$ at $H=4\text{w}$) was directly traced to a clerical data entry error in the CWC raw daily records for Ashti (Row 21042 on `05-10-2025`: $1,829,351\,\text{m}^3/\text{s}$). When Ashti's unclipped specific discharge is pooled into training, squared-error loss gradients become dominated by this unphysical value, corrupting the linear weights for neighboring Deccan basins. HistGradientBoosting is naturally bounded by tree-leaf quantiles and mitigates the error (GBT NSE $-0.260$ vs Ridge $-0.843$), but applying a physical sanity threshold on raw CWC discharge is essential before training M2 multi-source weather models.
+
+---
+
+## 11. Project Conclusions & Operational Roadmap
+
+1. **Baseline Established**: M0 (Persistence/Climatology) and M1 (Autoregressive Flow-Only) provide the verified mathematical and empirical baseline for the ES 335 study.
+2. **Next Phase (Tier M2 Hydro-Meteorological Models)**: Incorporate antecedent precipitation memory ($P_{1w \dots 3m}$, $API_{30d}$), atmospheric evaporative demand ($\text{PET}_{1w}, \text{PET}_{1m}$), and climatic water deficit ($P - \text{PET}$) to determine how much meteorological forcings extend predictive skill at $H=2, 4, 8$ weeks over flow inertia alone.

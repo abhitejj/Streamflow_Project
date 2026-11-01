@@ -58,9 +58,23 @@ This document tracks all formal methodological, architectural, and data governan
 
 ---
 
-### Gate AG-TS-04: Ashti Raw CWC Data Anomaly (Pending User Approval)
-* **Date:** October 31, 2026
-* **Status:** **IDENTIFIED & ESCALATED**
-* **Context:** On `05-10-2025`, raw CWC daily discharge table for Maharashtra contains a clerical data entry of **$1,829,351\,\text{m}^3/\text{s}$** at Ashti (Amazon River peak flow is $\sim 300,000\,\text{m}^3/\text{s}$).
-* **Specialist Evidence:** This single clerical typo distorts pooled model weights in Maharashtra Protocol 2 cross-basin transfer.
-* **Recommended Decision:** Apply an upper physical sanity bound ($Q \le 50,000\,\text{m}^3/\text{s}$ or historical max) to mask this single typo as unobserved `NaN`.
+### Gate AG-TS-04: Ashti Raw CWC Data Anomaly (Upper Physical Limit Masking)
+* **Date:** November 1, 2026
+* **Status:** **APPROVED & IMPLEMENTED**
+* **Context:** On `05-10-2025`, raw CWC daily discharge table for Maharashtra contained a clerical typo of **$1,829,351\,\text{m}^3/\text{s}$** at Ashti (and `69,514 m³/s` at Kudige).
+* **Specialist Evidence:** Geospatial and Time-Series audits proved these were clerical data entry errors (e.g. missing decimal point in 1829.351 m³/s), distorting pooled training distribution in Maharashtra.
+* **Approved Decision:** Updated `scripts/prepare_weekly_dataset.py` to enforce a strict physical upper threshold of $50,000\,\text{m}^3/\text{s}$. Any daily discharge exceeding this limit is masked as `NaN` (unobserved) before weekly resampling. Re-generated all 12 weekly tensors (Ashti peak streamflow cleanly corrected from $263,469\,\text{m}^3/\text{s}$ to $17,522.7\,\text{m}^3/\text{s}$).
+
+---
+
+### Gate AG-TS-05: Advance to Tier M2 Hydro-Meteorological Models (Code Generation)
+* **Date:** November 1, 2026
+* **Status:** **APPROVED & SCRIPT GENERATED (AWAITING ARCHITECTURE REVIEW)**
+* **Context:** Transition from flow-only autoregression (M1) to full hydro-meteorological models (M2) incorporating IMD rainfall, ERA5-Land PET/Temperature, and climatic water deficits.
+* **Approved Decision:** Generated `scripts/train_m2_models.py` implementing:
+  1. Protocol 1 (Temporal Multi-Horizon): `HistGradientBoostingRegressor` on 26 hydro-meteorological features.
+  2. Protocol 2 (Cross-Basin Spatial Transfer): PyTorch `HydroLSTM` on 10 intensive, depth-normalized sequential features over an $L=8$ week sliding lookback window.
+  3. Purge embargo: Terminal $H$-week purge embargo applied to Training and Validation sets.
+  4. Identical-row evaluation mask against M0 baseline.
+  5. Script generation completed without execution, pending human architecture review.
+

@@ -113,7 +113,33 @@ To uphold scientific integrity without fabricating streamflow observations:
 
 ---
 
+## 📈 Empirical Benchmark Results: Baseline M0 vs Autoregressive M1 (Audited)
+
+Full out-of-sample evaluation on the 10-year Test block (2016–2025: 522 weeks) under the terminal $H$-week purge embargo (AG-TS-02). Complete details are compiled in [`data/processed/validation_reports/forecast_models_m0_m1_benchmarking_report.md`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/validation_reports/forecast_models_m0_m1_benchmarking_report.md).
+
+### 12-Basin Portfolio Medians across Forecast Horizons
+
+| Horizon | Continuous NSE (M0 / GBT) | Continuous KGE (M0 / GBT) | Severe Drought ($Q_{95}$) CSI (M0 / GBT) | Key Empirical Finding |
+| :---: | :---: | :---: | :---: | :--- |
+| **1-Week** | 0.265 / **0.458** (+0.193) | **0.633** / 0.497 (-0.135) | **0.578** / 0.000 (-0.578) | GBT dominates continuous flow tracking; Persistence dominates short-range drought alerts. |
+| **2-Week** | -0.339 / **0.259** (+0.598) | 0.331 / **0.298** (-0.033) | **0.439** / 0.026 (-0.412) | Persistence collapses to negative NSE; Autoregressive trees maintain strong predictive skill. |
+| **4-Week** | 0.090 / **0.282** (+0.192) | 0.146 / **0.264** (+0.118) | 0.000 / **0.031** (+0.031) | Seasonal climatology has **zero drought detection skill** ($\text{CSI} = 0.000$); GBT retains positive skill. |
+| **8-Week** | -0.207 / **0.222** (+0.429) | -0.088 / **0.222** (+0.309) | 0.000 / **0.148** (+0.148) | Climatology is negative across all basins; GBT recovers long-range severe drought early warning ($\text{CSI} = 0.148$). |
+
+### Protocol 2: Cross-Basin Zero-Shot Spatial Transfer to Held-Out Sub-Basins
+
+| State | Holdout Sub-Basin | Horizon | M0 Baseline NSE | Zero-Shot M1 NSE | ΔNSE Skill Gain | Zero-Shot M1 KGE |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Odisha** | **Kantamal** (19,600 km²) | 1-week<br>2-week<br>4-week<br>8-week | 0.388<br>-0.030<br>0.093<br>-0.419 | **0.536 (GBT)**<br>**0.437 (GBT)**<br>**0.459 (GBT)**<br>**0.432 (GBT)** | **+0.149**<br>**+0.466**<br>**+0.366**<br>**+0.850** | 0.580<br>0.485<br>0.469<br>0.429 |
+| **Karnataka** | **Haralahalli** (14,582 km²) | 1-week<br>2-week<br>4-week<br>8-week | -0.149<br>-0.469<br>0.086<br>-0.118 | **0.154 (Ridge)**<br>**0.072 (Ridge)**<br>**0.255 (Ridge)**<br>**0.152 (Ridge)** | **+0.303**<br>**+0.541**<br>**+0.169**<br>**+0.270** | 0.393<br>0.238<br>0.295<br>0.136 |
+| **Maharashtra**| **Bamni** (46,020 km²) | 1-week<br>2-week<br>4-week<br>8-week | 0.250<br>-0.256<br>0.177<br>-0.116 | 0.244 (Ridge)<br>-0.241 (Ridge)<br>-0.376 (GBT)<br>-0.260 (GBT) | -0.005<br>+0.015<br>-0.553<br>-0.144 | 0.340<br>-0.127<br>-0.000<br>0.044 |
+
+*Note on Maharashtra Holdout:* Negative transfer at $H \ge 4\text{w}$ is driven by an unclipped clerical data entry typo at Ashti on 2025-10-06 ($1,829,351\,\text{m}^3/\text{s}$ in raw CWC records), pending Approval Gate AG-TS-04.
+
+---
+
 ## 📁 Repository Structure
+
 
 ```text
 ML Project/
@@ -147,7 +173,8 @@ ML Project/
     ├── station_explorer.py               # CLI tool to browse, search, and select stations
     ├── imd_cwc_alignment_test.py         # Parametric meteorological alignment test suite
     ├── prepare_weekly_dataset.py         # 46-year weekly tensor extraction & calibration pipeline
-    └── train_forecast_models.py          # M0 vs M1 multi-horizon training & benchmarking engine
+    ├── train_forecast_models.py          # M0 vs M1 multi-horizon training & benchmarking engine
+    └── train_m2_models.py                # M2 Hydro-Meteorological models (HistGradientBoosting & PyTorch LSTM)
 ```
 
 ---
@@ -164,7 +191,7 @@ For submission in academic and course project reports, complete technical specif
    - Exact mathematical formulas for Track A continuous accuracy (NSE, KGE-2009 with guards, RMSE, MAE) and Track B drought early warning (Mild $Q_{80}$, Moderate $Q_{90}$, Severe $Q_{95}$ with POD, FAR, CSI).
    - Direct mapping to the IITGN ES 335 course evaluation rubric.
 2. **[Formal Decision & Approval Gates Log (`docs/DECISION_LOG.md`)](docs/DECISION_LOG.md)**:
-   - Immutable audit trail of all approved gates: AG-01 (sub-basin relaxation), AG-02 (gap policy), AG-03 (ERA5-Land ingestion), AG-TS-01 (API weight fix), and AG-TS-02 (terminal $H$-week purge embargo).
+   - Immutable audit trail of all approved gates: AG-01 (sub-basin relaxation), AG-02 (gap policy), AG-03 (ERA5-Land ingestion), AG-TS-01 (API weight fix), AG-TS-02 (terminal $H$-week purge embargo), AG-TS-04 (outlier masking), and AG-TS-05 (M2 hydro-meteorological models).
 
 ---
 
@@ -209,3 +236,16 @@ python3 "scripts/train_forecast_models.py" --protocol 2 --model ridge
 # Full Evaluation Suite (Protocol 1 & 2 across Ridge and Gradient Boosting):
 python3 "scripts/train_forecast_models.py" --protocol all --model all --horizons 1 2 4 8
 ```
+
+### 5. Benchmark Tier M2 Hydro-Meteorological Models (Awaiting Review)
+```bash
+# Protocol 1: Temporal Benchmarking with HistGradientBoosting on 26 Hydro-Met features:
+python3 "scripts/train_m2_models.py" --protocol 1 --horizons 1 2 4 8
+
+# Protocol 2: Cross-Basin Spatial Transfer with PyTorch Deep Recurrent LSTM:
+python3 "scripts/train_m2_models.py" --protocol 2 --seq-len 8 --hidden-dim 64 --epochs 50
+
+# Full M2 Evaluation Suite:
+python3 "scripts/train_m2_models.py" --protocol all --horizons 1 2 4 8
+```
+

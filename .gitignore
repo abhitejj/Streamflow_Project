@@ -31,3 +31,26 @@ ENV/
 # Large Raw Datasets (Exceeds GitHub 100MB limit; total ~2.6GB)
 # Raw IMD NetCDF/GRD, CAMELS zip archives, CWC raw discharge tables
 data/raw/
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+# --- Added by sync.py ---
+# Keep raw input datasets local; synchronize processed outputs.
+!data/
+data/raw/
+!data/processed/
+!models/
+
+# Machine-specific and temporary files
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.log

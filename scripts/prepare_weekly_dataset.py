@@ -327,13 +327,21 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     
     sub_cwc['dt'] = pd.to_datetime(sub_cwc['Data Acquisition Time'], dayfirst=True, errors='coerce').dt.normalize()
     sub_cwc = sub_cwc.dropna(subset=['dt']).drop_duplicates('dt').set_index('dt')
-    s_cwc = sub_cwc['Manual Daily River Water Discharge (m3/sec)']
+    s_cwc = sub_cwc['Manual Daily River Water Discharge (m3/sec)'].copy()
+    
+    # Gate AG-TS-04: Enforce physical upper limit on daily CWC streamflow to eliminate clerical data entry errors
+    n_outliers = int((s_cwc > 50000.0).sum())
+    if n_outliers > 0:
+        print(f"      [!] AG-TS-04: Masked {n_outliers} daily CWC discharge observation(s) > 50,000 m³/s as NaN")
+        s_cwc = s_cwc.mask(s_cwc > 50000.0, np.nan)
     
     lat = float(sub_cwc['Latitude'].iloc[0])
     lon = float(sub_cwc['Longitude'].iloc[0])
     
     # 3. Stitch streamflow
     stitched_q = s_cwc.combine_first(s_camels).reindex(timeline)
+    stitched_q = stitched_q.mask(stitched_q > 50000.0, np.nan)
+
     
     # Missingness check
     n_missing = int(stitched_q.isnull().sum())
