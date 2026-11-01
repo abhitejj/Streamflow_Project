@@ -1,5 +1,6 @@
-# Byte-compiled / optimized / DLL files
+# Python cache
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -9,48 +10,27 @@ venv/
 env/
 ENV/
 
-# Execution logs
+# Logs
 *.log
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
+# Jupyter
+.ipynb_checkpoints/
 
-# OS-specific files (macOS & Linux interoperability)
+# macOS and Linux
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 
-# IDE / Editor configuration
+# IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Large Raw Datasets (Exceeds GitHub 100MB limit; total ~2.6GB)
-# Raw IMD NetCDF/GRD, CAMELS zip archives, CWC raw discharge tables
+# Raw datasets - keep local
 data/raw/
-# macOS
-.DS_Store
 
-# Python
-__pycache__/
-*.pyc
-
-# Logs
-*.log
-# --- Added by sync.py ---
-# Keep raw input datasets local; synchronize processed outputs.
-!data/
-data/raw/
-!data/processed/
-!models/
-
-# Machine-specific and temporary files
-.DS_Store
-**/.DS_Store
-__pycache__/
-**/__pycache__/
-*.py[cod]
-*.log
+# Temporary files
+*.tmp
