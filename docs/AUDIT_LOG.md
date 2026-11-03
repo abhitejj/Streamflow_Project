@@ -243,9 +243,21 @@ $\text{Warunji (1,890 km²)} \subset \text{Karad (5,462 km²)} \subset \text{Huv
 
 ---
 
-## 🛑 HARD STOP 2: Verification Checkpoint
-Phase 2 investigation and auditing are complete. All root causes have been diagnosed and proven with empirical code evidence.
-Per instructions:
-> "🛑 HARD STOP 2: Stop execution here. Present the AUDIT_LOG.md findings and your proposed solutions for the Nested Basins (H) and Karad zero-flows (C). Do not proceed to Phase 3 until I make a decision."
+## 🛑 HARD STOP 2: Verification Checkpoint (RESOLVED)
+Phase 2 investigation and auditing were completed and formally presented to the human decision-maker.
 
-Execution is halted. Awaiting human decision on Options H and C.
+### Human Decisions at Gate:
+1. **Issue H (Nested Basins Overlap):** User approved **Option H1**. The ungrounded "Zero Sub-Basin Overlap" claim was retired. The portfolio is reframed as **10 independent river systems and 1 nested multi-scale cascade ($\text{Warunji} \subset \text{Karad} \subset \text{Huvinhedigi}$)**.
+2. **Issue C (Karad Zero-Flows & Drought Thresholds):** User approved **Option C1**. Strict temporal evaluation purity was maintained by keeping the frozen training-fitted threshold ($Q_{95} = 5.994\,\text{m}^3/\text{s}$). The post-2010 anthropogenic regime shift (upstream Koyna diversion & CWC non-monsoon gauge shutdown) and the resulting 69.2% test zero-flow base rate were fully documented, updating the empirical no-skill PR baseline to 0.238 pooled across 12 basins (0.692 at Karad).
+3. **Strategic Pivot:** User approved telling the honest statistical story:
+   - M2 hydro-meteorological models do NOT achieve statistically significant continuous predictive superiority over M1 flow-only autoregression at any lead time ($p > 0.20$ across all horizons via Wilcoxon signed-rank test).
+   - At long horizons ($H = 4\text{w}$ and $8\text{w}$), seasonal weekly climatology (M0 = +0.349 at 4w, +0.348 at 8w) statistically outperforms both M2 (+0.267, +0.290) and M1 (+0.308, +0.248) as hydraulic memory collapses to 0.0%.
+   - M2's primary operational advantage lies in short-horizon ($H \le 2\text{w}$) severe drought false alarm suppression (reducing FAR by up to 27 percentage points).
+
+---
+
+## 5. Phase 3 Regeneration & Documentation Alignment (COMPLETED)
+- **Model Result Artifacts:** Regenerated all 6 result CSVs in `data/processed/model_results/` with 100% verified predictions.
+- **Interactive Visualizations:** Regenerated all 10 Plotly interactive HTML widgets in `data/processed/visualizations/` with audited metrics, accurate axis annotations, and explicit methodology subtitles.
+- **Frontend Assets on `gh-pages`:** Completely updated `assets/benchmark-data.js` and `index.html` with audited metrics, replacing impossible contingency cells with `undefined` and updating conclusions to reflect the approved statistical narrative.
+- **Documentation Synchronization:** Updated `README.md`, `docs/DECISION_LOG.md`, `docs/PROGRESS.md`, and `docs/PROJECT_REPORT_DOCUMENTATION.md` to guarantee 100% numerical consistency across the repository.

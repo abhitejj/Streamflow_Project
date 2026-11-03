@@ -212,7 +212,7 @@ For submission in academic and course project reports, complete technical specif
    - Exact mathematical formulas for Track A continuous accuracy (NSE, KGE-2009 with guards, RMSE, MAE) and Track B drought early warning (Mild $Q_{80}$, Moderate $Q_{90}$, Severe $Q_{95}$ with POD, FAR, CSI).
    - Direct mapping to the IITGN ES 335 course evaluation rubric.
 2. **[Formal Decision & Approval Gates Log (`docs/DECISION_LOG.md`)](docs/DECISION_LOG.md)**:
-   - Immutable audit trail of all approved gates: AG-01 (sub-basin relaxation), AG-02 (gap policy), AG-03 (ERA5-Land ingestion), AG-TS-01 (API weight fix), AG-TS-02 (terminal $H$-week purge embargo), AG-TS-04 (outlier masking), and AG-TS-05 (M2 hydro-meteorological models).
+   - Immutable audit trail of all approved gates: AG-01 (sub-basin relaxation), AG-02 (gap policy), AG-03 (ERA5-Land ingestion), AG-TS-01 (API weight fix), AG-TS-02 (terminal $H$-week purge embargo), AG-TS-04 (outlier masking), AG-TS-05 (M2 hydro-meteorological models), AG-TS-06 (nested cascade reframe H1), AG-TS-07 (Karad regime shift & threshold retention C1), and AG-TS-08 (objective statistical reporting & climatology pivot).
 
 ---
 
@@ -258,7 +258,7 @@ python3 "scripts/train_forecast_models.py" --protocol 2 --model ridge
 python3 "scripts/train_forecast_models.py" --protocol all --model all --horizons 1 2 4 8
 ```
 
-### 5. Benchmark Tier M2 Hydro-Meteorological Models (Awaiting Review)
+### 5. Benchmark Tier M2 Hydro-Meteorological Models (Implemented & Evaluated)
 ```bash
 # Protocol 1: Temporal Benchmarking with HistGradientBoosting on 26 Hydro-Met features:
 python3 "scripts/train_m2_models.py" --protocol 1 --horizons 1 2 4 8

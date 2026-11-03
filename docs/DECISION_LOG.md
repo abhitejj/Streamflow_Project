@@ -86,3 +86,30 @@ This document tracks all formal methodological, architectural, and data governan
 * **Context:** Deploying the interactive project website required hosting Plotly widgets without exposing the underlying Python training pipeline, raw datasets, or incurring browser-side latency from parsing 46-year CSVs.
 * **Specialist Evidence:** Software engineering audit confirmed that merging the backend main branch into a GitHub Pages deployment branch would leak sensitive data and bloat the repository. Generating dynamic plots client-side from raw CSVs would severely degrade mobile browser performance.
 * **Approved Decision:** Created an orphaned gh-pages branch serving a static Tailwind CSS site. Plots are pre-rendered in Python as standalone Plotly .html files and embedded via lazy-loaded <iframe> tags. Implemented deploy.sh to enforce a one-way, automated artifact transition from main to gh-pages, ensuring absolute separation of computation and presentation while forcing automated documentation updates.
+
+---
+
+### Gate AG-TS-06: Basin Independence Audit & Reframe to 10 Independent Systems + 1 Nested Cascade (Option H1)
+* **Date:** November 3, 2026
+* **Status:** **APPROVED BY USER & IMPLEMENTED**
+* **Context:** Comprehensive geospatial and hydrological network audit uncovered that the previous claim of "12 Independent Sub-Basins with Zero Overlap" was topologically invalid. In the Upper Krishna basin, Warunji ($1,890\,\text{km}^2$) is 100% nested within Karad ($5,462\,\text{km}^2$, comprising 34.6% of its area), and both are nested within Huvinhedigi ($55,150\,\text{km}^2$, comprising 3.4% and 9.9% of its area, respectively).
+* **Specialist Evidence:** Geospatial Data Engineer and Hydrology Expert proved that rather than flawed spatial independence, these three stations form a physically compelling multi-scale drainage cascade along a 55,000 km² elevation transect from the high-rainfall Western Ghats headwaters to the semi-arid peninsular plains.
+* **Approved Decision (Option H1):** Formally retired the "Zero Sub-Basin Overlap" claim. Reframed the experimental matrix as **10 hydrologically independent river systems and 1 multi-scale nested drainage cascade ($\text{Warunji} \subset \text{Karad} \subset \text{Huvinhedigi}$)**. All documentation, figures, and website text updated to accurately describe multi-scale propagation rather than false spatial independence.
+
+---
+
+### Gate AG-TS-07: Karad Anthropogenic Regime Shift & Empirical Drought Baseline (Option C1)
+* **Date:** November 3, 2026
+* **Status:** **APPROVED BY USER & IMPLEMENTED**
+* **Context:** An external audit identified that Karad's severe drought test-set PR-AUC was abnormally high (>0.95) despite low CSI. Investigation revealed a severe anthropogenic/operational regime shift starting around 2010: upstream Koyna trans-basin hydroelectric diversion (diverting dry-season flow westward to the Arabian Sea) combined with CWC non-monsoon gauge shutdown caused 361 out of 522 test weeks (69.2%) to record exactly $0.0000\,\text{m}^3/\text{s}$, compared to only 2.1% zero-flow weeks in the pre-2010 training fold.
+* **Specialist Evidence:** Drought Modelling Scientist and Evaluation Auditor confirmed that under training-fitted $Q_{95} = 5.994\,\text{m}^3/\text{s}$, the test drought event base rate is 69.2% (not 5.0%), shifting the empirical no-skill PR-AUC baseline to 0.692 for Karad and 0.238 pooled across 12 basins.
+* **Approved Decision (Option C1):** Maintained strict temporal evaluation purity by retaining the frozen training-fitted threshold ($Q_{95} = 5.994\,\text{m}^3/\text{s}$) rather than retroactively tuning thresholds on test data. Fully documented the anthropogenic diversion/shutdown regime shift and updated the true empirical no-skill PR baseline to 0.238 across all text, tables, and PR curves.
+
+---
+
+### Gate AG-TS-08: Strategic Pivot to Objective Statistical Storytelling
+* **Date:** November 3, 2026
+* **Status:** **APPROVED BY USER & IMPLEMENTED**
+* **Context:** Rigorous audit of model metrics revealed two critical scientific realities: (1) Wilcoxon signed-rank tests across the 12 basins showed M2 hydro-met models were NOT statistically significantly superior to M1 flow-only models at any horizon ($p > 0.20$); and (2) after fixing a double-shift bug in climatology indexing, seasonal weekly climatology (M0 = +0.348 at 8w, +0.349 at 4w) actually outperformed both M2 (+0.290, +0.267) and M1 (+0.248, +0.308) at extended lead times.
+* **Specialist Evidence:** Statistical Research Analyst and Evaluation Auditor demonstrated that hydraulic streamflow memory collapses completely to 0.0% by 8 weeks lead (proven via permutation feature importance), while local meteorological memory accounts for only 8.5% of variance, leaving annual astronomical calendar seasonality (72.0% of variance) as the dominant physical driver.
+* **Approved Decision:** Approved the strategic pivot to complete intellectual honesty and rigorous statistical transparency. Explicitly communicate that M2 does not provide statistically significant continuous accuracy gains over M1 ($p > 0.20$), highlight seasonal climatology as the winning continuous model at 4- and 8-week horizons, and focus M2's true practical value on short-term severe drought false alarm suppression and multi-hazard early warning.

@@ -3,3 +3,6 @@
 This log tracks project milestones, pipeline updates, and deployments to `main` and `gh-pages`.
 
 - **2026-11-02 00:47:46 IST**: Configure deployment automation and update web architecture documentation
+- **2026-11-03 22:30:00 IST**: Phase 2 Independent Scientific Audit: completed root-cause diagnosis of 11 issues (A–K), including Karad zero-flows (Issue C), nested basin overlap (Issue H), and climatology double-shift bug (Issue D); established automated recomputation audit in scripts/audit_metrics.py.
+- **2026-11-03 22:36:00 IST**: Phase 3 Execution: user approved Options H1 and C1 and strategic pivot; regenerated all 6 model results CSVs, recomputed 10 Plotly interactive HTML widgets with audited metrics, updated benchmark-data.js and index.html on gh-pages, and aligned all technical documentation.
+- **2026-11-03 22:59:06 IST**: Completed metric recomputation, frontend rewrite, and documentation alignment
