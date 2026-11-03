@@ -1,0 +1,126 @@
+nohup: ignoring input
+==================================================================================
+      OPERATIONAL WEEKLY DATASET PIPELINE (1980–2025: 46 YEARS)
+==================================================================================
+Project Root          : /home/bel/Desktop/Streamflow_Project
+IMD NetCDF Path       : /home/bel/Desktop/Streamflow_Project/data/raw/imd/imd_rainfall_2001_2025.nc
+CWC Directory         : /home/bel/Desktop/Streamflow_Project/data/raw/cwc
+CAMELS Directory      : /home/bel/Desktop/Streamflow_Project/data/raw/camels_ind
+ERA5-Land Directory   : /home/bel/Desktop/Streamflow_Project/data/raw/era5_land
+Validation Reports    : /home/bel/Desktop/Streamflow_Project/data/processed/validation_reports
+Weekly Tensors Output : /home/bel/Desktop/Streamflow_Project/data/processed/weekly_tensors
+----------------------------------------------------------------------------------
+[*] Timeline Verification: 1980-01-01 to 2025-12-31 -> 16802 daily timesteps.
+
+[*] Initializing Lazy IMD NetCDF Grid Handler...
+[*] Pre-loading CAMELS Historical Streamflow Matrix...
+
+---> Processing Station: Karad (CAMELS Gauge: 4021)
+      Streamflow Missingness: 56/16802 (0.33%), Max Contig Gap: 25 days
+      Boundary Calibration: P α=1.5616 (r_d=0.823, r_w=0.897), Tavg bias=+1.07C (r_d=0.943, r_w=0.961), PET α=0.7196 (r_d=0.760, r_w=0.781)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_04021_Karad.csv
+
+---> Processing Station: Warunji (CAMELS Gauge: 4063)
+      Streamflow Missingness: 68/16802 (0.40%), Max Contig Gap: 26 days
+      Boundary Calibration: P α=2.1797 (r_d=0.767, r_w=0.841), Tavg bias=+1.45C (r_d=0.933, r_w=0.950), PET α=0.7260 (r_d=0.796, r_w=0.825)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_04063_Warunji.csv
+
+---> Processing Station: Ashti (CAMELS Gauge: 3005)
+      Streamflow Missingness: 215/16802 (1.28%), Max Contig Gap: 26 days
+      Boundary Calibration: P α=0.7824 (r_d=0.645, r_w=0.857), Tavg bias=-1.47C (r_d=0.949, r_w=0.961), PET α=0.6937 (r_d=0.708, r_w=0.736)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_03005_Ashti.csv
+
+---> Processing Station: Bamni (Ballarsha) (CAMELS Gauge: 3008)
+      Streamflow Missingness: 237/16802 (1.41%), Max Contig Gap: 34 days
+      Boundary Calibration: P α=0.8548 (r_d=0.691, r_w=0.893), Tavg bias=-0.47C (r_d=0.976, r_w=0.984), PET α=0.7351 (r_d=0.688, r_w=0.706)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_03008_Bamni (Ballarsha).csv
+
+---> Processing Station: Anandpur (CAMELS Gauge: 7002)
+      Streamflow Missingness: 150/16802 (0.89%), Max Contig Gap: 26 days
+      Boundary Calibration: P α=0.8995 (r_d=0.779, r_w=0.896), Tavg bias=+0.44C (r_d=0.973, r_w=0.987), PET α=0.7913 (r_d=0.776, r_w=0.785)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_07002_Anandpur.csv
+
+---> Processing Station: Kashinagar (CAMELS Gauge: 16007)
+      Streamflow Missingness: 81/16802 (0.48%), Max Contig Gap: 31 days
+      Boundary Calibration: P α=1.1447 (r_d=0.678, r_w=0.806), Tavg bias=-0.09C (r_d=0.964, r_w=0.980), PET α=0.7652 (r_d=0.789, r_w=0.811)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_16007_Kashinagar.csv
+
+---> Processing Station: Gomlai (CAMELS Gauge: 7007)
+      Streamflow Missingness: 119/16802 (0.71%), Max Contig Gap: 82 days
+      Boundary Calibration: P α=0.8509 (r_d=0.745, r_w=0.850), Tavg bias=-0.48C (r_d=0.965, r_w=0.974), PET α=0.7430 (r_d=0.713, r_w=0.720)
+      [SAVED] 2394 weekly samples (2382 observed, 12 unobserved/NaN) -> weekly_tensor_gauge_07007_Gomlai.csv
+
+---> Processing Station: Kantamal (CAMELS Gauge: 8013)
+      Streamflow Missingness: 285/16802 (1.70%), Max Contig Gap: 93 days
+      Boundary Calibration: P α=1.0135 (r_d=0.638, r_w=0.821), Tavg bias=-0.65C (r_d=0.956, r_w=0.967), PET α=0.6965 (r_d=0.724, r_w=0.732)
+      [SAVED] 2394 weekly samples (2372 observed, 22 unobserved/NaN) -> weekly_tensor_gauge_08013_Kantamal.csv
+
+---> Processing Station: Yadgir (CAMELS Gauge: 4064)
+      Streamflow Missingness: 0/16802 (0.00%), Max Contig Gap: 0 days
+      Boundary Calibration: P α=0.8560 (r_d=0.571, r_w=0.808), Tavg bias=-0.88C (r_d=0.950, r_w=0.966), PET α=0.6529 (r_d=0.532, r_w=0.533)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_04064_Yadgir.csv
+
+---> Processing Station: Huvinhedigi (CAMELS Gauge: 4017)
+      Streamflow Missingness: 39/16802 (0.23%), Max Contig Gap: 15 days
+      Boundary Calibration: P α=0.9987 (r_d=0.349, r_w=0.549), Tavg bias=-1.17C (r_d=0.945, r_w=0.966), PET α=0.6410 (r_d=0.543, r_w=0.542)
+      [SAVED] 2394 weekly samples (2393 observed, 1 unobserved/NaN) -> weekly_tensor_gauge_04017_Huvinhedigi.csv
+
+---> Processing Station: KUDIGE (CAMELS Gauge: 5010)
+      Streamflow Missingness: 676/16802 (4.02%), Max Contig Gap: 213 days
+      Boundary Calibration: P α=2.1191 (r_d=0.678, r_w=0.801), Tavg bias=+2.35C (r_d=0.872, r_w=0.924), PET α=0.9030 (r_d=0.522, r_w=0.522)
+      [SAVED] 2394 weekly samples (2362 observed, 32 unobserved/NaN) -> weekly_tensor_gauge_05010_KUDIGE.csv
+
+---> Processing Station: Haralahalli (CAMELS Gauge: 4013)
+      Streamflow Missingness: 1264/16802 (7.52%), Max Contig Gap: 161 days
+      Boundary Calibration: P α=1.6131 (r_d=0.553, r_w=0.676), Tavg bias=-0.52C (r_d=0.935, r_w=0.960), PET α=0.7445 (r_d=0.568, r_w=0.568)
+      [SAVED] 2394 weekly samples (2297 observed, 97 unobserved/NaN) -> weekly_tensor_gauge_04013_Haralahalli.csv
+
+[*] Writing Structural Validation Workpapers...
+[+] Integrity report: /home/bel/Desktop/Streamflow_Project/data/processed/validation_reports/station_integrity_report.md
+[+] Calibration report: /home/bel/Desktop/Streamflow_Project/data/processed/validation_reports/structural_break_calibration.md
+
+==================================================================================
+ PIPELINE COMPLETED SUCCESSFULLY (Peak RAM: 0.45 GB / 4.0 GB)
+ Processed Tensors saved to: /home/bel/Desktop/Streamflow_Project/data/processed/weekly_tensors
+==================================================================================
+
+
+################################################################################
+      STREAMFLOW & DROUGHT FORECASTING BENCHMARK: M0 vs M1
+      Timestamp: 2026-11-01T16:05:04.219040
+      Models Directory: /home/bel/Desktop/Streamflow_Project/models
+################################################################################
+
+================================================================================
+ EXECUTION: PROTOCOL 1 (Station-Specific Multi-Horizon Benchmarking)
+ Model Type: M1 (RIDGE) vs M0 Baseline
+ Horizons  : [1, 2, 4, 8] weeks
+================================================================================
+[+] Protocol 1 models saved to: /home/bel/Desktop/Streamflow_Project/models/protocol1
+[+] Protocol 1 results saved to: /home/bel/Desktop/Streamflow_Project/data/processed/model_results/protocol1_temporal_results_ridge.csv
+
+================================================================================
+ EXECUTION: PROTOCOL 2 (Cross-Basin Zero-Shot Spatial Transfer)
+ Model Type: M1 (RIDGE) vs M0 Baseline (Specific Runoff q)
+ Horizons  : [1, 2, 4, 8] weeks
+================================================================================
+[+] Protocol 2 models saved to: /home/bel/Desktop/Streamflow_Project/models/protocol2
+[+] Protocol 2 results saved to: /home/bel/Desktop/Streamflow_Project/data/processed/model_results/protocol2_spatial_results_ridge.csv
+
+================================================================================
+ EXECUTION: PROTOCOL 1 (Station-Specific Multi-Horizon Benchmarking)
+ Model Type: M1 (GBT) vs M0 Baseline
+ Horizons  : [1, 2, 4, 8] weeks
+================================================================================
+[+] Protocol 1 models saved to: /home/bel/Desktop/Streamflow_Project/models/protocol1
+[+] Protocol 1 results saved to: /home/bel/Desktop/Streamflow_Project/data/processed/model_results/protocol1_temporal_results_gbt.csv
+
+================================================================================
+ EXECUTION: PROTOCOL 2 (Cross-Basin Zero-Shot Spatial Transfer)
+ Model Type: M1 (GBT) vs M0 Baseline (Specific Runoff q)
+ Horizons  : [1, 2, 4, 8] weeks
+================================================================================
+[+] Protocol 2 models saved to: /home/bel/Desktop/Streamflow_Project/models/protocol2
+[+] Protocol 2 results saved to: /home/bel/Desktop/Streamflow_Project/data/processed/model_results/protocol2_spatial_results_gbt.csv
+
+[+] Benchmark execution pipeline completed successfully.
