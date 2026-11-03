@@ -1,6 +1,6 @@
 # Streamflow & Drought Forecasting ML Project (1980–2025)
 
-An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning across 12 diverse, non-overlapping river basins in India.
+An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning across 12 diverse catchments in India (10 independent river systems and 1 multi-scale nested cascade).
 
 ---
 
@@ -42,35 +42,50 @@ Meteorological inputs are harmonized across two continuous observation epochs to
      - **Dry Spell Duration**: Count of dry days ($P < 1.0\,\text{mm}$) within the issuance week.
 
 2. **Atmospheric Evaporative Demand & Thermal Forcings**:
-   - **Historical Baseline (1980–2020)**: Sourced from CAMELS-IND, which compiles IMD gridded daily temperature ($T_{max}, T_{min}, T_{avg}$) and GLEAM v3.6a Potential Evapotranspiration ($PET_{GLEAM}$, mm/day).
-   - **Operational Period (2021–2025)**: To preserve source continuity with the CAMELS-IND baseline and eliminate structural breaks at the 2020/2021 boundary, non-rainfall forcings are ingested from **ERA5-Land reanalysis** (`data/raw/era5_land/`), matching the GLEAM evaporative demand formulation via FAO-56 Penman-Monteith reference evapotranspiration. We explicitly avoid crude empirical approximations (e.g., Hargreaves-Samani on coarse grids).
+   - **Historical Baseline (1980–2020)**: Sourced from CAMELS-IND, which compiles IMD gridded daily temperature ($T_{max}, T_{min}, T_{avg}$) and GLEAM v3.6a Potential Evapotranspiration ($PET_{GLEAM}$, mm/day; Priestley-Taylor formulation).
+   - **Operational Period (2021–2025)**: To preserve source continuity with the CAMELS-IND baseline and eliminate structural breaks at the 2020/2021 boundary, non-rainfall forcings are ingested from **ERA5-Land reanalysis** (`data/raw/era5_land/`), matching the evaporative demand formulation via reference evapotranspiration.
    - **Boundary Calibration (2015–2020 Overlap)**:
-     - **Temperature**: Ingests daily $T_{avg}$ and $T_{max}$ from ERA5-Land, calibrated with an additive bias correction ($\text{Bias}_T = \mu_{CAMELS} - \mu_{ERA5}$, portfolio mean bias: $-0.035\,^\circ\text{C}$, $r = 0.947$).
+     - **Temperature**: Ingests daily $T_{avg}$ and $T_{max}$ from ERA5-Land, calibrated with an additive bias correction ($\text{Bias}_T = \mu_{CAMELS} - \mu_{ERA5}$; Mean Absolute Bias across portfolio: $0.84\,^\circ\text{C}$, signed portfolio mean: $-0.035\,^\circ\text{C}$, $r = 0.947$).
      - **PET**: Ingests FAO-56 Penman-Monteith ET0, calibrated via multiplicative scaling ($\alpha_{PET} = \sum PET_{GLEAM} / \sum PET_{ERA5} \approx 0.734$, $r = 0.677$).
    - **Engineered Weekly Features**:
      - $T_{mean, 1w}$ (7-day mean), $T_{max, 1w}$ (7-day max).
      - $PET_{1w}$ (7-day sum), $PET_{1m}$ (30-day sum).
      - **Hydrological Water Deficit**: $\text{Deficit}_{1w} = P_{1w} - PET_{1w}$ and $\text{Deficit}_{1m} = P_{1m} - PET_{1m}$ capturing net atmospheric water deficit and catchment drying stress.
+   - **Aridity Index Definition**: Catchment aridity reported in CAMELS-IND represents the Budyko wetness index $\bar{P} / \overline{\text{PET}}$ (values $< 1.0$ indicate water-limited regimes, $> 1.0$ energy-limited/humid regimes).
 
 3. **Multi-Depth Soil Moisture Pruning**:
    - As mandated by data integrity rules, multi-depth soil moisture ($sm_1 \dots sm_4$) has been pruned from the operational pipeline to eliminate non-native scraping dependencies and ensure 100% auditable traceability.
 
 ---
 
-## 12-Station Independent Sub-Basin Portfolio (0 Sub-Basin Overlap)
+## 12-Station Catchment Portfolio: 10 Independent River Systems & 1 Multi-Scale Nested Cascade
 
-To eliminate **spatial autocorrelation** and prevent upstream-downstream data leakage, we enforce a strict **zero sub-basin overlap rule** across all three target states (Maharashtra, Odisha, Karnataka). While macro-basins (such as the Krishna or Godavari) cover vast continental expanses spanning divergent climatic zones, their distinct sub-basins represent hydrologically decoupled catchments with unique drainage geometries, geology, and elevation gradients.
+The experimental portfolio encompasses **12 CWC/CAMELS-IND river gauging catchments** spanning three distinct macro-climatic and physiographic zones of peninsular and eastern India (Maharashtra, Odisha, Karnataka) across a 46-year continuous timeline (1980–2025: 2,394 weekly timesteps).
 
-Following formal approval gate review, the macro-basin zero-overlap constraint was explicitly relaxed to a strictly enforced **sub-basin zero-overlap rule** to prioritize the **46-year continuous timeline (1980–2025: 16,802 daily timesteps)**. This ensures our models train on authentic historical hydrological regimes without relying on automated or synthetic imputation across multi-month gaps.
+### Catchment Independence & Nested Hierarchy
+Rigorous hydrological and spatial audit establishes the exact topological structure of the portfolio:
+1. **10 Independent River Systems**: Ten catchments represent hydrologically decoupled, non-overlapping drainage networks across the Godavari (Wainganga, Wardha), Mahanadi (Tel), Baitarani, Vamsadhara, Brahmani, Cauvery, and Tungabhadra river basins.
+2. **1 Multi-Scale Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
+   - **Warunji (Gauge 4063)**: Headwater catchment on the Koyna River ($1,890.0\,\text{km}^2$) in the Western Ghats high-rainfall crest.
+   - **Karad (Gauge 4021)**: Upper Krishna mainstem gauge ($5,462.0\,\text{km}^2$), directly receiving Koyna outflow. Warunji represents **34.6% of Karad's drainage area**.
+   - **Huvinhedigi (Gauge 4017)**: Downstream regional trunk gauge on the peninsular Krishna in Karnataka ($55,150.0\,\text{km}^2$). Warunji comprises **3.4%** and Karad comprises **9.9%** of Huvinhedigi's upstream catchment.
+   - *Audit Disclosure*: We explicitly retire the former 'Zero Sub-Basin Overlap' claim. Models evaluated on Warunji, Karad, and Huvinhedigi evaluate multi-scale hydrological propagation along a 55,000 km² drainage cascade rather than mutually independent catchments.
+
+### Karad Anthropogenic Regime Shift & Drought Thresholds
+A severe hydrological regime shift was uncovered at Karad (Gauge 4021):
+- **Pre-2010 Historical Regime**: Karad was historically a perennial river with median non-monsoon discharge of $100\text{--}350\,\text{m}^3/\text{s}$ and only 4.5% annual zero-flow days.
+- **Post-2010 Regime Shift**: Following operational changes in the upstream Koyna Hydroelectric Project (diverting water westward to the Arabian Sea) and CWC gauge non-monsoon seasonal shutdowns, streamflow drops to exactly $0.0000\,\text{m}^3/\text{s}$ for 5 to 7 consecutive months each year (December to June).
+- **Test Set Impact (2016–2025)**: During the 10-year test block, **361 out of 522 weeks (69.2%)** record zero discharge.
+- **Temporal Split Purity (Gate Option C1)**: To maintain strict separation between model fitting and evaluation, the severe drought threshold was calibrated strictly on the 1980–2010 training fold ($Q_{95} = 5.994\,\text{m}^3/\text{s}$). Because of the post-2010 shutdown, 69.2% of test weeks fall below this threshold. Consequently, the true empirical no-skill PR baseline is **0.692 for Karad** and **0.238 pooled across all 12 test basins** (not the theoretical 0.05).
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                               12-STATION INDEPENDENT SUB-BASIN EXPERIMENTAL MATRIX                                    │
+│                               12-STATION EXPERIMENTAL MATRIX: REGIMES & ATTRIBUTES                                    │
 ├─────────────────┬────────────────────────┬──────────────────────┬─────────────┬───────────┬──────────┬────────────────┤
-│ State           │ Station Name           │ Distinct Sub-Basin   │ CAMELS ID   │ Area(km²) │ Aridity  │ Regime Type    │
+│ State           │ Station Name           │ Sub-Basin / River    │ CAMELS ID   │ Area(km²) │ Aridity* │ Regime Type    │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Maharashtra** │ 1. Karad               │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.810  │ Deccan Plains  │
-│                 │ 2. Warunji             │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   1.106  │ Ghats Headwater│
+│ **Maharashtra** │ 1. Karad (Cascade 2)   │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.810  │ Deccan Plains  │
+│                 │ 2. Warunji (Cascade 1) │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   1.106  │ Ghats Headwater│
 │                 │ 3. Ashti               │ Wainganga Sub-basin  │ Gauge 3005  │  50,990.0 │   0.813  │ Sub-Humid East │
 │                 │ 4. Bamni (Holdout)     │ Wardha Sub-basin     │ Gauge 3008  │  46,020.0 │   0.592  │ Vidarbha Basin │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
@@ -80,10 +95,11 @@ Following formal approval gate review, the macro-basin zero-overlap constraint w
 │                 │ 4. Kantamal (Holdout)  │ Tel / Mahanadi Basin │ Gauge 8013  │  19,600.0 │   0.988  │ Inland Delta   │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
 │ **Karnataka**   │ 1. Yadgir              │ Bhima Sub-basin      │ Gauge 4064  │  69,863.0 │   0.428  │ Semi-Arid Soil │
-│                 │ 2. Huvinhedigi         │ Upper Krishna South  │ Gauge 4017  │  55,150.0 │   0.506  │ Peninsular Mid │
+│                 │ 2. Huvinhedigi(Casc. 3)│ Upper Krishna Main   │ Gauge 4017  │  55,150.0 │   0.506  │ Peninsular Mid │
 │                 │ 3. KUDIGE              │ Upper Cauvery Basin  │ Gauge 5010  │   1,934.0 │   1.388  │ High-Rain Head │
 │                 │ 4. Haralahalli(Holdout)│ Tungabhadra Basin    │ Gauge 4013  │  14,582.0 │   0.916  │ Central Valley │
 └─────────────────┴────────────────────────┴──────────────────────┴─────────────┴───────────┴──────────┴────────────────┘
+* Aridity is reported as the Budyko wetness index P_mean / PET_mean from CAMELS-IND.
 ```
 
 ### Data Continuity & Gap Handling Protocol
@@ -119,24 +135,25 @@ Full out-of-sample evaluation on the 10-year Test block (2016–2025: 522 weeks)
 
 ### 12-Basin Portfolio Medians across Forecast Horizons (Protocol 1: Temporal)
 
-| Horizon | Continuous NSE (M0 / M1 / M2) | Continuous KGE (M0 / M1 / M2) | Severe Drought ($Q_{95}$) CSI (M0 / M1 / M2) | Severe Drought ($Q_{95}$) FAR (M1 / M2) | Key Empirical Finding |
+| Horizon | Continuous NSE (M0 / M1 / M2) | Continuous KGE (M0 / M1 / M2) | Severe Drought ($Q_{95}$) CSI (M0 / M1 / M2) | Severe Drought ($Q_{95}$) FAR (M1 / M2) | Statistical Significance & Key Finding |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1-Week** | 0.265 / **0.458** / 0.453 | **0.633** / 0.497 / 0.506 | **0.578** / 0.000 / 0.000 | 0.674 / **0.400** (-0.274) | Persistence dominates 1w alerts; M2 weather forcings slash false alarms by 27.4%. |
-| **2-Week** | -0.339 / 0.259 / **0.345** (+0.086) | 0.331 / 0.298 / **0.397** (+0.099) | **0.439** / 0.026 / 0.003 | 0.660 / **0.482** (-0.178) | Persistence collapses to negative NSE; M2 Hydro-Met models provide major skill surge (+0.684 over M0). |
-| **4-Week** | 0.090 / **0.282** / 0.267 | 0.146 / 0.264 / **0.380** (+0.116) | 0.000 / **0.031** / 0.020 | 0.556 / 0.610 | Climatology is completely blind to droughts ($\text{CSI} = 0$); M2 delivers large volumetric KGE gains. |
-| **8-Week** | -0.207 / 0.222 / **0.290** (+0.068) | -0.088 / 0.222 / **0.308** (+0.086) | 0.000 / **0.148** / 0.007 | 0.519 / **0.447** (-0.072) | Climatology negative across all 12 basins; M2 seasonal rain memory ($P_{3m}$) boosts 10/12 basins. |
+| **1-Week** | 0.306 / **0.475** / 0.453 | **0.653** / 0.553 / 0.506 | **0.574** / 0.000 / 0.000 | 1.000 / **0.467** | Flow memory dominates continuous flow; M2 is **not** statistically significantly better than M1 ($W = 29.0, p = 0.470$; 6/12 basins favor M1). Persistence dominates short-term binary alerts. |
+| **2-Week** | -0.146 / 0.324 / **0.345** (+0.009) | **0.427** / 0.409 / 0.397 | **0.429** / 0.024 / 0.003 | 0.731 / **0.500** (-0.231) | Persistence collapses ($\text{NSE} = -0.146$); M1 and M2 restore positive predictive skill, but M2 gain over M1 is not statistically significant ($W = 23.0, p = 0.233$; 6/12 basins favor M2). |
+| **4-Week** | **0.349** / 0.308 / 0.267 | 0.386 / **0.399** / 0.380 | 0.000 / **0.031** / 0.020 | **0.556** / 0.610 | **Seasonal Climatology (M0 = +0.349) outperforms both M1 (+0.308) and M2 (+0.267)** in median NSE. M2 vs M1 difference is not statistically significant ($p = 0.233$). Climatology cannot issue drought alerts ($\text{CSI} = 0$). |
+| **8-Week** | **0.348** / 0.248 / 0.290 | **0.385** / 0.330 / 0.308 | 0.000 / **0.148** / 0.006 | 0.519 / **0.453** (-0.066) | **Seasonal Climatology (M0 = +0.348) outperforms M2 (+0.290) and M1 (+0.248)** as hydraulic memory collapses to 0.0%. M2 weather inputs provide slight directional gain over M1 (+0.019), but not statistically significant ($W = 28.0, p = 0.424$). |
 
 ### Protocol 2: Cross-Basin Zero-Shot Spatial Transfer to Held-Out Sub-Basins
 
-| State | Holdout Sub-Basin | Horizon | M0 Baseline NSE | M1 Zero-Shot NSE | M2 PyTorch LSTM NSE | Δ(LSTM - M1 GBT) | M2 LSTM KGE |
+| State | Holdout Sub-Basin | Horizon | M0 Baseline NSE | M1 GBT Pool NSE | M1 Ridge Pool NSE | M2 PyTorch LSTM NSE | M2 LSTM KGE |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Odisha** | **Kantamal** | 1-week<br>2-week<br>4-week<br>8-week | 0.388<br>-0.030<br>0.093<br>-0.419 | **0.536 (GBT)**<br>**0.437 (GBT)**<br>**0.459 (GBT)**<br>**0.432 (GBT)** | **0.514**<br>**0.410**<br>**0.446**<br>**0.403** | -0.022<br>-0.027<br>-0.013<br>-0.028 | +0.592<br>+0.477<br>+0.501<br>+0.388 |
-| **Maharashtra**| **Bamni** | 1-week<br>2-week<br>4-week<br>8-week | 0.250<br>-0.256<br>0.177<br>-0.116 | 0.240 (GBT)<br>-0.466 (GBT)<br>-0.376 (GBT)<br>-0.260 (GBT) | **0.339**<br>**0.031**<br>**0.153**<br>-1.266 | **+0.099**<br>**+0.497**<br>**+0.528**<br>-1.005 | +0.386<br>+0.081<br>+0.186<br>-0.773 |
-| **Karnataka** | **Haralahalli** | 1-week<br>2-week<br>4-week<br>8-week | -0.149<br>-0.469<br>0.086<br>-0.118 | 0.154 (Ridge)<br>**0.072 (Ridge)**<br>**0.255 (Ridge)**<br>**0.152 (Ridge)** | **0.258**<br>-0.192<br>-0.098<br>-0.421 | **+0.123**<br>-0.226<br>-0.134<br>-0.319 | +0.383<br>+0.248<br>+0.296<br>+0.069 |
+| **Odisha** | **Kantamal** | 1-week<br>2-week<br>4-week<br>8-week | +0.388<br>-0.030<br>+0.483<br>+0.481 | **+0.536**<br>+0.437<br>+0.459<br>+0.432 | +0.472<br>**+0.448**<br>+0.448<br>+0.425 | +0.514<br>+0.410<br>+0.446<br>+0.403 | +0.592<br>+0.477<br>+0.501<br>+0.388 |
+| **Maharashtra**| **Bamni** | 1-week<br>2-week<br>4-week<br>8-week | +0.250<br>-0.256<br>+0.234<br>+0.233 | +0.240<br>-0.466<br>-0.376<br>-0.260 | +0.279<br>-0.128<br>-0.148<br>-0.207 | **+0.339**<br>**+0.031**<br>+0.153<br>-1.266 | +0.386<br>+0.081<br>+0.186<br>-0.773 |
+| **Karnataka** | **Haralahalli** | 1-week<br>2-week<br>4-week<br>8-week | -0.149<br>-0.469<br>+0.210<br>+0.206 | +0.135<br>+0.034<br>+0.035<br>-0.102 | +0.154<br>**+0.072**<br>**+0.255**<br>+0.152 | **+0.258**<br>-0.192<br>-0.098<br>-0.421 | +0.383<br>+0.248<br>+0.296<br>+0.069 |
 
 *Key Spatial Transfer Findings:*
-1. **Ashti Outlier Sanitization Effect**: Enforcing the $50,000\,\text{m}^3/\text{s}$ limit under Gate AG-TS-04 completely reversed Maharashtra negative transfer at $H=1\text{w}, 2\text{w}, 4\text{w}$, transforming Bamni NSE from $-0.466$ to $+0.031$ ($H=2\text{w}$) and $-0.376$ to $+0.153$ ($H=4\text{w}$).
-2. **PyTorch HydroLSTM Zero-Shot Generalization**: Successfully transfers across homogeneous regimes (Odisha: $H=8\text{w}$ NSE $= +0.403$, beating M0 by $+0.822\,\Delta\text{NSE}$). In flashy/semi-arid regions, parsimonious linear Ridge regression remains more resilient at extended lead times.
+1. **Ashti Outlier Sanitization Effect**: Enforcing the $50,000\,\text{m}^3/\text{s}$ limit under Gate AG-TS-04 completely reversed Maharashtra negative transfer at $H=1\text{w}, 2\text{w}, 4\text{w}$, transforming Bamni LSTM NSE from $-0.466$ to $+0.031$ ($H=2\text{w}$) and $-0.376$ to $+0.153$ ($H=4\text{w}$).
+2. **PyTorch HydroLSTM vs Ridge Resilience**: PyTorch HydroLSTM achieves positive zero-shot transfer across homogeneous sub-humid catchments (Odisha: $H=8\text{w}$ NSE $= +0.403$). In flashy/semi-arid peninsular catchments (Haralahalli), parsimonious linear Ridge regression generalizes more stably at extended lead times ($H=4\text{w}$ NSE $= +0.255$ for Ridge vs $-0.098$ for LSTM).
+3. **Seasonal Climatology as a Hard Transfer Baseline**: In large drainage systems with stable annual hydrographs (Kantamal), regional training-fold climatology achieves $\text{NSE} \approx +0.48$, establishing that multi-basin ML models must beat seasonal astronomical cycles before claiming true predictive generalization.
 
 ---
 

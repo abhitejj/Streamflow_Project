@@ -295,16 +295,8 @@ def compute_track_b_drought_metrics(y_true, y_pred, threshold, clip_nonnegative=
     denom_csi = hits + miss + fa
     
     pod = float(hits / obs_count) if obs_count > 0 else np.nan
-    
-    if pred_count > 0:
-        far = float(fa / pred_count)
-    else:
-        far = 0.0 if obs_count == 0 else np.nan
-        
-    if denom_csi > 0:
-        csi = float(hits / denom_csi)
-    else:
-        csi = float(csi_zero_events_default)
+    far = float(fa / pred_count) if pred_count > 0 else np.nan
+    csi = float(hits / denom_csi) if denom_csi > 0 else np.nan
         
     return {
         'POD': pod,
@@ -362,8 +354,10 @@ def predict_m0_baseline(df_train, df_eval, horizon_weeks, target_col):
         return df_eval['flow_lag_0'].values.copy()
     elif horizon_weeks in [4, 8]:
         # Calculate seasonal weekly climatology from training fold only (ISO weeks 1 to 53)
-        train_climatology = df_train.groupby('week_of_year')[target_col].mean()
-        overall_train_mean = float(df_train[target_col].mean())
+        # Use unshifted flow so climatology is horizon-agnostic and free from phase shifts
+        flow_col = 'flow_target_m3s' if 'flow_target_m3s' in df_train.columns else 'flow_lag_0'
+        train_climatology = df_train.groupby(df_train.index.isocalendar().week)[flow_col].mean()
+        overall_train_mean = float(df_train[flow_col].mean())
         
         # Target week at forecast issuance t + H
         target_dates = df_eval.index + pd.Timedelta(weeks=horizon_weeks)
@@ -371,7 +365,7 @@ def predict_m0_baseline(df_train, df_eval, horizon_weeks, target_col):
         
         # Map target week to training climatology lookup
         climatology_preds = target_weeks.map(train_climatology).fillna(overall_train_mean).values
-        return climatology_preds
+        return np.maximum(0.0, climatology_preds)
     else:
         raise ValueError(
             f"[-] M0 BASELINE VIOLATION: Pure persistence attempted for horizon H={horizon_weeks}w. "

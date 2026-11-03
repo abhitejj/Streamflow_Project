@@ -313,9 +313,9 @@ def calc_drought_contingency(y_true, y_pred, threshold):
     correct_negs = int(np.sum((~obs_drought) & (~pred_drought)))
     
     pod = float(hits / (hits + misses)) if (hits + misses) > 0 else np.nan
-    far = float(false_alarms / (hits + false_alarms)) if (hits + false_alarms) > 0 else (0.0 if misses == 0 else np.nan)
+    far = float(false_alarms / (hits + false_alarms)) if (hits + false_alarms) > 0 else np.nan
     denom_csi = hits + misses + false_alarms
-    csi = float(hits / denom_csi) if denom_csi > 0 else (1.0 if (hits + misses + false_alarms == 0) else 0.0)
+    csi = float(hits / denom_csi) if denom_csi > 0 else np.nan
     
     return {
         'POD': pod,
@@ -338,14 +338,15 @@ def predict_m0_baseline(df_train, df_eval, horizon_weeks, target_col='target_H1'
     - Halts execution if pure persistence is attempted for H > 2.
     """
     if horizon_weeks > 2:
-        train_valid = df_train.dropna(subset=[target_col]).copy()
+        flow_col = 'flow_target_specific_mm' if 'specific' in target_col else ('flow_target_m3s' if 'flow_target_m3s' in df_train.columns else 'flow_lag_0')
+        train_valid = df_train.dropna(subset=[flow_col]).copy()
         train_weeks = train_valid.index.isocalendar().week
-        climatology = train_valid.groupby(train_weeks)[target_col].mean()
+        climatology = train_valid.groupby(train_weeks)[flow_col].mean()
         
         target_dates = df_eval.index + pd.Timedelta(weeks=horizon_weeks)
         target_weeks = target_dates.isocalendar().week
         
-        pred_baseline = target_weeks.map(climatology).fillna(train_valid[target_col].mean())
+        pred_baseline = target_weeks.map(climatology).fillna(train_valid[flow_col].mean())
         return np.maximum(0.0, pred_baseline.values)
     elif horizon_weeks in [1, 2]:
         # For specific runoff targets, use specific flow; for volumetric, use flow_lag_0

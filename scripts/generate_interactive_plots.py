@@ -497,7 +497,7 @@ def generate_interactive_pr_curves(out_dir):
         title=dict(
             text="<b>Interactive Precision-Recall Curves for Severe Hydrological Drought (Q95) Early Warning</b><br>"
                  "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Hover over curve points to inspect operational discharge thresholds, detection recall, and false alarm ratios."
+                 "Hover over curve points to inspect operational discharge thresholds, detection recall, and false alarm ratios. Empirical no-skill baseline (0.238) reflects pooled test base rate across 12 catchments under training-calibrated Q95 thresholds."
                  "</span>",
             x=0.03, y=0.96
         ),
@@ -644,7 +644,7 @@ def generate_interactive_kge_decomposition(out_dir):
         title=dict(
             text="<b>Kling-Gupta Efficiency (KGE) Component Decomposition Across Lead Horizons</b><br>"
                  "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Decomposition reveals why M2 excels at H=4w & H=8w: meteorological forcings preserve volume balance (β ≈ 1.0) and correlation (r > 0.55)."
+                 "Decomposition of KGE components (r, α, β) shows that at H=8w, hydraulic memory collapses, and while meteorological forcings stabilize volume balance (β ≈ 1.0), M0 Climatology achieves comparable hydrograph correlation (r ≈ 0.62) with zero parametric variance."
                  "</span>",
             x=0.03, y=0.96
         ),
@@ -742,7 +742,7 @@ def generate_interactive_feature_importance(out_dir):
         title=dict(
             text="<b>Hydrological Driver Shift: Flow Memory (H=1w) vs Meteorological Memory (H=8w)</b><br>"
                  "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Permutation feature importance on Karad test fold reveals collapse of autoregressive flow memory and dominance of climate forcings."
+                 "Permutation feature importance on Karad test fold reveals collapse of autoregressive flow memory (0.0% at H=8w) and dominance of calendar seasonality (72.0%) and atmospheric evaporative demand (19.5%)."
                  "</span>",
             x=0.03, y=0.96
         ),
@@ -858,7 +858,7 @@ def generate_interactive_spatial_transfer(out_dir):
         title=dict(
             text="<b>Protocol 2: Cross-Basin Zero-Shot Spatial Generalization (M0 vs M1 GBT vs M2 PyTorch LSTM)</b><br>"
                  "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Held-out basins were strictly excluded from model training. PyTorch HydroLSTM achieves positive zero-shot transfer on Bamni and Kantamal."
+                 "Held-out basins were strictly excluded from model training. PyTorch HydroLSTM achieves positive zero-shot transfer on Bamni (H=1w,2w,4w) and Kantamal (all horizons), while linear Ridge baseline remains resilient in Karnataka."
                  "</span>",
             x=0.03, y=0.96
         ),
