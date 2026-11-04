@@ -59,6 +59,8 @@ Karad / Warunji / Yadgir keep only 75–180 scored weeks each, with 0–1 Q95 ev
 
 ## Final consistency pass (2026-11-04)
 
-- Fixed: `deploy.sh` works through the `gh-pages` worktree (no branch switch) and syncs the docs to gh-pages. Corrected the Kantamal sentence (GBT beats the LSTM at every lead) and the KGE β range (0.81–0.86). The Track B card states that only Q95 is scored. Added framing notes (CSI station sets, Haralahalli negative scores, Bamni 8w failure). Q95 label now shows 2 decimals. README metric claims and quickstart corrected. The station list is now defined once in `scripts/eval_config.py`. Removed the legacy `data/processed/visualizations/` and `scripts/generate_visualizations.py`. Added a count note to the DECISION_LOG.
+- Fixed: `deploy.sh` works through the `gh-pages` worktree (no branch switch) and syncs the docs to gh-pages. Corrected the Kantamal sentence (later refined: GBT and LSTM are within 0.03 NSE, a near-tie within sampling noise at 1–4 weeks) and the KGE β range (0.81–0.86). The Track B card states that only Q95 is scored. Added framing notes (CSI station sets, Haralahalli negative scores, Bamni 8w failure). Q95 label now shows 2 decimals. README metric claims and quickstart corrected. The station list is now defined once in `scripts/eval_config.py`. Removed the legacy `data/processed/visualizations/` and `scripts/generate_visualizations.py`. Added a count note to the DECISION_LOG.
 - Pipeline rerun: audited and uncertainty outputs are byte-identical.
 - Committed and pushed by the user's instruction, following the CLAUDE.md git rules (user is sole author, no Claude attribution).
+
+- Kantamal recheck (2026-11-04): NSE values verified from three sources; both models are trained on the same Odisha pool with no leakage. GBT − LSTM NSE = +0.022/+0.027/+0.013/+0.028; block-bootstrap 95% CI excludes zero only at 8 weeks; the LSTM has the higher KGE at 1 and 4 weeks. Wording changed from "beats" to "matches".

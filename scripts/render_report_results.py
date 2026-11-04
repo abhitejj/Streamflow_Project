@@ -203,8 +203,10 @@ def report_md(d, pr, fi, fg) -> str:
       f"{f3(k('Kantamal', '8w', 'm0_nse_fixed'))} vs {f3(k('Kantamal', '4w', 'p2_lstm_nse'))} / "
       f"{f3(k('Kantamal', '8w', 'p2_lstm_nse'))}; Bamni {f3(k('Bamni (Ballarsha)', '4w', 'm0_nse_fixed'))} vs "
       f"{f3(k('Bamni (Ballarsha)', '4w', 'p2_lstm_nse'))} at 4 weeks), and at Bamni the LSTM fails badly at 8 weeks "
-      f"(NSE {f3(k('Bamni (Ballarsha)', '8w', 'p2_lstm_nse'))}). At Kantamal the pooled flow-only GBT beats the LSTM at "
-      "every lead. At Haralahalli the 2-week advantage is between two negative scores "
+      f"(NSE {f3(k('Bamni (Ballarsha)', '8w', 'p2_lstm_nse'))}). At Kantamal the pooled three-feature flow-only GBT "
+      "matches the LSTM: NSE differs by only 0.01–0.03 (GBT higher at every lead), within sampling noise at 1–4 weeks "
+      "on a 52-week block bootstrap, and the LSTM has the higher KGE at 1 and 4 weeks. The weather inputs and the "
+      "recurrent model therefore add no clear gain there. At Haralahalli the 2-week advantage is between two negative scores "
       f"({f3(k('Haralahalli', '2w', 'p2_lstm_nse'))} vs {f3(k('Haralahalli', '2w', 'm0_nse_fixed'))}). "
       "A positive zero-shot NSE should therefore not be read as skill. The held-out "
       "basins are gauged, so the baseline uses their own history; an ungauged basin would have no such baseline.")
