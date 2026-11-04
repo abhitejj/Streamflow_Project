@@ -8,7 +8,10 @@ the project web interface and deliverables:
 2. Precision-Recall Curves: Severe Drought (Q95) Early Warning at H=2w & H=4w with rich hover data (Threshold, Precision, Recall, FAR)
 3. KGE Component Decomposition: Interactive trajectory of r, alpha, beta across H=1,2,4,8 weeks with 1.0 benchmark line
 4. Feature Importance Shift: Grouped horizontal bar chart of M2 GBT predictor importances (H=1w vs H=8w)
-5. Zero-Shot Spatial Transfer: Grouped bar chart of H=4w and H=8w NSE on holdout basins (Kantamal, Bamni, Haralahalli) for M0, M1, M2 LSTM
+5. Zero-Shot Spatial Transfer: Grouped bar chart of NSE at every lead on holdout basins (Kantamal, Bamni, Haralahalli) for M0, M1, M2 LSTM
+
+All numbers come from data/processed/model_results/test_predictions.csv and audited_metrics_recomputed.csv,
+written by scripts/audit_metrics.py. Run that script first.
 
 All plots are exported as standalone, self-contained HTML files using fig.write_html().
 """
@@ -129,45 +132,56 @@ def load_estimator(model_path):
         return obj['model'], obj.get('scaler'), obj.get('train_medians')
     return obj, None, None
 
-def load_test_predictions(station_name, gauge_id, horizon, m1_path, m2_path):
+PREDICTIONS_CSV = os.path.join(RESULTS_DIR, 'test_predictions.csv')
+AUDITED_CSV = os.path.join(RESULTS_DIR, 'audited_metrics_recomputed.csv')
+
+# Stations whose recorded zeros are unmeasured weeks (single definition in scripts/eval_config.py).
+sys.path.insert(0, SCRIPT_DIR)
+from eval_config import ZERO_AS_MISSING_STATIONS  # noqa: E402
+ALL_STATIONS = [
+    ('Karad', 4021), ('Warunji', 4063), ('Ashti', 3005), ('Bamni (Ballarsha)', 3008),
+    ('Anandpur', 7002), ('Kashinagar', 16007), ('Gomlai', 7007), ('Kantamal', 8013),
+    ('Yadgir', 4064), ('Huvinhedigi', 4017), ('KUDIGE', 5010), ('Haralahalli', 4013),
+]
+FEATURE_GROUPS = ['Streamflow Memory', 'Precipitation & Recharge', 'Atmospheric Demand',
+                  'Climatic Water Deficit', 'Calendar Seasonality']
+
+
+def _load_predictions():
+    """Per-week test predictions written by scripts/audit_metrics.py (single source of truth)."""
+    if not os.path.isfile(PREDICTIONS_CSV):
+        raise FileNotFoundError(f"{PREDICTIONS_CSV} missing: run scripts/audit_metrics.py first")
+    return pd.read_csv(PREDICTIONS_CSV, parse_dates=['issue_date', 'target_date'])
+
+
+def _load_audited():
+    return pd.read_csv(AUDITED_CSV)
+
+
+def load_test_predictions(station_name, horizon, preds=None, audited=None):
     """
-    Loads test fold (2016–2025) and generates out-of-sample predictions for M1 & M2.
+    Test-block (2016–2025) series for one station and lead, taken from the audited
+    prediction table. Weeks not scored by the audit (missing data, or recorded zeros at
+    ZERO_AS_MISSING_STATIONS) are returned as NaN so they plot as gaps.
+    Dates are TARGET dates: the week the forecast refers to.
     """
-    tensor_path = os.path.join(TENSORS_DIR, f"weekly_tensor_gauge_{gauge_id:05d}_{station_name}.csv")
-    if not os.path.isfile(tensor_path):
-        raise FileNotFoundError(f"Weekly tensor missing: {tensor_path}")
-        
-    df = pd.read_csv(tensor_path, parse_dates=['date']).set_index('date')
-    df_test = df.loc['2016-01-01':'2025-12-31'].copy()
-    
-    target_col = f'target_H{horizon}'
-    valid_mask = (~df_test[target_col].isna()) & (~df_test['flow_lag_0'].isna())
-    df_eval = df_test[valid_mask].copy()
-    
-    # Load M1
-    m1_est, s1, med1 = load_estimator(m1_path)
-    X_m1 = df_eval[M1_FLOW_FEATURES].fillna(med1 if med1 is not None else df_eval[M1_FLOW_FEATURES].median())
-    preds_m1 = np.maximum(0.0, m1_est.predict(X_m1.values if hasattr(m1_est, 'n_features_in_') else X_m1))
-    
-    # Load M2
-    m2_est, s2, med2 = load_estimator(m2_path)
-    X_m2 = df_eval[M2_TABULAR_FEATURES].fillna(med2 if med2 is not None else df_eval[M2_TABULAR_FEATURES].median())
-    preds_m2 = np.maximum(0.0, m2_est.predict(X_m2.values if hasattr(m2_est, 'n_features_in_') else X_m2))
-    
-    y_actual = df_eval[target_col].values
-    
-    # Historical training thresholds (1980–2010)
-    df_train = df.loc['1980-01-01':'2010-12-31'].dropna(subset=[target_col])
-    q95_thresh = float(np.percentile(df_train[target_col], 5.0))
-    q90_thresh = float(np.percentile(df_train[target_col], 10.0))
-    
+    preds = _load_predictions() if preds is None else preds
+    audited = _load_audited() if audited is None else audited
+    d = preds[(preds['station'] == station_name) & (preds['horizon'] == f'{horizon}w')]
+    scored = d['scored'].values.astype(bool)
+    row = audited[(audited['station'] == station_name) & (audited['horizon'] == f'{horizon}w')].iloc[0]
+    blank = lambda col: np.where(scored, d[col].values, np.nan)
     return {
-        'dates': df_eval.index,
-        'y_actual': y_actual,
-        'preds_m1': preds_m1,
-        'preds_m2': preds_m2,
-        'q95': q95_thresh,
-        'q90': q90_thresh,
+        'dates': d['target_date'],
+        'y_actual': blank('y_obs'),
+        'preds_m1': blank('m1_gbt'),
+        'preds_m2': blank('m2_gbt'),
+        'scored': scored,
+        'n_masked': int(d['zero_as_missing'].sum()),
+        'q95': float(d['q95'].iloc[0]),
+        'q90': float(d['q90'].iloc[0]),
+        'nse_m1': float(row['m1_nse']),
+        'nse_m2': float(row['m2_nse']),
     }
 
 # ==============================================================================
@@ -175,200 +189,88 @@ def load_test_predictions(station_name, gauge_id, horizon, m1_path, m2_path):
 # ==============================================================================
 def generate_interactive_hydrographs(out_dir):
     """
-    Generates interactive Plotly hydrographs for Karad and Kantamal at H=1w and H=4w.
-    Equipped with a Plotly rangeslider and quick-zoom selectors for drought analysis.
+    Interactive hydrographs for Karad and Kantamal at H=1w and H=4w, drawn from the
+    audited prediction table. NSE labels equal the audited CSV values.
     """
     print("[*] Generating Plot 1: Interactive Hydrographs with Range Slider...")
-    
+    preds, audited = _load_predictions(), _load_audited()
     stations = [
-        ('Karad', 4021, 'Maharashtra (Upper Krishna Basin)'),
-        ('Kantamal', 8013, 'Odisha (Tel / Mahanadi Basin)'),
+        ('Karad', 'Maharashtra (Upper Krishna Basin)'),
+        ('Kantamal', 'Odisha (Tel / Mahanadi Basin)'),
     ]
-    horizons = [1, 4]
-    
     saved_files = []
-    
-    # 1. Individual standalone interactive hydrographs per station/horizon
-    for stn_name, gid, basin_desc in stations:
-        clean_name = stn_name.replace(' ', '_').replace('(', '').replace(')', '')
-        for H in horizons:
-            m1_path = os.path.join(MODELS_DIR, 'protocol1', f"m1_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-            m2_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-            
-            data = load_test_predictions(stn_name, gid, H, m1_path, m2_path)
-            dates = data['dates']
-            y_obs = data['y_actual']
-            p_m1  = data['preds_m1']
-            p_m2  = data['preds_m2']
-            q95   = data['q95']
-            q90   = data['q90']
-            
-            # Metrics
-            ss_tot = np.sum((y_obs - np.mean(y_obs)) ** 2)
-            nse_m1 = 1 - (np.sum((y_obs - p_m1) ** 2) / ss_tot)
-            nse_m2 = 1 - (np.sum((y_obs - p_m2) ** 2) / ss_tot)
-            
-            # Plotly Figure
+    panels = {}
+    for stn_name, basin_desc in stations:
+        for H in [1, 4]:
+            data = load_test_predictions(stn_name, H, preds, audited)
+            panels[(stn_name, H)] = data
+            gap_note = (f" | {data['n_masked']} weeks recorded as 0 m³/s treated as unobserved (gaps)"
+                        if stn_name in ZERO_AS_MISSING_STATIONS else "")
             fig = go.Figure()
-            
-            # Actual Streamflow
             fig.add_trace(go.Scatter(
-                x=dates, y=y_obs,
-                name='Observed Streamflow (Q)',
-                mode='lines',
-                line=dict(color=COLOR_OBSERVED, width=2.2),
-                hovertemplate='<b>Observed Q</b>: %{y:.2f} m³/s<br>Date: %{x|%Y-%m-%d}<extra></extra>'
+                x=data['dates'], y=data['y_actual'], name='Observed Streamflow (Q)', mode='lines',
+                line=dict(color=COLOR_OBSERVED, width=2.2), connectgaps=False,
+                hovertemplate='<b>Observed Q</b>: %{y:.2f} m³/s<br>Week: %{x|%Y-%m-%d}<extra></extra>'
             ))
-            
-            # M1 Flow-Only GBT
             fig.add_trace(go.Scatter(
-                x=dates, y=p_m1,
-                name=f'M1: Flow-Only GBT (NSE: {nse_m1:.3f})',
-                mode='lines',
-                line=dict(color=COLOR_M1, width=1.8, dash='dash'),
-                hovertemplate='<b>M1 Forecast</b>: %{y:.2f} m³/s<br>Error: %{customdata:.2f} m³/s<extra></extra>',
-                customdata=p_m1 - y_obs
+                x=data['dates'], y=data['preds_m1'], name=f"M1: Flow-Only GBT (NSE: {data['nse_m1']:.3f})",
+                mode='lines', line=dict(color=COLOR_M1, width=1.8, dash='dash'), connectgaps=False,
+                customdata=data['preds_m1'] - data['y_actual'],
+                hovertemplate='<b>M1 Forecast</b>: %{y:.2f} m³/s<br>Error: %{customdata:.2f} m³/s<extra></extra>'
             ))
-            
-            # M2 Hydro-Meteorological GBT
             fig.add_trace(go.Scatter(
-                x=dates, y=p_m2,
-                name=f'M2: Hydro-Met GBT (NSE: {nse_m2:.3f})',
-                mode='lines',
-                line=dict(color=COLOR_M2, width=2.0),
-                hovertemplate='<b>M2 Forecast</b>: %{y:.2f} m³/s<br>Error: %{customdata:.2f} m³/s<extra></extra>',
-                customdata=p_m2 - y_obs
+                x=data['dates'], y=data['preds_m2'], name=f"M2: Hydro-Met GBT (NSE: {data['nse_m2']:.3f})",
+                mode='lines', line=dict(color=COLOR_M2, width=2.0), connectgaps=False,
+                customdata=data['preds_m2'] - data['y_actual'],
+                hovertemplate='<b>M2 Forecast</b>: %{y:.2f} m³/s<br>Error: %{customdata:.2f} m³/s<extra></extra>'
             ))
-            
-            # Drought Thresholds
-            fig.add_hline(
-                y=q95, line_dash='dot', line_color=COLOR_Q95, line_width=1.8,
-                annotation_text=f"Severe Drought (Q95: {q95:.1f} m³/s)",
-                annotation_position="top left",
-                annotation_font=dict(color=COLOR_Q95, size=11, family="sans-serif")
-            )
-            fig.add_hline(
-                y=q90, line_dash='dashdot', line_color=COLOR_Q90, line_width=1.4,
-                annotation_text=f"Moderate Drought (Q90: {q90:.1f} m³/s)",
-                annotation_position="bottom left",
-                annotation_font=dict(color=COLOR_Q90, size=10, family="sans-serif")
-            )
-            
-            # Layout & Rangeslider
+            fig.add_hline(y=data['q95'], line_dash='dot', line_color=COLOR_Q95, line_width=1.8,
+                          annotation_text=f"Severe Drought (Q95: {data['q95']:.2f} m³/s)", annotation_position="top left",
+                          annotation_font=dict(color=COLOR_Q95, size=11))
+            fig.add_hline(y=data['q90'], line_dash='dashdot', line_color=COLOR_Q90, line_width=1.4,
+                          annotation_text=f"Moderate Drought (Q90: {data['q90']:.2f} m³/s)", annotation_position="bottom left",
+                          annotation_font=dict(color=COLOR_Q90, size=10))
             fig.update_layout(
                 title=dict(
                     text=f"<b>Interactive Hydrograph: {stn_name} ({basin_desc})</b><br>"
                          f"<span style='font-size: 13px; color: #4B5563;'>"
-                         f"Lead Horizon H = {H} Week{'s' if H > 1 else ''} | Out-of-Sample Test Record (2016–2025)"
-                         f"</span>",
-                    x=0.03, y=0.96
-                ),
-                xaxis=dict(
-                    title="Forecast Timeline",
-                    rangeslider=dict(visible=True, thickness=0.08, bgcolor='#F3F4F6'),
-                    rangeselector=dict(
-                        buttons=list([
-                            dict(count=6, label="6 Months", step="month", stepmode="backward"),
-                            dict(count=1, label="1 Year", step="year", stepmode="backward"),
-                            dict(count=2, label="2 Years (2018–19 Window)", step="year", stepmode="backward"),
-                            dict(step="all", label="All 10 Years (2016–2025)")
-                        ]),
-                        x=0.0, y=1.12, bgcolor='#E5E7EB', font=dict(size=11)
-                    ),
-                    range=['2018-01-01', '2019-12-31'],  # Default focus on the 2018 drought & 2019 monsoon
-                    showgrid=True, gridcolor='#E5E7EB'
-                ),
-                yaxis=dict(
-                    title="Discharge Rate (m³/s)",
-                    showgrid=True, gridcolor='#E5E7EB',
-                    zeroline=True, zerolinecolor='#9CA3AF'
-                ),
-                template='plotly_white',
-                hovermode='x unified',
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0,
-                    bgcolor="rgba(255,255,255,0.85)", bordercolor="#D1D5DB", borderwidth=1
-                ),
-                margin=dict(l=60, r=40, t=110, b=60),
-                height=560
+                         f"Lead H = {H} week{'s' if H > 1 else ''} | Test block 2016–2025, plotted at the forecast target week{gap_note}"
+                         f"</span>", x=0.03, y=0.96),
+                xaxis=dict(title="Target week", rangeslider=dict(visible=True, thickness=0.08, bgcolor='#F3F4F6'),
+                           range=['2018-01-01', '2019-12-31'], showgrid=True, gridcolor='#E5E7EB'),
+                yaxis=dict(title="Discharge Rate (m³/s)", showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF'),
+                template='plotly_white', hovermode='x unified',
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+                margin=dict(l=60, r=40, t=110, b=60), height=560
             )
-            
-            out_filename = f"interactive_hydrograph_{stn_name.lower()}_h{H}w.html"
-            out_file = os.path.join(out_dir, out_filename)
+            out_file = os.path.join(out_dir, f"interactive_hydrograph_{stn_name.lower()}_h{H}w.html")
             fig.write_html(out_file, include_plotlyjs='cdn')
             saved_files.append(out_file)
             print(f"   [+] Saved standalone hydrograph: {out_file}")
-            
-    # 2. Comprehensive 2x2 Subplot Dashboard (Karad & Kantamal x H=1w & H=4w)
-    fig_dash = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=[
-            "<b>Karad (Krishna Basin) — 1-Week Ahead</b>",
-            "<b>Kantamal (Mahanadi Basin) — 1-Week Ahead</b>",
-            "<b>Karad (Krishna Basin) — 4-Weeks Ahead</b>",
-            "<b>Kantamal (Mahanadi Basin) — 4-Weeks Ahead</b>"
-        ],
-        vertical_spacing=0.12, horizontal_spacing=0.08
-    )
-    
-    stn_configs = [
-        ('Karad', 4021, 1, 1),
-        ('Kantamal', 8013, 1, 2),
-        ('Karad', 4021, 2, 1),
-        ('Kantamal', 8013, 2, 2),
-    ]
-    
-    for stn_name, gid, row, col in stn_configs:
-        H = 1 if row == 1 else 4
-        clean_name = stn_name.replace(' ', '_').replace('(', '').replace(')', '')
-        m1_path = os.path.join(MODELS_DIR, 'protocol1', f"m1_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-        m2_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-        
-        data = load_test_predictions(stn_name, gid, H, m1_path, m2_path)
-        dates = data['dates']
-        y_obs = data['y_actual']
-        p_m1  = data['preds_m1']
-        p_m2  = data['preds_m2']
-        q95   = data['q95']
-        
+
+    fig_dash = make_subplots(rows=2, cols=2, vertical_spacing=0.12, horizontal_spacing=0.08, subplot_titles=[
+        "<b>Karad — 1-Week Ahead</b>", "<b>Kantamal — 1-Week Ahead</b>",
+        "<b>Karad — 4-Weeks Ahead</b>", "<b>Kantamal — 4-Weeks Ahead</b>"])
+    for (stn_name, H), (row, col) in zip([('Karad', 1), ('Kantamal', 1), ('Karad', 4), ('Kantamal', 4)],
+                                         [(1, 1), (1, 2), (2, 1), (2, 2)]):
+        data = panels[(stn_name, H)]
         show_leg = (row == 1 and col == 1)
-        
-        fig_dash.add_trace(go.Scatter(
-            x=dates, y=y_obs, name='Observed (Q)', mode='lines',
-            line=dict(color=COLOR_OBSERVED, width=1.8), showlegend=show_leg
-        ), row=row, col=col)
-        
-        fig_dash.add_trace(go.Scatter(
-            x=dates, y=p_m1, name='M1: Flow-Only GBT', mode='lines',
-            line=dict(color=COLOR_M1, width=1.5, dash='dash'), showlegend=show_leg
-        ), row=row, col=col)
-        
-        fig_dash.add_trace(go.Scatter(
-            x=dates, y=p_m2, name='M2: Hydro-Met GBT', mode='lines',
-            line=dict(color=COLOR_M2, width=1.8), showlegend=show_leg
-        ), row=row, col=col)
-        
-        fig_dash.add_hline(y=q95, line_dash='dot', line_color=COLOR_Q95, line_width=1.2, row=row, col=col)
-        
+        for y, nm, ln in ((data['y_actual'], 'Observed (Q)', dict(color=COLOR_OBSERVED, width=1.8)),
+                          (data['preds_m1'], 'M1: Flow-Only GBT', dict(color=COLOR_M1, width=1.5, dash='dash')),
+                          (data['preds_m2'], 'M2: Hydro-Met GBT', dict(color=COLOR_M2, width=1.8))):
+            fig_dash.add_trace(go.Scatter(x=data['dates'], y=y, name=nm, mode='lines', line=ln,
+                                          connectgaps=False, showlegend=show_leg), row=row, col=col)
+        fig_dash.add_hline(y=data['q95'], line_dash='dot', line_color=COLOR_Q95, line_width=1.2, row=row, col=col)
     fig_dash.update_layout(
-        title=dict(
-            text="<b>Multi-Basin Hydrograph Dashboard (Observed vs M1 vs M2 Across Horizons)</b><br>"
-                 "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Zoom into individual panels or double-click to reset axis. Dotted amber line represents Q95 Severe Drought."
-                 "</span>",
-            x=0.03, y=0.98
-        ),
-        template='plotly_white',
-        height=850,
-        margin=dict(l=60, r=40, t=90, b=60),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1.0)
-    )
-    # Default range to the 2018-2019 drought window across all panels
+        title=dict(text="<b>Hydrograph Dashboard (Observed vs M1 vs M2)</b><br>"
+                        "<span style='font-size: 13px; color: #4B5563;'>Dotted amber line: Q95 severe-drought threshold. "
+                        "Gaps at Karad are weeks recorded as 0 m³/s (unmeasured), excluded from scoring.</span>", x=0.03, y=0.98),
+        template='plotly_white', height=850, margin=dict(l=60, r=40, t=90, b=60),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1.0))
     for r in [1, 2]:
         for c in [1, 2]:
             fig_dash.update_xaxes(range=['2018-01-01', '2019-12-31'], row=r, col=c, gridcolor='#E5E7EB')
             fig_dash.update_yaxes(title_text="Discharge (m³/s)", row=r, col=c, gridcolor='#E5E7EB')
-            
     dash_file = os.path.join(out_dir, "interactive_hydrographs_dashboard.html")
     fig_dash.write_html(dash_file, include_plotlyjs='cdn')
     print(f"   [+] Saved integrated hydrographs dashboard: {dash_file}")
@@ -379,135 +281,45 @@ def generate_interactive_hydrographs(out_dir):
 # ==============================================================================
 def generate_interactive_pr_curves(out_dir):
     """
-    Generates interactive Precision-Recall curves for Severe Hydrological Drought (Q95)
-    at H=2w and H=4w across all 12 test basins, with full threshold hover data.
+    Pooled precision-recall curves for severe drought (Q95) at H=2w and H=4w over all
+    scored test weeks of the 12 stations. Score = negated forecast flow.
+    PR-AUC is reported as average precision.
     """
     print("[*] Generating Plot 2: Interactive Precision-Recall Curves (Q95, H=2w & H=4w)...")
-    
-    test_stations = [
-        ('Karad', 4021), ('Warunji', 4063), ('Ashti', 3005), ('Bamni (Ballarsha)', 3008),
-        ('Anandpur', 7002), ('Kashinagar', 16007), ('Gomlai', 7007), ('Kantamal', 8013),
-        ('Yadgir', 4064), ('Huvinhedigi', 4017), ('KUDIGE', 5010), ('Haralahalli', 4013),
-    ]
-    
+    preds = _load_predictions()
     horizons = [2, 4]
-    
-    fig = make_subplots(
-        rows=1, cols=2,
-        subplot_titles=[
-            "<b>Horizon H = 2 Weeks Ahead (Severe Drought Q95)</b>",
-            "<b>Horizon H = 4 Weeks Ahead (Severe Drought Q95)</b>"
-        ],
-        horizontal_spacing=0.10
-    )
-    
+    fig = make_subplots(rows=1, cols=2, horizontal_spacing=0.10, subplot_titles=[
+        "<b>H = 2 Weeks Ahead (Severe Drought Q95)</b>", "<b>H = 4 Weeks Ahead (Severe Drought Q95)</b>"])
+    summary = []
     for col_idx, H in enumerate(horizons, start=1):
-        y_true_all, m1_all, m2_all = [], [], []
-        
-        for stn, gid in test_stations:
-            clean_name = stn.replace(' ', '_').replace('(', '').replace(')', '')
-            m1_path = os.path.join(MODELS_DIR, 'protocol1', f"m1_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-            m2_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib")
-            
-            if os.path.isfile(m1_path) and os.path.isfile(m2_path):
-                data = load_test_predictions(stn, gid, H, m1_path, m2_path)
-                thresh = data['q95']
-                
-                # Binary drought event (1 if flow <= Q95)
-                y_bin = (data['y_actual'] <= thresh).astype(int)
-                
-                # Deficit alert scores: inverted flow predictions
-                s_m1 = -data['preds_m1']
-                s_m2 = -data['preds_m2']
-                
-                y_true_all.extend(y_bin)
-                m1_all.extend(s_m1)
-                m2_all.extend(s_m2)
-                
-        y_true_arr = np.array(y_true_all)
-        m1_arr     = np.array(m1_all)
-        m2_arr     = np.array(m2_all)
-        
-        # PR curves
-        p_m1, r_m1, t_m1 = precision_recall_curve(y_true_arr, m1_arr)
-        p_m2, r_m2, t_m2 = precision_recall_curve(y_true_arr, m2_arr)
-        
-        auc_m1 = average_precision_score(y_true_arr, m1_arr)
-        auc_m2 = average_precision_score(y_true_arr, m2_arr)
-        prevalence = np.mean(y_true_arr)
-        
-        # Format aligned thresholds for hover info
-        t1_aligned = np.append(-t_m1, -t_m1[-1])
-        t2_aligned = np.append(-t_m2, -t_m2[-1])
-        
-        far_m1 = np.maximum(0.0, 1.0 - p_m1)
-        far_m2 = np.maximum(0.0, 1.0 - p_m2)
-        
-        cdata_m1 = np.stack((t1_aligned, far_m1), axis=-1)
-        cdata_m2 = np.stack((t2_aligned, far_m2), axis=-1)
-        
-        # M1 Trace
-        fig.add_trace(go.Scatter(
-            x=r_m1, y=p_m1,
-            name=f"M1: Flow-Only (PR-AUC: {auc_m1:.3f})",
-            mode='lines',
-            line=dict(color=COLOR_M1, width=2.4),
-            customdata=cdata_m1,
-            hovertemplate=(
-                "<b>M1 (Flow-Only GBT)</b><br>"
-                "Recall (POD): %{x:.3f}<br>"
-                "Precision (1-FAR): %{y:.3f}<br>"
-                "Discharge Cutoff: %{customdata[0]:.2f} m³/s<br>"
-                "False Alarm Ratio (FAR): %{customdata[1]:.3f}<extra></extra>"
-            ),
-            legendgroup=f"m1_h{H}"
-        ), row=1, col=col_idx)
-        
-        # M2 Trace
-        fig.add_trace(go.Scatter(
-            x=r_m2, y=p_m2,
-            name=f"M2: Hydro-Met (PR-AUC: {auc_m2:.3f})",
-            mode='lines',
-            line=dict(color=COLOR_M2, width=2.6),
-            customdata=cdata_m2,
-            hovertemplate=(
-                "<b>M2 (Hydro-Meteorological GBT)</b><br>"
-                "Recall (POD): %{x:.3f}<br>"
-                "Precision (1-FAR): %{y:.3f}<br>"
-                "Discharge Cutoff: %{customdata[0]:.2f} m³/s<br>"
-                "False Alarm Ratio (FAR): %{customdata[1]:.3f}<extra></extra>"
-            ),
-            legendgroup=f"m2_h{H}"
-        ), row=1, col=col_idx)
-        
-        # Prevalence Baseline
-        fig.add_trace(go.Scatter(
-            x=[0, 1.0], y=[prevalence, prevalence],
-            name=f"No-Skill Baseline ({prevalence:.3f})",
-            mode='lines',
-            line=dict(color='#6B7280', width=1.5, dash='dash'),
-            hoverinfo='none',
-            showlegend=(col_idx == 1)
-        ), row=1, col=col_idx)
-        
+        d = preds[(preds['horizon'] == f'{H}w') & preds['scored']]
+        y_true = (d['y_obs'] <= d['q95']).astype(int).values
+        prevalence = float(y_true.mean())
+        for key, color, width, label in (('m1_gbt', COLOR_M1, 2.4, 'M1: Flow-Only'),
+                                         ('m2_gbt', COLOR_M2, 2.6, 'M2: Hydro-Met')):
+            score = -d[key].values
+            p, r, t = precision_recall_curve(y_true, score)
+            ap = average_precision_score(y_true, score)
+            summary.append(f"H={H}w {label} AP={ap:.3f}")
+            cdata = np.stack((np.append(-t, -t[-1]), np.maximum(0.0, 1.0 - p)), axis=-1)
+            fig.add_trace(go.Scatter(
+                x=r, y=p, name=f"{label} (PR-AUC: {ap:.3f})", mode='lines', line=dict(color=color, width=width),
+                customdata=cdata, legendgroup=f"{key}_h{H}",
+                hovertemplate=(f"<b>{label}</b><br>Recall (POD): %{{x:.3f}}<br>Precision (1-FAR): %{{y:.3f}}<br>"
+                               "Score cutoff (forecast flow): %{customdata[0]:.2f} m³/s<br>FAR: %{customdata[1]:.3f}<extra></extra>")
+            ), row=1, col=col_idx)
+        fig.add_trace(go.Scatter(x=[0, 1.0], y=[prevalence, prevalence], name=f"No-Skill Baseline ({prevalence:.3f})",
+                                 mode='lines', line=dict(color='#6B7280', width=1.5, dash='dash'), hoverinfo='none',
+                                 showlegend=(col_idx == 1)), row=1, col=col_idx)
         fig.update_xaxes(title_text="Recall / Probability of Detection (POD)", range=[0, 1.02], row=1, col=col_idx, gridcolor='#E5E7EB')
         fig.update_yaxes(title_text="Precision (1 - False Alarm Ratio)", range=[0, 1.02], row=1, col=col_idx, gridcolor='#E5E7EB')
-        
+    print("   " + " | ".join(summary))
     fig.update_layout(
-        title=dict(
-            text="<b>Interactive Precision-Recall Curves for Severe Hydrological Drought (Q95) Early Warning</b><br>"
-                 "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Hover over curve points to inspect operational discharge thresholds, detection recall, and false alarm ratios. Empirical no-skill baseline (0.238) reflects pooled test base rate across 12 catchments under training-calibrated Q95 thresholds."
-                 "</span>",
-            x=0.03, y=0.96
-        ),
-        template='plotly_white',
-        hovermode='closest',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
-        height=540,
-        margin=dict(l=60, r=40, t=100, b=60)
-    )
-    
+        title=dict(text="<b>Precision-Recall Curves for Severe Hydrological Drought (Q95)</b><br>"
+                        "<span style='font-size: 13px; color: #4B5563;'>Pooled over all scored test weeks of the 12 stations. "
+                        "PR-AUC = average precision. No-skill line = pooled event base rate.</span>", x=0.03, y=0.96),
+        template='plotly_white', hovermode='closest', height=540, margin=dict(l=60, r=40, t=100, b=60),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0))
     out_file = os.path.join(out_dir, "interactive_pr_curves_severe_drought.html")
     fig.write_html(out_file, include_plotlyjs='cdn')
     print(f"   [+] Saved interactive PR curves: {out_file}")
@@ -517,365 +329,160 @@ def generate_interactive_pr_curves(out_dir):
 # 5. PLOT 3: KGE COMPONENT DECOMPOSITION (r, alpha, beta ACROSS HORIZONS)
 # ==============================================================================
 def generate_interactive_kge_decomposition(out_dir):
-    """
-    Generates an interactive multi-panel line plot tracking median KGE components
-    (Pearson r, variability ratio alpha, and bias ratio beta) across H=1,2,4,8 weeks.
-    """
+    """Median KGE components (r, alpha, beta) over the 12 stations, from the audited CSV."""
     print("[*] Generating Plot 3: Interactive KGE Component Decomposition (r, α, β)...")
-    
-    p1_m1_path = os.path.join(RESULTS_DIR, 'protocol1_temporal_results_gbt.csv')
-    p1_m2_path = os.path.join(RESULTS_DIR, 'protocol1_temporal_results_m2_gbt.csv')
-    
-    df1 = pd.read_csv(p1_m1_path)
-    df2 = pd.read_csv(p1_m2_path)
-    
-    horizons = [1, 2, 4, 8]
-    
-    # Extract median components across the 12 catchments
-    m0_r, m1_r, m2_r = [], [], []
-    m0_a, m1_a, m2_a = [], [], []
-    m0_b, m1_b, m2_b = [], [], []
-    
-    for h in horizons:
-        s1 = df1[df1['Horizon_Weeks'] == h]
-        s2 = df2[df2['Horizon_Weeks'] == h]
-        
-        m0_r.append(float(s2['M0_KGE_r'].median()))
-        m1_r.append(float(s1['M1_KGE_r'].median()))
-        m2_r.append(float(s2['M2_KGE_r'].median()))
-        
-        m0_a.append(float(s2['M0_KGE_alpha'].median()))
-        m1_a.append(float(s1['M1_KGE_alpha'].median()))
-        m2_a.append(float(s2['M2_KGE_alpha'].median()))
-        
-        m0_b.append(float(s2['M0_KGE_beta'].median()))
-        m1_b.append(float(s1['M1_KGE_beta'].median()))
-        m2_b.append(float(s2['M2_KGE_beta'].median()))
-        
-    fig = make_subplots(
-        rows=1, cols=3,
-        subplot_titles=[
-            "<b>(a) Hydrograph Correlation (r)</b><br><span style='font-size:11px;color:#6B7280;'>Timing & Shape Synchronization</span>",
-            "<b>(b) Variability Ratio (α = σ<sub>pred</sub> / σ<sub>obs</sub>)</b><br><span style='font-size:11px;color:#6B7280;'>Peak Flow & Discharge Dispersion</span>",
-            "<b>(c) Volume Bias Ratio (β = μ<sub>pred</sub> / μ<sub>obs</sub>)</b><br><span style='font-size:11px;color:#6B7280;'>Long-Term Cumulative Water Balance</span>"
-        ],
-        horizontal_spacing=0.08
-    )
-    
-    components = [
-        ('Correlation (r)', m0_r, m1_r, m2_r, 1),
-        ('Variability (α)', m0_a, m1_a, m2_a, 2),
-        ('Bias Ratio (β)',  m0_b, m1_b, m2_b, 3),
-    ]
-    
+    df = _load_audited()
     hz_labels = ['1w', '2w', '4w', '8w']
-    
-    for comp_name, m0_vals, m1_vals, m2_vals, col_idx in components:
-        show_leg = (col_idx == 1)
-        
-        # Ideal benchmark line (1.0)
-        fig.add_trace(go.Scatter(
-            x=hz_labels, y=[1.0, 1.0, 1.0, 1.0],
-            name='Ideal Benchmark (1.0)',
-            mode='lines',
-            line=dict(color=COLOR_IDEAL, width=1.6, dash='dot'),
-            hovertemplate='<b>Ideal Benchmark</b>: 1.000<extra></extra>',
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # M0 Persistence / Climatology
-        dev_m0 = np.array(m0_vals) - 1.0
-        fig.add_trace(go.Scatter(
-            x=hz_labels, y=m0_vals,
-            name='M0: Baseline',
-            mode='lines+markers',
-            line=dict(color=COLOR_M0, width=2.0, dash='dash'),
-            marker=dict(size=8, symbol='square'),
-            customdata=dev_m0,
-            hovertemplate=(
-                f"<b>M0 Baseline — {comp_name}</b><br>"
-                "Lead: H = %{x}<br>"
-                "Value: %{y:.3f}<br>"
-                "Deviation from Ideal: %{customdata:+.3f}<extra></extra>"
-            ),
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # M1 Flow-Only GBT
-        dev_m1 = np.array(m1_vals) - 1.0
-        fig.add_trace(go.Scatter(
-            x=hz_labels, y=m1_vals,
-            name='M1: Flow-Only GBT',
-            mode='lines+markers',
-            line=dict(color=COLOR_M1, width=2.2),
-            marker=dict(size=8, symbol='diamond'),
-            customdata=dev_m1,
-            hovertemplate=(
-                f"<b>M1 (Flow-Only) — {comp_name}</b><br>"
-                "Lead: H = %{x}<br>"
-                "Value: %{y:.3f}<br>"
-                "Deviation from Ideal: %{customdata:+.3f}<extra></extra>"
-            ),
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # M2 Hydro-Meteorological GBT
-        dev_m2 = np.array(m2_vals) - 1.0
-        fig.add_trace(go.Scatter(
-            x=hz_labels, y=m2_vals,
-            name='M2: Hydro-Met GBT',
-            mode='lines+markers',
-            line=dict(color=COLOR_M2, width=2.5),
-            marker=dict(size=9, symbol='circle'),
-            customdata=dev_m2,
-            hovertemplate=(
-                f"<b>M2 (Hydro-Met) — {comp_name}</b><br>"
-                "Lead: H = %{x}<br>"
-                "Value: %{y:.3f}<br>"
-                "Deviation from Ideal: %{customdata:+.3f}<extra></extra>"
-            ),
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        fig.update_xaxes(title_text="Forecast Horizon Ahead", row=1, col=col_idx, gridcolor='#E5E7EB')
-        fig.update_yaxes(title_text="Component Value", range=[-0.05, 1.25], row=1, col=col_idx, gridcolor='#E5E7EB')
-        
+    med = df.groupby('horizon')[[f'{m}_{c}' for m in ('m0', 'm1', 'm2') for c in ('r', 'alpha', 'beta')]].median().loc[hz_labels]
+    fig = make_subplots(rows=1, cols=3, horizontal_spacing=0.08, subplot_titles=[
+        "<b>(a) Correlation (r)</b>", "<b>(b) Variability Ratio (α = σ<sub>pred</sub> / σ<sub>obs</sub>)</b>",
+        "<b>(c) Bias Ratio (β = μ<sub>pred</sub> / μ<sub>obs</sub>)</b>"])
+    styles = {'m0': ('M0: Baseline', COLOR_M0, 'dash', 'square'), 'm1': ('M1: Flow-Only GBT', COLOR_M1, 'solid', 'diamond'),
+              'm2': ('M2: Hydro-Met GBT', COLOR_M2, 'solid', 'circle')}
+    for col_idx, comp in enumerate(('r', 'alpha', 'beta'), start=1):
+        show_leg = col_idx == 1
+        fig.add_trace(go.Scatter(x=hz_labels, y=[1.0] * 4, name='Ideal Benchmark (1.0)', mode='lines',
+                                 line=dict(color=COLOR_IDEAL, width=1.6, dash='dot'), showlegend=show_leg), row=1, col=col_idx)
+        for m, (nm, color, dash, sym) in styles.items():
+            vals = med[f'{m}_{comp}'].values
+            fig.add_trace(go.Scatter(x=hz_labels, y=vals, name=nm, mode='lines+markers', line=dict(color=color, width=2.2, dash=dash),
+                                     marker=dict(size=8, symbol=sym), showlegend=show_leg,
+                                     hovertemplate=f"<b>{nm}</b><br>Lead %{{x}}<br>Median {comp}: %{{y:.3f}}<extra></extra>"),
+                          row=1, col=col_idx)
+        fig.update_xaxes(title_text="Forecast lead", row=1, col=col_idx, gridcolor='#E5E7EB')
+        fig.update_yaxes(title_text="Component value", range=[-0.05, 1.25], row=1, col=col_idx, gridcolor='#E5E7EB')
+    r8 = med.loc['8w']
     fig.update_layout(
-        title=dict(
-            text="<b>Kling-Gupta Efficiency (KGE) Component Decomposition Across Lead Horizons</b><br>"
-                 "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Decomposition of KGE components (r, α, β) shows that at H=8w, hydraulic memory collapses, and while meteorological forcings stabilize volume balance (β ≈ 1.0), M0 Climatology achieves comparable hydrograph correlation (r ≈ 0.62) with zero parametric variance."
-                 "</span>",
-            x=0.03, y=0.96
-        ),
-        template='plotly_white',
-        hovermode='closest',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
-        height=540,
-        margin=dict(l=60, r=40, t=110, b=60)
-    )
-    
+        title=dict(text="<b>KGE Component Decomposition Across Lead Times (12-station medians)</b><br>"
+                        f"<span style='font-size: 13px; color: #4B5563;'>At 8 weeks the median correlation is "
+                        f"{r8['m0_r']:.3f} for M0 climatology, {r8['m1_r']:.3f} for M1 and {r8['m2_r']:.3f} for M2.</span>",
+                   x=0.03, y=0.96),
+        template='plotly_white', hovermode='closest', height=540, margin=dict(l=60, r=40, t=110, b=60),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0))
     out_file = os.path.join(out_dir, "interactive_kge_component_decomposition.html")
     fig.write_html(out_file, include_plotlyjs='cdn')
     print(f"   [+] Saved KGE decomposition plot: {out_file}")
     return out_file
 
 # ==============================================================================
-# 6. PLOT 4: FEATURE IMPORTANCE TRANSITION (GROUPED HORIZONTAL BARS)
+# 6. PLOT 4: FEATURE IMPORTANCE (POOLED OVER STATIONS WITH COMPLETE LOW-FLOW RECORDS)
 # ==============================================================================
+def _station_importance(stn_name, gid, H, preds, n_repeats=10, seed=42):
+    """
+    Permutation importance of the M2 GBT on the audited scored test weeks of one station.
+    Returns (per-feature share in %, per-group ΔMSE as a fraction of baseline MSE).
+    Group importance permutes all features of a family together, so correlated features
+    (e.g. flow lags) cannot hide each other's contribution.
+    """
+    clean_name = stn_name.replace(' ', '_').replace('(', '').replace(')', '')
+    model, _, medians = load_estimator(os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gid:05d}_{clean_name}_H{H}.joblib"))
+    df = pd.read_csv(os.path.join(TENSORS_DIR, f"weekly_tensor_gauge_{gid:05d}_{stn_name}.csv"), parse_dates=['date']).set_index('date')
+    d = preds[(preds['station'] == stn_name) & (preds['horizon'] == f'{H}w') & preds['scored']]
+    X = df.loc[pd.to_datetime(d['issue_date']).values, M2_TABULAR_FEATURES]
+    X = X.fillna(medians if medians is not None else X.median()).values
+    y = d['y_obs'].values
+    r = permutation_importance(model, X, y, n_repeats=n_repeats, random_state=seed, scoring='neg_mean_squared_error')
+    imp = np.maximum(0.0, r.importances_mean)
+    share = pd.Series(100.0 * imp / imp.sum() if imp.sum() > 0 else imp, index=M2_TABULAR_FEATURES)
+    base_mse = float(np.mean((y - model.predict(X)) ** 2))
+    rng = np.random.default_rng(seed)
+    group_gain = {}
+    for g in FEATURE_GROUPS:
+        cols = [i for i, f in enumerate(M2_TABULAR_FEATURES) if categorize_feature(f) == g]
+        incs = []
+        for _ in range(n_repeats):
+            Xp = X.copy()
+            Xp[:, cols] = X[rng.permutation(len(X))][:, cols]
+            incs.append(np.mean((y - model.predict(Xp)) ** 2) - base_mse)
+        group_gain[g] = float(np.mean(incs)) / base_mse
+    return share, pd.Series(group_gain)
+
+
 def generate_interactive_feature_importance(out_dir):
     """
-    Generates an interactive grouped horizontal bar chart comparing M2 GBT feature
-    importances at H=1w vs H=8w for representative Deccan headwater gauge Karad.
+    M2 GBT permutation importance at H=1w vs H=8w, averaged over the 8 stations with
+    complete low-flow records (Karad, Warunji, Yadgir and Huvinhedigi excluded because
+    their test weeks are dominated by unmeasured zeros).
     """
-    print("[*] Generating Plot 4: Interactive Feature Importance Transition (H=1w vs H=8w)...")
-    
-    stn_name = 'Karad'
-    gid = 4021
-    
-    tensor_path = os.path.join(TENSORS_DIR, f"weekly_tensor_gauge_{gid:05d}_{stn_name}.csv")
-    df = pd.read_csv(tensor_path, parse_dates=['date']).set_index('date')
-    df_test = df.loc['2016-01-01':'2025-12-31'].copy()
-    
-    imp_results = {}
-    
+    print("[*] Generating Plot 4: Feature Importance (pooled, H=1w vs H=8w)...")
+    preds = _load_predictions()
+    stations = [(s, g) for s, g in ALL_STATIONS if s not in ZERO_AS_MISSING_STATIONS]
+    shares, groups = {}, {}
     for H in [1, 8]:
-        model_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gid:05d}_{stn_name}_H{H}.joblib")
-        model, scaler, medians = load_estimator(model_path)
-        
-        target_col = f'target_H{H}'
-        eval_df = df_test.dropna(subset=[target_col] + M2_TABULAR_FEATURES)
-        X = eval_df[M2_TABULAR_FEATURES]
-        y = eval_df[target_col]
-        
-        r = permutation_importance(model, X.values if hasattr(model, 'n_features_in_') else X, y.values,
-                                   n_repeats=5, random_state=42, scoring='neg_mean_squared_error')
-        importances = np.maximum(0, r.importances_mean)
-        sum_imp = np.sum(importances)
-        norm_imp = (importances / sum_imp) * 100 if sum_imp > 0 else importances
-        imp_results[H] = pd.Series(norm_imp, index=M2_TABULAR_FEATURES)
-        
-    df_imp = pd.DataFrame({'H1': imp_results[1], 'H8': imp_results[8]})
-    df_imp['Max_Imp'] = df_imp.max(axis=1)
-    df_top = df_imp.sort_values('Max_Imp', ascending=True)  # All 28 predictors without truncation
-    
-    feat_display_names = [FEATURE_LABELS.get(f, f) for f in df_top.index]
-    categories = [categorize_feature(f) for f in df_top.index]
-    
+        per_stn = [_station_importance(s, g, H, preds) for s, g in stations]
+        shares[H] = pd.concat([p[0] for p in per_stn], axis=1).mean(axis=1)
+        groups[H] = pd.concat([p[1] for p in per_stn], axis=1).median(axis=1)
+    df_imp = pd.DataFrame({'H1': shares[1], 'H8': shares[8]})
+    df_top = df_imp.assign(Max_Imp=df_imp.max(axis=1)).sort_values('Max_Imp', ascending=True)
+    pd.DataFrame({'H1_share_pct': shares[1], 'H8_share_pct': shares[8]}).to_csv(os.path.join(RESULTS_DIR, 'feature_importance_pooled.csv'))
+    pd.DataFrame({'H1_dMSE_over_MSE': groups[1], 'H8_dMSE_over_MSE': groups[8]}).to_csv(os.path.join(RESULTS_DIR, 'feature_importance_groups.csv'))
+    print("   Group importance (median ΔMSE / MSE when the whole family is permuted):")
+    print(pd.DataFrame({'1w': groups[1], '8w': groups[8]}).round(3).to_string())
+
+    names = [FEATURE_LABELS.get(f, f) for f in df_top.index]
+    cats = [categorize_feature(f) for f in df_top.index]
     fig = go.Figure()
-    
-    # H=1w Trace (Short-term flow memory dominant)
-    cdata_h1 = np.stack((categories, df_top['H1'].values), axis=-1)
-    fig.add_trace(go.Bar(
-        y=feat_display_names,
-        x=df_top['H1'],
-        name='Horizon H = 1 Week (Short-Term Memory)',
-        orientation='h',
-        marker=dict(color='#2563EB', line=dict(color='#1E40AF', width=1)),
-        customdata=cdata_h1,
-        hovertemplate=(
-            "<b>Predictor: %{y}</b><br>"
-            "Hydrological Category: %{customdata[0]}<br>"
-            "Lead Time: H = 1 Week Ahead<br>"
-            "Relative Importance: <b>%{x:.1f}%</b><extra></extra>"
-        )
-    ))
-    
-    # H=8w Trace (Meteorological / calendar memory dominant)
-    cdata_h8 = np.stack((categories, df_top['H8'].values), axis=-1)
-    fig.add_trace(go.Bar(
-        y=feat_display_names,
-        x=df_top['H8'],
-        name='Horizon H = 8 Weeks (Long-Term Weather & Seasonality)',
-        orientation='h',
-        marker=dict(color='#DC2626', line=dict(color='#991B1B', width=1)),
-        customdata=cdata_h8,
-        hovertemplate=(
-            "<b>Predictor: %{y}</b><br>"
-            "Hydrological Category: %{customdata[0]}<br>"
-            "Lead Time: H = 8 Weeks Ahead<br>"
-            "Relative Importance: <b>%{x:.1f}%</b><extra></extra>"
-        )
-    ))
-    
+    for col, nm, color, line in (('H1', 'Horizon H = 1 Week', '#2563EB', '#1E40AF'), ('H8', 'Horizon H = 8 Weeks', '#DC2626', '#991B1B')):
+        fig.add_trace(go.Bar(y=names, x=df_top[col], name=nm, orientation='h',
+                             marker=dict(color=color, line=dict(color=line, width=1)),
+                             customdata=np.stack((cats, df_top[col].values), axis=-1),
+                             hovertemplate="<b>%{y}</b><br>Group: %{customdata[0]}<br>Mean share: <b>%{x:.1f}%</b><extra></extra>"))
+    g1, g8 = groups[1], groups[8]
     fig.update_layout(
-        title=dict(
-            text="<b>Hydrological Driver Shift: Flow Memory (H=1w) vs Meteorological Memory (H=8w)</b><br>"
-                 "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Permutation feature importance on Karad test fold across all 28 predictors reveals collapse of autoregressive flow memory (0.0% at H=8w) and dominance of calendar seasonality (72.0%) and atmospheric evaporative demand (19.5%)."
-                 "</span>",
-            x=0.03, y=0.96
-        ),
-        barmode='group',
-        template='plotly_white',
-        xaxis=dict(
-            title="Relative Permutation Importance (%)",
-            showgrid=True, gridcolor='#E5E7EB'
-        ),
-        yaxis=dict(
-            title="Predictor Feature",
-            showgrid=False
-        ),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0,
-            bgcolor="rgba(255,255,255,0.9)", bordercolor="#D1D5DB", borderwidth=1
-        ),
-        height=850,
-        margin=dict(l=220, r=40, t=100, b=60)
-    )
-    
+        title=dict(text="<b>M2 Permutation Importance: 1-Week vs 8-Week Lead (mean over 8 stations)</b><br>"
+                        "<span style='font-size: 13px; color: #4B5563;'>Excludes Karad, Warunji, Yadgir, Huvinhedigi (unmeasured zero weeks). "
+                        f"Permuting all flow features together raises MSE by {100*g1['Streamflow Memory']:.0f}% at 1 week and "
+                        f"{100*g8['Streamflow Memory']:.0f}% at 8 weeks; all precipitation features: "
+                        f"{100*g1['Precipitation & Recharge']:.0f}% and {100*g8['Precipitation & Recharge']:.0f}% (station medians).</span>",
+                   x=0.03, y=0.96),
+        barmode='group', template='plotly_white',
+        xaxis=dict(title="Share of permutation importance (%)", showgrid=True, gridcolor='#E5E7EB'),
+        yaxis=dict(title="Predictor", showgrid=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        height=850, margin=dict(l=220, r=40, t=110, b=60))
     out_file = os.path.join(out_dir, "interactive_feature_importance_shift.html")
     fig.write_html(out_file, include_plotlyjs='cdn')
-    print(f"   [+] Saved interactive feature importance shift: {out_file}")
+    print(f"   [+] Saved feature importance: {out_file}")
     return out_file
 
 # ==============================================================================
-# 7. PLOT 5: ZERO-SHOT SPATIAL TRANSFER GROUPED BARS
+# 7. PLOT 5: ZERO-SHOT SPATIAL TRANSFER (ALL FOUR LEADS)
 # ==============================================================================
 def generate_interactive_spatial_transfer(out_dir):
     """
-    Generates interactive grouped bar charts comparing H=4w and H=8w Zero-Shot Nash-Sutcliffe
-    Efficiency on held-out test basins across M0, M1 Flow-Only GBT, and M2 PyTorch HydroLSTM.
+    Zero-shot NSE on the three held-out basins at every lead, from the audited CSV:
+    M0 climatology/persistence (station's own history), M1 pooled GBT, M2 pooled HydroLSTM.
     """
     print("[*] Generating Plot 5: Interactive Zero-Shot Spatial Generalization...")
-    
-    p2_m1_path = os.path.join(RESULTS_DIR, 'protocol2_spatial_results_gbt.csv')
-    p2_m2_path = os.path.join(RESULTS_DIR, 'protocol2_spatial_results_m2_lstm.csv')
-    
-    df_p2_m1 = pd.read_csv(p2_m1_path)
-    df_p2_m2 = pd.read_csv(p2_m2_path)
-    
-    holdouts = [
-        ('Kantamal', 'Odisha', 'Tel / Mahanadi Basin'),
-        ('Bamni (Ballarsha)', 'Maharashtra', 'Wardha / Godavari Basin'),
-        ('Haralahalli', 'Karnataka', 'Tungabhadra / Krishna Basin'),
-    ]
-    
-    fig = make_subplots(
-        rows=1, cols=2,
-        subplot_titles=[
-            "<b>Horizon H = 4 Weeks Ahead (Zero-Shot Cross-Basin)</b>",
-            "<b>Horizon H = 8 Weeks Ahead (Zero-Shot Cross-Basin)</b>"
-        ],
-        horizontal_spacing=0.10
-    )
-    
-    horizons = [4, 8]
-    
+    df = _load_audited()
+    holdouts = [('Kantamal', 'Odisha'), ('Bamni (Ballarsha)', 'Maharashtra'), ('Haralahalli', 'Karnataka')]
+    horizons = [1, 2, 4, 8]
+    fig = make_subplots(rows=1, cols=4, horizontal_spacing=0.05,
+                        subplot_titles=[f"<b>H = {H} Week{'s' if H > 1 else ''}</b>" for H in horizons])
     for col_idx, H in enumerate(horizons, start=1):
-        sub_m1 = df_p2_m1[df_p2_m1['Horizon_Weeks'] == H].set_index('Holdout_Station')
-        sub_m2 = df_p2_m2[df_p2_m2['Horizon_Weeks'] == H].set_index('Holdout_Station')
-        
-        stn_names = [h[0] for h in holdouts]
-        display_names = [f"<b>{h[0].split()[0]}</b><br><span style='font-size:10px;color:#6B7280;'>{h[1]}</span>" for h in holdouts]
-        
-        m0_vals   = [float(sub_m1.loc[s, 'M0_NSE']) for s in stn_names]
-        m1_vals   = [float(sub_m1.loc[s, 'M1_NSE']) for s in stn_names]
-        lstm_vals = [float(sub_m2.loc[s, 'M2_NSE']) for s in stn_names]
-        
-        show_leg = (col_idx == 1)
-        
-        # M0 Baseline
-        fig.add_trace(go.Bar(
-            x=display_names, y=m0_vals,
-            name='M0: Baseline (Climatology)',
-            marker=dict(color=COLOR_M0, line=dict(color='#4B5563', width=1)),
-            text=[f"{v:+.2f}" for v in m0_vals],
-            textposition='auto',
-            hovertemplate="<b>M0 Baseline</b><br>Station: %{x}<br>NSE: <b>%{y:+.3f}</b><extra></extra>",
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # M1 Flow-Only GBT
-        fig.add_trace(go.Bar(
-            x=display_names, y=m1_vals,
-            name='M1: Flow-Only GBT',
-            marker=dict(color=COLOR_M1, line=dict(color='#1E40AF', width=1)),
-            text=[f"{v:+.2f}" for v in m1_vals],
-            textposition='auto',
-            hovertemplate="<b>M1 Flow-Only GBT</b><br>Station: %{x}<br>NSE: <b>%{y:+.3f}</b><extra></extra>",
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # M2 PyTorch HydroLSTM
-        fig.add_trace(go.Bar(
-            x=display_names, y=lstm_vals,
-            name='M2: PyTorch HydroLSTM',
-            marker=dict(color=COLOR_LSTM, line=dict(color='#5B21B6', width=1)),
-            text=[f"{v:+.2f}" for v in lstm_vals],
-            textposition='auto',
-            hovertemplate="<b>M2 PyTorch HydroLSTM</b><br>Station: %{x}<br>NSE: <b>%{y:+.3f}</b><extra></extra>",
-            showlegend=show_leg
-        ), row=1, col=col_idx)
-        
-        # Zero Predictive Skill Boundary Line
+        sub = df[df['horizon'] == f'{H}w'].set_index('station')
+        x = [f"<b>{s.split()[0]}</b><br><span style='font-size:10px;color:#6B7280;'>{st}</span>" for s, st in holdouts]
+        for col, nm, color in (('m0_nse_fixed', 'M0: Baseline (Persistence / Climatology)', COLOR_M0),
+                               ('p2_gbt_nse', 'M1: Flow-Only GBT (pooled)', COLOR_M1),
+                               ('p2_lstm_nse', 'M2: PyTorch HydroLSTM (pooled)', COLOR_LSTM)):
+            vals = [float(sub.loc[s, col]) for s, _ in holdouts]
+            fig.add_trace(go.Bar(x=x, y=vals, name=nm, marker=dict(color=color), text=[f"{v:+.2f}" for v in vals],
+                                 textposition='auto', showlegend=(col_idx == 1),
+                                 hovertemplate=f"<b>{nm}</b><br>%{{x}}<br>NSE: <b>%{{y:+.3f}}</b><extra></extra>"),
+                          row=1, col=col_idx)
         fig.add_hline(y=0.0, line_dash='dash', line_color='#374151', line_width=1.5, row=1, col=col_idx)
-        
-        fig.update_xaxes(title_text="Held-Out Sub-Basin", row=1, col=col_idx)
-        fig.update_yaxes(title_text="Zero-Shot NSE", range=[-1.45, 0.75], row=1, col=col_idx, gridcolor='#E5E7EB')
-        
+        fig.update_yaxes(range=[-1.45, 0.75], row=1, col=col_idx, gridcolor='#E5E7EB')
+    fig.update_yaxes(title_text="Zero-shot NSE", row=1, col=1)
     fig.update_layout(
-        title=dict(
-            text="<b>Protocol 2: Cross-Basin Zero-Shot Spatial Generalization (M0 vs M1 GBT vs M2 PyTorch LSTM)</b><br>"
-                 "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Held-out basins were strictly excluded from model training. PyTorch HydroLSTM achieves positive zero-shot transfer on Bamni (H=1w,2w,4w) and Kantamal (all horizons), while linear Ridge baseline remains resilient in Karnataka."
-                 "</span>",
-            x=0.03, y=0.96
-        ),
-        barmode='group',
-        template='plotly_white',
-        hovermode='closest',
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0,
-            bgcolor="rgba(255,255,255,0.9)", bordercolor="#D1D5DB", borderwidth=1
-        ),
-        height=540,
-        margin=dict(l=60, r=40, t=105, b=60)
-    )
-    
+        title=dict(text="<b>Protocol 2: Zero-Shot Transfer to Held-Out Basins</b><br>"
+                        "<span style='font-size: 13px; color: #4B5563;'>Held-out basins were excluded from training. "
+                        "M0 uses the held-out station's own flow history (persistence at 1–2 weeks, climatology at 4–8 weeks).</span>",
+                   x=0.03, y=0.96),
+        barmode='group', template='plotly_white', hovermode='closest', height=540, margin=dict(l=60, r=40, t=105, b=60),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0))
     out_file = os.path.join(out_dir, "interactive_spatial_transfer_grouped_bars.html")
     fig.write_html(out_file, include_plotlyjs='cdn')
-    print(f"   [+] Saved interactive zero-shot transfer grouped bars: {out_file}")
+    print(f"   [+] Saved interactive zero-shot transfer: {out_file}")
     return out_file
 
 # ==============================================================================

@@ -184,28 +184,50 @@ A total of **133 discrepancies** were uncovered between the published website (`
 
 ### Issue K: Uncertainty Quantification & Statistical Significance Tests
 
+> **Recomputed 2026-11-04 on the masked evaluation set** (recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi excluded; see Section 7) with `scripts/uncertainty_tests.py`. Outputs: `data/processed/model_results/uncertainty_portfolio.csv` and `uncertainty_station_block_bootstrap.csv`. Seed 42, 1,000 resamples. The pre-mask values previously shown here (e.g. 1-week $p = 0.4697$) are superseded.
+
 #### 1. Wilcoxon Signed-Rank Test Across the 12 Portfolio Catchments
-To test whether M2 (hydro-meteorology GBT) is statistically significantly superior to M1 (flow-only GBT), we conducted two-sided Wilcoxon signed-rank tests across the 12 stations:
+Two-sided Wilcoxon signed-rank test of station NSE, M2 (hydro-met GBT) vs M1 (flow-only GBT), $n = 12$:
 
-| Horizon | Median of Per-Station Diffs $\text{Median}(M2_i - M1_i)$ | Difference of Medians $\text{Med}(M2) - \text{Med}(M1)$ | Wilcoxon Statistic ($W$) | $p$-value | Statistically Significant at $\alpha = 0.05$? | Catchments Where M2 > M1 |
+| Horizon | Median of Per-Station Diffs $\text{Median}(M2_i - M1_i)$ | Difference of Medians | Wilcoxon $W$ | $p$-value | Significant at $\alpha = 0.05$? | Catchments Where M2 > M1 |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1-Week** | **-0.0085** | -0.0225 | 29.0 | **0.4697** | **NO** ($p > 0.05$) | 6 / 12 (50.0%) |
-| **2-Weeks** | **+0.0093** | +0.0212 | 23.0 | **0.2334** | **NO** ($p > 0.05$) | 6 / 12 (50.0%) |
-| **4-Weeks** | **-0.0165** | -0.0414 | 23.0 | **0.2334** | **NO** ($p > 0.05$) | 4 / 12 (33.3%) |
-| **8-Weeks** | **+0.0194** | +0.0428 | 28.0 | **0.4238** | **NO** ($p > 0.05$) | 8 / 12 (66.7%) |
+| **1-Week** | **-0.0179** | -0.0349 | 27.0 | **0.3804** | **NO** | 5 / 12 |
+| **2-Weeks** | **+0.0119** | +0.0126 | 23.0 | **0.2334** | **NO** | 6 / 12 |
+| **4-Weeks** | **-0.0165** | -0.0104 | 23.0 | **0.2334** | **NO** | 4 / 12 |
+| **8-Weeks** | **+0.0096** | +0.0417 | 32.0 | **0.6221** | **NO** | 8 / 12 |
 
-**Definitive Statistical Conclusion:**
-At **no forecast horizon** does M2 achieve statistically significant superiority over M1 ($p > 0.20$ everywhere). The website claim that "M2 hydro-meteorological inputs decisively beat M1 across 10 of 12 basins" is **statistically refuted**.
+**Conclusion:** M2 is not significantly better than M1 on NSE at any lead ($p \ge 0.23$). On KGE, M2 is significantly worse at 1 week ($p = 0.007$; see `assets/benchmark-data.js`).
 
-#### 2. Portfolio-Level Block Bootstrap Confidence Intervals (1,000 Resamples)
-- $H=1\text{w}$: $\Delta\text{NSE} = -0.0085$, **95% CI: [-0.0683, +0.0310]** (Spans zero)
-- $H=2\text{w}$: $\Delta\text{NSE} = +0.0093$, **95% CI: [-0.0115, +0.0773]** (Spans zero)
-- $H=4\text{w}$: $\Delta\text{NSE} = -0.0165$, **95% CI: [-0.0624, +0.0174]** (Spans zero)
-- $H=8\text{w}$: $\Delta\text{NSE} = +0.0194$, **95% CI: [-0.0160, +0.0361]** (Spans zero)
+#### 2. Portfolio-Level Bootstrap Confidence Intervals (Stations Resampled, 1,000 Resamples)
+The 12 stations are resampled with replacement and the median paired ΔNSE recomputed each time:
 
-#### 3. Station-Level Stationary Block Bootstrap (52-Week Blocks, 1,000 Resamples)
-- **Karad ($H=2\text{w}$):** Point $\Delta\text{NSE} = +0.1195$, **95% Block Bootstrap CI: [-0.0431, +0.1855]**
-- **Kantamal ($H=2\text{w}$):** Point $\Delta\text{NSE} = -0.0082$, **95% Block Bootstrap CI: [-0.1109, +0.0641]**
+- $H=1\text{w}$: $\Delta\text{NSE} = -0.0179$, **95% CI: [-0.0629, +0.0365]** (spans zero)
+- $H=2\text{w}$: $\Delta\text{NSE} = +0.0119$, **95% CI: [-0.0107, +0.0876]** (spans zero)
+- $H=4\text{w}$: $\Delta\text{NSE} = -0.0165$, **95% CI: [-0.0814, +0.0174]** (spans zero)
+- $H=8\text{w}$: $\Delta\text{NSE} = +0.0096$, **95% CI: [-0.0290, +0.0527]** (spans zero)
+
+#### 3. Station-Level Moving-Block Bootstrap (52-Week Blocks, 1,000 Resamples)
+ΔNSE = NSE(M2) − NSE(M1) on each station's scored test weeks; 95% percentile interval. A station-lead counts as "M2 better" or "M1 better" only when the interval excludes zero.
+
+| Station | 1w ΔNSE [95% CI] | 2w | 4w | 8w |
+| :-- | :-- | :-- | :-- | :-- |
+| Karad † (n=142) | +0.063 [-0.085, +0.165] | +0.148 [-0.022, +0.199] | -0.147 [-0.284, -0.070] **M1** | +0.098 [-0.056, +0.311] |
+| Warunji † (n=133) | -0.008 [-0.077, +0.051] | +0.089 [-0.051, +0.160] | -0.084 [-0.088, -0.016] **M1** | -0.086 [-0.078, +0.125] |
+| Ashti (n=521) | +0.010 [-0.075, +0.145] | -0.013 [-0.071, +0.067] | -0.054 [-0.090, -0.022] **M1** | -0.045 [-0.082, +0.021] |
+| Bamni (Ballarsha) (n=521) | +0.066 [-0.077, +0.188] | +0.086 [+0.018, +0.149] **M2** | -0.004 [-0.099, +0.023] | +0.052 [+0.019, +0.101] **M2** |
+| Anandpur (n=521) | +0.005 [-0.036, +0.117] | +0.096 [+0.032, +0.229] **M2** | +0.031 [-0.071, +0.117] | +0.063 [-0.035, +0.201] |
+| Kashinagar (n=521) | -0.180 [-0.434, -0.084] **M1** | -0.015 [-0.074, +0.040] | -0.019 [-0.076, +0.031] | +0.013 [-0.103, +0.097] |
+| Gomlai (n=510) | +0.068 [+0.040, +0.158] **M2** | -0.009 [-0.049, +0.026] | +0.004 [-0.042, +0.057] | +0.027 [-0.023, +0.043] |
+| Kantamal (n=507) | -0.063 [-0.361, +0.150] | -0.008 [-0.115, +0.066] | +0.087 [-0.003, +0.225] | -0.104 [-0.216, -0.010] **M1** |
+| Yadgir † (n=179) | -0.036 [-0.313, +0.205] | -0.075 [-0.135, +0.086] | -0.079 [-0.088, -0.031] **M1** | +0.005 [-0.025, +0.033] |
+| Huvinhedigi † (n=421) | -0.028 [-0.271, +0.118] | -0.003 [-0.067, +0.076] | +0.032 [-0.006, +0.066] | +0.053 [-0.056, +0.115] |
+| KUDIGE (n=489) | -0.074 [-0.190, +0.004] | +0.027 [-0.026, +0.077] | -0.099 [-0.397, +0.025] | -0.013 [-0.192, +0.071] |
+| Haralahalli (n=415) | -0.087 [-0.197, -0.026] **M1** | +0.028 [-0.056, +0.051] | -0.014 [-0.022, +0.009] | +0.006 [-0.020, +0.024] |
+
+Across the 48 station-lead cases, M2 is clearly better in 4, M1 is clearly better in 7, and 37 cannot be told apart. At 4 weeks M1 is clearly better at 4 stations and M2 at none.
+
+*Caveat:* † stations keep only 75–180 scored weeks after masking. For those short series the percentile interval is unreliable and can even exclude its own point estimate (e.g. Warunji 8w), so treat them as indicative only. Excluded weeks are closed up before blocking, so a few blocks span a gap.
+
 
 ---
 
@@ -291,3 +313,20 @@ Phase 2 investigation and auditing were completed and formally presented to the 
 - **Interactive Widgets:** Updated `scripts/generate_interactive_plots.py` to write directly to `visualizations/source/` and plot all 26 tabular predictors in permutation importance without truncation.
 - **Site Data Compiler:** Created `tools/build_site_data.py` on `main` to build `assets/figdata.js` and render standalone visualization wrappers.
 - **Audited Metrics JS Export:** Implemented `scripts/export_benchmark_data.py` ensuring precomputed benchmark tables in `assets/benchmark-data.js` include explicit sample sizes ($n$) for all contingency metrics.
+
+
+---
+
+## 7. Phase 5: External Review Response (2026-11-04)
+
+Full task log: `docs/REVIEW_FIX_PROGRESS.md`.
+
+1. **Reproducibility.** With the new mask switched off, the committed code and saved models reproduce the previously published `audited_metrics_recomputed.csv` exactly (max abs diff 1.8e-15 over 34 columns).
+2. **Unmeasured zero-flow weeks (extends Issue C).** The problem is not limited to Karad. Test-period zero-flow share is 69% at Karad, 70% at Warunji, 62% at Yadgir and 14% at Huvinhedigi, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about 20% of those zeros fall in June–October. At these four stations, weeks whose issue-time or target flow is a recorded zero are now excluded from scoring for all models. This lowers the pooled Q95 base rate from 0.238 to 0.065. Haralahalli (dry-season-only zeros, also present in training) is unchanged. Models were not retrained.
+3. **M0 drought metrics** now use the fixed climatology at 4–8 weeks (previously the double-shifted version).
+4. **Single source for charts.** `test_predictions.csv` feeds every chart. Hydrographs are plotted at the target week. PR curves and KGE components are recomputed on the scored weeks.
+5. **Feature importance.** The old chart used Karad only, where most test weeks are unmeasured zeros. It is now pooled over the 8 clean stations, with grouped (block) permutation importance: at 1 week, precipitation +84% MSE and flow +22%; at 8 weeks, calendar +86% and flow +1%. Low Q(t) importance is genuine model behaviour, not dilution among correlated lags.
+6. **Statistics after masking.** Wilcoxon M2 vs M1 on NSE: p = 0.380 / 0.233 / 0.233 / 0.622 (1/2/4/8 weeks). On KGE, M2 is worse at 1 week (p = 0.007). Climatology beats M2 at 11/12 stations at 4 weeks and 8/12 at 8 weeks. M2's median Q95 CSI is 0.000 at every lead. All published Δs are now paired medians.
+7. **Station metadata.** Areas corrected from the tensors (Kashinagar 7,820, Gomlai 21,950, Yadgir 69,863 km²). Aridity is now the Budyko index PET/P computed from the 1980–2020 tensors.
+
+8. **Issue K recomputed** on the masked set with `scripts/uncertainty_tests.py` (Section 3, Issue K).

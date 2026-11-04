@@ -69,7 +69,13 @@ echo -e "${GREEN}[+] Appended progress entry to docs/PROGRESS.md${NC}"
 # ------------------------------------------------------------------------------
 # 3. Backend Commit on 'main'
 # ------------------------------------------------------------------------------
-echo -e "${YELLOW}[2/8] Staging and committing backend documentation on 'main'...${NC}"
+echo -e "${YELLOW}[2/8] Rebuilding audited outputs, then committing on 'main'...${NC}"
+python3 scripts/audit_metrics.py > /dev/null
+python3 scripts/export_benchmark_data.py > /dev/null
+python3 scripts/generate_interactive_plots.py > /dev/null
+python3 scripts/uncertainty_tests.py > /dev/null
+python3 scripts/render_report_results.py > /dev/null
+git add data/processed/model_results/ assets/benchmark-data.js visualizations/source/
 git add docs/PROGRESS.md README.md docs/DECISION_LOG.md docs/PROJECT_REPORT_DOCUMENTATION.md deploy.sh
 git add -u
 
@@ -81,59 +87,54 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 4. Artifact Transition to Temporary Directory
+# 4. Rebuild audited outputs and stage them to a temporary directory
+#    Pipeline: audit_metrics.py -> export_benchmark_data.py -> generate_interactive_plots.py
+#    (charts are written to visualizations/source/, the only chart source the site uses)
 # ------------------------------------------------------------------------------
-echo -e "${YELLOW}[3/8] Staging visualization artifacts to temporary directory...${NC}"
-TEMP_DIR="/tmp/es335_viz"
-rm -rf "${TEMP_DIR}"
-mkdir -p "${TEMP_DIR}"
-
-VIZ_SRC="data/processed/visualizations"
-if [ -d "${VIZ_SRC}" ]; then
-    cp -r "${VIZ_SRC}"/* "${TEMP_DIR}"/
-    echo -e "${GREEN}[+] Copied artifacts to ${TEMP_DIR}.${NC}"
-    echo -e "${YELLOW}[4/8] Removing local generated folder '${VIZ_SRC}' to prevent checkout conflicts...${NC}"
-    rm -rf "${VIZ_SRC}"
-else
-    echo -e "${RED}[ERROR] Source visualization directory '${VIZ_SRC}' not found!${NC}"
-    exit 1
-fi
+echo -e "${YELLOW}[3/8] Staging rebuilt chart sources and site data...${NC}"
+TEMP_DIR="$(mktemp -d)"
+VIZ_SRC="visualizations/source"
+cp "${VIZ_SRC}"/interactive_*.html "${TEMP_DIR}"/
+cp assets/benchmark-data.js tools/build_site_data.py "${TEMP_DIR}"/
+echo -e "${GREEN}[+] Staged chart sources and site data in ${TEMP_DIR}.${NC}"
+echo -e "${YELLOW}[4/8] (no local folders removed)${NC}"
 
 # ------------------------------------------------------------------------------
-# 5. Branch Switch & Sync 'gh-pages'
+# 5. Locate (or create) the gh-pages worktree; 'main' stays checked out here
 # ------------------------------------------------------------------------------
-echo -e "${YELLOW}[5/8] Checking out 'gh-pages' branch...${NC}"
-if ! git checkout gh-pages; then
-    echo -e "${RED}[ERROR] Failed to switch to 'gh-pages' branch.${NC}"
-    # Restore artifacts before exiting
-    mkdir -p "${VIZ_SRC}"
-    cp -r "${TEMP_DIR}"/* "${VIZ_SRC}"/
-    rm -rf "${TEMP_DIR}"
-    exit 1
+echo -e "${YELLOW}[5/8] Locating the 'gh-pages' worktree...${NC}"
+SITE_DIR="$(git worktree list --porcelain | awk '/^worktree /{wt=substr($0,10)} /^branch refs\/heads\/gh-pages$/{print wt}')"
+if [ -z "${SITE_DIR}" ]; then
+    SITE_DIR="${REPO_ROOT}/site"
+    git worktree add "${SITE_DIR}" gh-pages || { echo -e "${RED}[ERROR] Could not create gh-pages worktree.${NC}"; rm -rf "${TEMP_DIR}"; exit 1; }
 fi
+echo -e "${GREEN}[+] Using gh-pages worktree at ${SITE_DIR}.${NC}"
+cp docs/PROJECT_REPORT_DOCUMENTATION.md docs/DECISION_LOG.md docs/PROGRESS.md "${TEMP_DIR}"/
+cd "${SITE_DIR}"
 
 echo -e "${YELLOW}Pulling latest UI changes from origin...${NC}"
-if ! git pull origin gh-pages; then
-    echo -e "${RED}[ERROR] Failed to pull from origin/gh-pages. You may have a merge conflict.${NC}"
-    echo -e "${RED}Temp artifacts are preserved in ${TEMP_DIR}. Resolve the conflict manually.${NC}"
+if ! git pull --ff-only origin gh-pages; then
+    echo -e "${RED}[ERROR] Failed to fast-forward gh-pages from origin. Resolve manually in ${SITE_DIR}.${NC}"
+    echo -e "${RED}Temp artifacts are preserved in ${TEMP_DIR}.${NC}"
     exit 1
 fi
 
-
 # ------------------------------------------------------------------------------
-# 6. Asset Porting to Root 'visualizations/'
+# 6. Port chart sources, data and docs; rebuild figdata.js, chart pages and table
 # ------------------------------------------------------------------------------
-echo -e "${YELLOW}[6/8] Porting HTML widgets into root 'visualizations/' on 'gh-pages'...${NC}"
-mkdir -p visualizations
-cp -r "${TEMP_DIR}"/* visualizations/
-echo -e "${GREEN}[+] HTML widgets copied into visualizations/.${NC}"
+echo -e "${YELLOW}[6/8] Rebuilding site data on 'gh-pages'...${NC}"
+mkdir -p visualizations/source tools assets docs
+cp "${TEMP_DIR}"/interactive_*.html visualizations/source/
+cp "${TEMP_DIR}"/benchmark-data.js assets/
+cp "${TEMP_DIR}"/build_site_data.py tools/
+cp "${TEMP_DIR}"/PROJECT_REPORT_DOCUMENTATION.md "${TEMP_DIR}"/DECISION_LOG.md "${TEMP_DIR}"/PROGRESS.md docs/
+python3 tools/build_site_data.py
 
 # ------------------------------------------------------------------------------
 # 7. Frontend Deployment on 'gh-pages'
 # ------------------------------------------------------------------------------
 echo -e "${YELLOW}[7/8] Staging and committing frontend assets on 'gh-pages'...${NC}"
-git add visualizations/
-[ -f "index.html" ] && git add index.html
+git add visualizations/ assets/ tools/build_site_data.py index.html docs/
 [ -f ".nojekyll" ] && git add .nojekyll
 
 if git diff-index --quiet HEAD --; then
@@ -148,19 +149,12 @@ git push origin gh-pages
 echo -e "${GREEN}[+] Successfully pushed to origin/gh-pages.${NC}"
 
 # ------------------------------------------------------------------------------
-# 8. Cleanup and Return to 'main'
+# 8. Cleanup
 # ------------------------------------------------------------------------------
-echo -e "${YELLOW}[8/8] Returning to 'main' branch and restoring workspace...${NC}"
-git checkout main || {
-    echo -e "${RED}[ERROR] Failed to switch back to 'main' branch.${NC}"
-    exit 1
-}
-
-# Restore data/processed/visualizations on main
-mkdir -p "${VIZ_SRC}"
-cp -r "${TEMP_DIR}"/* "${VIZ_SRC}"/
+echo -e "${YELLOW}[8/8] Cleaning up...${NC}"
+cd "${REPO_ROOT}"
 rm -rf "${TEMP_DIR}"
-echo -e "${GREEN}[+] Restored ${VIZ_SRC} on 'main' and cleaned up temporary staging.${NC}"
+echo -e "${GREEN}[+] Cleaned up temporary staging. 'main' was never switched out.${NC}"
 
 echo -e "\n${GREEN}================================================================${NC}"
 echo -e "${GREEN}      DEPLOYMENT & PROGRESS SYNC FINISHED SUCCESSFULLY!         ${NC}"

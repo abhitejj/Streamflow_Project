@@ -98,6 +98,8 @@ This document tracks all formal methodological, architectural, and data governan
 
 ---
 
+> **Note (2026-11-04):** in counts, this is 10 river systems: 9 independent gauges plus 1 three-gauge cascade (Warunji ⊂ Karad ⊂ Huvinhedigi) = 12 gauges.
+
 ### Gate AG-TS-07: Karad Anthropogenic Regime Shift & Empirical Drought Baseline (Option C1)
 * **Date:** November 3, 2026
 * **Status:** **APPROVED BY USER & IMPLEMENTED**

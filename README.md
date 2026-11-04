@@ -1,6 +1,6 @@
 # Streamflow & Drought Forecasting ML Project (1980–2025)
 
-An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning across 12 diverse catchments in India (10 independent river systems and 1 multi-scale nested cascade).
+An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning at 12 gauges in India on 10 river systems (9 independent gauges and one three-gauge nested cascade).
 
 ---
 
@@ -25,7 +25,7 @@ An empirical machine learning framework evaluating the predictive value of India
 | **Forecast Horizons ($H$)** | **1-week, 2-week, 4-week, 8-week** | Direct multi-step weekly mean discharge forecasts ($y_{t+H}$) |
 | **Model Tiers** | **M0: Persistence Baseline**<br>**M1: Autoregressive (Flow Only)**<br>**M2: Hydro-Meteorological (Flow + Multi-Source Weather)** | $Q_{t+H} = Q_t$ for $H \le 2\text{w}$; seasonal weekly climatology for $H \ge 4\text{w}$<br>Input: Past discharge lags ($Q_t, \dots, Q_{t-7}$) + recession slope + within-week flow std + calendar Fourier seasonality<br>Input: Flow lags + IMD Rainfall ($P_{1w}, P_{2w}, P_{1m}, P_{2m}, P_{3m}, API_{30d}, \text{dry days}$) + ERA5-Land/GLEAM Temp & PET ($T_{mean}, T_{max}, PET_{1w}, PET_{1m}, \text{Water Deficit}_{1w}, \text{Water Deficit}_{1m}$) |
 | **Drought Severity Levels** | **Mild Drought** ($Q \le Q_{80}$ or $SSI \le -0.8$)<br>**Moderate Drought** ($Q \le Q_{90}$ or $SSI \le -1.2$)<br>**Severe Drought** ($Q \le Q_{95}$ or $SSI \le -1.6$) | Empirically derived from historical baseline distribution |
-| **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE, Log-NSE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), Brier Score, Reliability Curves** |
+| **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), PR-AUC**, scored for severe drought ($Q_{95}$) only. Mild and moderate levels are defined but not reported; Log-NSE, Brier score and reliability curves are not computed. |
 
 ---
 
@@ -58,25 +58,31 @@ Meteorological inputs are harmonized across two continuous observation epochs to
 
 ---
 
-## 12-Station Catchment Portfolio: 10 Independent River Systems & 1 Multi-Scale Nested Cascade
+## 12-Station Catchment Portfolio: 10 River Systems (9 Independent Gauges + 1 Three-Gauge Cascade)
 
 The experimental portfolio encompasses **12 CWC/CAMELS-IND river gauging catchments** spanning three distinct macro-climatic and physiographic zones of peninsular and eastern India (Maharashtra, Odisha, Karnataka) across a 46-year continuous timeline (1980–2025: 2,394 weekly timesteps).
 
 ### Catchment Independence & Nested Hierarchy
 Rigorous hydrological and spatial audit establishes the exact topological structure of the portfolio:
-1. **10 Independent River Systems**: Ten catchments represent hydrologically decoupled, non-overlapping drainage networks across the Godavari (Wainganga, Wardha), Mahanadi (Tel), Baitarani, Vamsadhara, Brahmani, Cauvery, and Tungabhadra river basins.
-2. **1 Multi-Scale Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
+1. **9 Independent Gauges**: Nine catchments are hydrologically decoupled, non-overlapping drainage networks across the Godavari (Wainganga, Wardha), Mahanadi (Tel), Baitarani, Vamsadhara, Brahmani, Cauvery, and Tungabhadra river basins.
+2. **1 Three-Gauge Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
    - **Warunji (Gauge 4063)**: Headwater catchment on the Koyna River ($1,890.0\,\text{km}^2$) in the Western Ghats high-rainfall crest.
    - **Karad (Gauge 4021)**: Upper Krishna mainstem gauge ($5,462.0\,\text{km}^2$), directly receiving Koyna outflow. Warunji represents **34.6% of Karad's drainage area**.
    - **Huvinhedigi (Gauge 4017)**: Downstream regional trunk gauge on the peninsular Krishna in Karnataka ($55,150.0\,\text{km}^2$). Warunji comprises **3.4%** and Karad comprises **9.9%** of Huvinhedigi's upstream catchment.
    - *Audit Disclosure*: We explicitly retire the former 'Zero Sub-Basin Overlap' claim. Models evaluated on Warunji, Karad, and Huvinhedigi evaluate multi-scale hydrological propagation along a 55,000 km² drainage cascade rather than mutually independent catchments.
 
-### Karad Anthropogenic Regime Shift & Drought Thresholds
-A severe hydrological regime shift was uncovered at Karad (Gauge 4021):
-- **Pre-2010 Historical Regime**: Karad was historically a perennial river with median non-monsoon discharge of $100\text{--}350\,\text{m}^3/\text{s}$ and only 4.5% annual zero-flow days.
-- **Post-2010 Regime Shift**: Following operational changes in the upstream Koyna Hydroelectric Project (diverting water westward to the Arabian Sea) and CWC gauge non-monsoon seasonal shutdowns, streamflow drops to exactly $0.0000\,\text{m}^3/\text{s}$ for 5 to 7 consecutive months each year (December to June).
-- **Test Set Impact (2016–2025)**: During the 10-year test block, **361 out of 522 weeks (69.2%)** record zero discharge.
-- **Temporal Split Purity (Gate Option C1)**: To maintain strict separation between model fitting and evaluation, the severe drought threshold was calibrated strictly on the 1980–2010 training fold ($Q_{95} = 5.994\,\text{m}^3/\text{s}$). Because of the post-2010 shutdown, 69.2% of test weeks fall below this threshold. Consequently, the true empirical no-skill PR baseline is **0.692 for Karad** and **0.238 pooled across all 12 test basins** (not the theoretical 0.05).
+### Unmeasured Low Flows Recorded as Zero (Karad, Warunji, Yadgir, Huvinhedigi)
+After about 2010 CWC operated Karad, Warunji and Yadgir as monsoon-season stations; weeks that were not measured are logged as exactly $0.0000\,\text{m}^3/\text{s}$ (see `docs/AUDIT_LOG.md`, Issue C). Share of weeks recorded as zero:
+
+| Station | Train 1980–2010 | Val 2011–2015 | Test 2016–2025 | Test zeros falling in Jun–Oct |
+| :-- | --: | --: | --: | --: |
+| Karad | 2.1% | 76.6% | 69.0% | 21% |
+| Warunji | 4.0% | 77.0% | 70.0% | 22% |
+| Yadgir | 19.9% | 65.1% | 62.3% | 18% |
+| Huvinhedigi | 0.0% | 0.0% | 14.1% | 28% |
+
+These are missing measurements, not droughts (about a fifth fall inside the monsoon). At these four stations every week whose issue-time or target flow is a recorded zero is excluded from scoring for all models (`ZERO_AS_MISSING_STATIONS` in `scripts/audit_metrics.py`). This lowers the pooled severe-drought base rate from 0.238 to about 0.065, close to the nominal 0.05. Haralahalli's zeros (dry season only, also present in training) are kept. Drought thresholds are still fitted on the 1980–2010 training fold (Gate AG-TS-07); the models were not retrained, so their inputs still contain the recorded zeros.
+
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -84,22 +90,22 @@ A severe hydrological regime shift was uncovered at Karad (Gauge 4021):
 ├─────────────────┬────────────────────────┬──────────────────────┬─────────────┬───────────┬──────────┬────────────────┤
 │ State           │ Station Name           │ Sub-Basin / River    │ CAMELS ID   │ Area(km²) │ Aridity* │ Regime Type    │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Maharashtra** │ 1. Karad (Cascade 2)   │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.810  │ Deccan Plains  │
-│                 │ 2. Warunji (Cascade 1) │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   1.106  │ Ghats Headwater│
-│                 │ 3. Ashti               │ Wainganga Sub-basin  │ Gauge 3005  │  50,990.0 │   0.813  │ Sub-Humid East │
-│                 │ 4. Bamni (Holdout)     │ Wardha Sub-basin     │ Gauge 3008  │  46,020.0 │   0.592  │ Vidarbha Basin │
+│ **Maharashtra** │ 1. Karad (Cascade 2)   │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.977  │ Deccan Plains  │
+│                 │ 2. Warunji (Cascade 1) │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   0.747  │ Ghats Headwater│
+│                 │ 3. Ashti               │ Wainganga Sub-basin  │ Gauge 3005  │  50,990.0 │   0.852  │ Sub-Humid East │
+│                 │ 4. Bamni (Holdout)     │ Wardha Sub-basin     │ Gauge 3008  │  46,020.0 │   1.110  │ Vidarbha Basin │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Odisha**      │ 1. Anandpur            │ Baitarani Sub-basin  │ Gauge 7002  │   8,570.0 │   1.180  │ Humid Coastal  │
-│                 │ 2. Kashinagar          │ Vamsadhara Basin     │ Gauge 16007 │   7,820.0 │   1.044  │ Eastern Ghats  │
-│                 │ 3. Gomlai              │ Upper Brahmani Basin │ Gauge 7007  │  21,950.0 │   0.990  │ Highland Plain │
-│                 │ 4. Kantamal (Holdout)  │ Tel / Mahanadi Basin │ Gauge 8013  │  19,600.0 │   0.988  │ Inland Delta   │
+│ **Odisha**      │ 1. Anandpur            │ Baitarani Sub-basin  │ Gauge 7002  │   8,570.0 │   0.674  │ Humid Coastal  │
+│                 │ 2. Kashinagar          │ Vamsadhara Basin     │ Gauge 16007 │   7,820.0 │   0.770  │ Eastern Ghats  │
+│                 │ 3. Gomlai              │ Upper Brahmani Basin │ Gauge 7007  │  21,950.0 │   0.751  │ Highland Plain │
+│                 │ 4. Kantamal (Holdout)  │ Tel / Mahanadi Basin │ Gauge 8013  │  19,600.0 │   0.740  │ Inland Delta   │
 ├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Karnataka**   │ 1. Yadgir              │ Bhima Sub-basin      │ Gauge 4064  │  69,863.0 │   0.428  │ Semi-Arid Soil │
-│                 │ 2. Huvinhedigi(Casc. 3)│ Upper Krishna Main   │ Gauge 4017  │  55,150.0 │   0.506  │ Peninsular Mid │
-│                 │ 3. KUDIGE              │ Upper Cauvery Basin  │ Gauge 5010  │   1,934.0 │   1.388  │ High-Rain Head │
-│                 │ 4. Haralahalli(Holdout)│ Tungabhadra Basin    │ Gauge 4013  │  14,582.0 │   0.916  │ Central Valley │
+│ **Karnataka**   │ 1. Yadgir              │ Bhima Sub-basin      │ Gauge 4064  │  69,863.0 │   1.440  │ Semi-Arid Soil │
+│                 │ 2. Huvinhedigi(Casc. 3)│ Upper Krishna Main   │ Gauge 4017  │  55,150.0 │   1.367  │ Peninsular Mid │
+│                 │ 3. KUDIGE              │ Upper Cauvery Basin  │ Gauge 5010  │   1,934.0 │   0.725  │ High-Rain Head │
+│                 │ 4. Haralahalli(Holdout)│ Tungabhadra Basin    │ Gauge 4013  │  14,582.0 │   0.901  │ Central Valley │
 └─────────────────┴────────────────────────┴──────────────────────┴─────────────┴───────────┴──────────┴────────────────┘
-* Aridity is reported as the Budyko wetness index P_mean / PET_mean from CAMELS-IND.
+* Aridity is the Budyko aridity index PET/P over 1980–2020, computed from the weekly tensors; > 1.0 = water-limited.
 ```
 
 ### Data Continuity & Gap Handling Protocol
@@ -129,31 +135,27 @@ To uphold scientific integrity without fabricating streamflow observations:
 
 ---
 
-## Empirical Benchmark Results: Baseline M0 vs Flow-Only M1 vs Hydro-Met M2 (Audited)
+## Empirical Benchmark Results (Audited)
 
-Full out-of-sample evaluation on the 10-year Test block (2016–2025: 522 weeks) under the terminal $H$-week purge embargo (AG-TS-02) and sanitized raw CWC gauge limits (AG-TS-04). Detailed reports are pre-compiled in [`docs/PROJECT_REPORT_DOCUMENTATION.md`](file:///Users/abhitej/Downloads/ML%20Project/docs/PROJECT_REPORT_DOCUMENTATION.md).
+<!-- README_RESULTS:START -->
+### Audited results (test block 2016–2025, 12 stations)
 
-### 12-Basin Portfolio Medians across Forecast Horizons (Protocol 1: Temporal)
+Generated by `scripts/render_report_results.py`; full tables in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10. Recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi are treated as unmeasured weeks. Δ = paired median of per-station differences; *p* = Wilcoxon signed-rank.
 
-| Horizon | Continuous NSE (M0 / M1 / M2) | Continuous KGE (M0 / M1 / M2) | Severe Drought ($Q_{95}$) CSI (M0 / M1 / M2) | Severe Drought ($Q_{95}$) FAR (M1 / M2) | Statistical Significance & Key Finding |
-| :---: | :---: | :---: | :---: | :---: | :--- |
-| **1-Week** | 0.306 / **0.475** / 0.453 | **0.653** / 0.553 / 0.506 | **0.574** / 0.000 / 0.000 | 1.000 / **0.467** | Flow memory dominates continuous flow; M2 is **not** statistically significantly better than M1 ($W = 29.0, p = 0.470$; 6/12 basins favor M1). Persistence dominates short-term binary alerts. |
-| **2-Week** | -0.146 / 0.324 / **0.345** (+0.009) | **0.427** / 0.409 / 0.397 | **0.429** / 0.024 / 0.003 | 0.731 / **0.500** (-0.231) | Persistence collapses ($\text{NSE} = -0.146$); M1 and M2 restore positive predictive skill, but M2 gain over M1 is not statistically significant ($W = 23.0, p = 0.233$; 6/12 basins favor M2). |
-| **4-Week** | **0.349** / 0.308 / 0.267 | 0.386 / **0.399** / 0.380 | 0.000 / **0.031** / 0.020 | **0.556** / 0.610 | **Seasonal Climatology (M0 = +0.349) outperforms both M1 (+0.308) and M2 (+0.267)** in median NSE. M2 vs M1 difference is not statistically significant ($p = 0.233$). Climatology cannot issue drought alerts ($\text{CSI} = 0$). |
-| **8-Week** | **0.348** / 0.248 / 0.290 | **0.385** / 0.330 / 0.308 | 0.000 / **0.148** / 0.006 | 0.519 / **0.453** (-0.066) | **Seasonal Climatology (M0 = +0.348) outperforms M2 (+0.290) and M1 (+0.248)** as hydraulic memory collapses to 0.0%. M2 weather inputs provide slight directional gain over M1 (+0.019), but not statistically significant ($W = 28.0, p = 0.424$). |
+| Lead | NSE M0 / M1 / M2 | ΔNSE (M2−M1), *p* | KGE M0 / M1 / M2 | Q95 CSI M0 / M1 / M2 | Climatology or persistence beats M2 |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| **1w** | +0.284 / +0.458 / +0.423 | -0.018, 0.380 | +0.643 / +0.543 / +0.494 | 0.529 / 0.000 / 0.000 | 2 of 12 |
+| **2w** | -0.185 / +0.282 / +0.294 | +0.012, 0.233 | +0.408 / +0.355 / +0.354 | 0.379 / 0.026 / 0.000 | 0 of 12 |
+| **4w** | +0.364 / +0.273 / +0.262 | -0.017, 0.233 | +0.366 / +0.328 / +0.311 | 0.000 / 0.014 / 0.000 | 11 of 12 |
+| **8w** | +0.353 / +0.237 / +0.278 | +0.010, 0.622 | +0.367 / +0.327 / +0.348 | 0.000 / 0.111 / 0.000 | 8 of 12 |
 
-### Protocol 2: Cross-Basin Zero-Shot Spatial Transfer to Held-Out Sub-Basins
+**Key findings.**
+- Weather inputs (M2) add no significant skill over flow history on NSE at any lead; on KGE M2 is worse at 1 week (*p* = 0.007).
+- From 4 weeks the station's weekly climatology beats M2 at 11 and 8 of 12 stations (4 and 8 weeks).
+- No model gives reliable severe-drought warnings: M2's median Q95 CSI is 0.000 at every lead; persistence is best at 1–2 weeks.
+- Zero-shot HydroLSTM transfer beats the held-out station's own baseline only at 1–2 weeks.
 
-| State | Holdout Sub-Basin | Horizon | M0 Baseline NSE | M1 GBT Pool NSE | M1 Ridge Pool NSE | M2 PyTorch LSTM NSE | M2 LSTM KGE |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Odisha** | **Kantamal** | 1-week<br>2-week<br>4-week<br>8-week | +0.388<br>-0.030<br>+0.483<br>+0.481 | **+0.536**<br>+0.437<br>+0.459<br>+0.432 | +0.472<br>**+0.448**<br>+0.448<br>+0.425 | +0.514<br>+0.410<br>+0.446<br>+0.403 | +0.592<br>+0.477<br>+0.501<br>+0.388 |
-| **Maharashtra**| **Bamni** | 1-week<br>2-week<br>4-week<br>8-week | +0.250<br>-0.256<br>+0.234<br>+0.233 | +0.240<br>-0.466<br>-0.376<br>-0.260 | +0.279<br>-0.128<br>-0.148<br>-0.207 | **+0.339**<br>**+0.031**<br>+0.153<br>-1.266 | +0.386<br>+0.081<br>+0.186<br>-0.773 |
-| **Karnataka** | **Haralahalli** | 1-week<br>2-week<br>4-week<br>8-week | -0.149<br>-0.469<br>+0.210<br>+0.206 | +0.135<br>+0.034<br>+0.035<br>-0.102 | +0.154<br>**+0.072**<br>**+0.255**<br>+0.152 | **+0.258**<br>-0.192<br>-0.098<br>-0.421 | +0.383<br>+0.248<br>+0.296<br>+0.069 |
-
-*Key Spatial Transfer Findings:*
-1. **Ashti Outlier Sanitization Effect**: Enforcing the $50,000\,\text{m}^3/\text{s}$ limit under Gate AG-TS-04 completely reversed Maharashtra negative transfer at $H=1\text{w}, 2\text{w}, 4\text{w}$, transforming Bamni LSTM NSE from $-0.466$ to $+0.031$ ($H=2\text{w}$) and $-0.376$ to $+0.153$ ($H=4\text{w}$).
-2. **PyTorch HydroLSTM vs Ridge Resilience**: PyTorch HydroLSTM achieves positive zero-shot transfer across homogeneous sub-humid catchments (Odisha: $H=8\text{w}$ NSE $= +0.403$). In flashy/semi-arid peninsular catchments (Haralahalli), parsimonious linear Ridge regression generalizes more stably at extended lead times ($H=4\text{w}$ NSE $= +0.255$ for Ridge vs $-0.098$ for LSTM).
-3. **Seasonal Climatology as a Hard Transfer Baseline**: In large drainage systems with stable annual hydrographs (Kantamal), regional training-fold climatology achieves $\text{NSE} \approx +0.48$, establishing that multi-basin ML models must beat seasonal astronomical cycles before claiming true predictive generalization.
+<!-- README_RESULTS:END -->
 
 ---
 
@@ -195,7 +197,13 @@ ML Project/
     ├── imd_cwc_alignment_test.py         # Parametric meteorological alignment test suite
     ├── prepare_weekly_dataset.py         # 46-year weekly tensor extraction & calibration pipeline
     ├── train_forecast_models.py          # M0 vs M1 multi-horizon training & benchmarking engine
-    └── train_m2_models.py                # M2 Hydro-Meteorological models (HistGradientBoosting & PyTorch LSTM)
+    ├── train_m2_models.py                # M2 Hydro-Meteorological models (HistGradientBoosting & PyTorch LSTM)
+    ├── eval_config.py                    # Shared evaluation settings (stations whose recorded zeros are unmeasured)
+    ├── audit_metrics.py                  # Scores every saved model on one shared mask (source of all published numbers)
+    ├── export_benchmark_data.py          # Writes assets/benchmark-data.js for the website
+    ├── generate_interactive_plots.py     # Plotly chart sources from the scored predictions
+    ├── uncertainty_tests.py              # Wilcoxon tests and bootstrap confidence intervals
+    └── render_report_results.py          # Regenerates report sections 10-12 and the README results
 ```
 
 ---
@@ -247,6 +255,7 @@ python3 "scripts/prepare_weekly_dataset.py"
 ```
 
 ### 4. Benchmark M0 Baseline vs M1 Autoregressive Models
+> **Warning:** steps 4 and 5 retrain the models and overwrite `models/`. Retrained models, especially the LSTM, may not reproduce the published numbers exactly. To reproduce the published results from the committed models, skip to step 6.
 ```bash
 # Protocol 1: Station-Specific Temporal Benchmarking across 1, 2, 4, 8 weeks:
 python3 "scripts/train_forecast_models.py" --protocol 1 --model ridge
@@ -270,9 +279,19 @@ python3 "scripts/train_m2_models.py" --protocol 2 --seq-len 8 --hidden-dim 64 --
 python3 "scripts/train_m2_models.py" --protocol all --horizons 1 2 4 8
 ```
 
-### 6. Deploy Interactive Visualizations to GitHub Pages
-The deployment script enforces a strict one-way port of Plotly `.html` widgets from the backend to the orphaned `gh-pages` branch, simultaneously logging the update to `PROGRESS.md`.
+### 6. Score the Saved Models and Rebuild All Published Numbers
+These steps use only the committed weekly tensors and models, and reproduce every number on the website and in the report.
+```bash
+python3 scripts/audit_metrics.py              # score every model on the shared mask -> audited_metrics_recomputed.csv, test_predictions.csv
+python3 scripts/export_benchmark_data.py      # site data file assets/benchmark-data.js (medians, paired deltas, Wilcoxon tests)
+python3 scripts/generate_interactive_plots.py # Plotly chart sources in visualizations/source/ and feature-importance CSVs
+python3 scripts/uncertainty_tests.py          # Wilcoxon + bootstrap confidence intervals (Issue K)
+python3 scripts/render_report_results.py      # regenerate report sections 10-12 and the README results section
+```
+
+### 7. Deploy Interactive Visualizations to GitHub Pages
+`deploy.sh` runs step 6, commits `main`, then updates the `gh-pages` worktree (`site/`, created if missing): it copies the chart sources, site data and docs, rebuilds `figdata.js`, the chart pages and the benchmark table, then commits and pushes `gh-pages`.
 ```bash
 # Execute from the main branch; requires a progress update message
-./deploy.sh "Regenerated KGE component plots and updated index.html iframe layouts"
+./deploy.sh "Regenerated audited metrics, charts and report tables"
 ```

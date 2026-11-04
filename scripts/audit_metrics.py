@@ -60,6 +60,12 @@ PORTFOLIO = [
     {'state': 'Karnataka', 'station': 'Haralahalli', 'gauge_id': 4013, 'is_holdout': True, 'area_km2': 14582.0},
 ]
 
+# Recorded zeros at these stations are unmeasured weeks; see scripts/eval_config.py.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from eval_config import ZERO_AS_MISSING_STATIONS  # noqa: E402
+
+PREDICTIONS_CSV = RESULTS_DIR / "test_predictions.csv"
+
 M1_FEATURES = [
     'flow_lag_0', 'flow_lag_1', 'flow_lag_2', 'flow_lag_3', 'flow_lag_4', 'flow_lag_7',
     'flow_std_7d', 'flow_min_7d', 'flow_max_7d', 'flow_recession_slope', 'sin_week', 'cos_week'
@@ -271,7 +277,8 @@ def recompute_all_predictions():
     for M0 (persistence & climatology), M1 (GBT & Ridge), M2 (GBT), and Protocol 2 (LSTM).
     """
     records = []
-    
+    pred_frames = []
+
     for info in PORTFOLIO:
         station = info['station']
         clean_name = station.replace(' ', '_').replace('(', '').replace(')', '')
@@ -416,17 +423,24 @@ def recompute_all_predictions():
                         print(f"[-] Error evaluating LSTM for {station} H{H}: {e}")
 
             # Enforce Evaluation Mask Contract:
-            # Row evaluated iff target, flow_lag_0, M0, M1_GBT, M2_GBT are non-NaN
+            # Row evaluated iff target, flow_lag_0, M0, M1_GBT, M2_GBT are non-NaN, and,
+            # at ZERO_AS_MISSING_STATIONS, neither the issue-time flow nor the target flow
+            # is a recorded zero (unmeasured week). Every model is scored on the same rows.
             y_test = df_test[target_col].values
             flow_0 = df_test['flow_lag_0'].values
             
             eval_mask = (
                 (~np.isnan(y_test)) &
                 (~np.isnan(flow_0)) &
-                (~np.isnan(preds_m0_bugged)) &
+                (~np.isnan(preds_m0_fixed)) &
                 (~np.isnan(preds_m1_gbt)) &
                 (~np.isnan(preds_m2_gbt))
             )
+            zero_recorded = (y_test == 0.0) | (flow_0 == 0.0)
+            gap_masked = eval_mask & zero_recorded if station in ZERO_AS_MISSING_STATIONS else np.zeros_like(eval_mask)
+            eval_mask = eval_mask & ~gap_masked
+            if is_holdout:
+                eval_mask = eval_mask & ~np.isnan(preds_p2_lstm)
             
             y_eval = y_test[eval_mask]
             
@@ -437,8 +451,8 @@ def recompute_all_predictions():
             m1_rdg_a = compute_continuous_metrics(y_eval, preds_m1_ridge[eval_mask])
             m2_gbt_a = compute_continuous_metrics(y_eval, preds_m2_gbt[eval_mask])
             
-            # Track B Severe Drought (Q95)
-            m0_b = compute_drought_metrics(y_eval, preds_m0_bugged[eval_mask], q95)
+            # Track B Severe Drought (Q95). M0 = persistence (H<=2) or fixed climatology (H>=4).
+            m0_b = compute_drought_metrics(y_eval, preds_m0_fixed[eval_mask], q95)
             m1_b = compute_drought_metrics(y_eval, preds_m1_gbt[eval_mask], q95)
             m2_b = compute_drought_metrics(y_eval, preds_m2_gbt[eval_mask], q95)
             
@@ -447,17 +461,28 @@ def recompute_all_predictions():
             p2_gbt_a  = compute_continuous_metrics(y_eval, preds_p2_gbt[eval_mask]) if is_holdout else {}
             p2_rdg_a  = compute_continuous_metrics(y_eval, preds_p2_ridge[eval_mask]) if is_holdout else {}
             
-            records.append({
+            pred_frames.append(pd.DataFrame({
+                'station': station, 'horizon': f"{H}w", 'issue_date': df_test.index.strftime('%Y-%m-%d'),
+                'target_date': (df_test.index + pd.Timedelta(weeks=H)).strftime('%Y-%m-%d'),
+                'y_obs': y_test, 'scored': eval_mask, 'zero_as_missing': gap_masked,
+                'm0': preds_m0_fixed, 'm1_gbt': preds_m1_gbt, 'm1_ridge': preds_m1_ridge, 'm2_gbt': preds_m2_gbt,
+                'p2_lstm': preds_p2_lstm, 'p2_gbt': preds_p2_gbt, 'p2_ridge': preds_p2_ridge,
+                'q95': q95, 'q90': q90,
+            }))
+            
+            rec = {
                 'station': station,
                 'state': state,
                 'gauge_id': gauge_id,
                 'horizon': f"{H}w",
                 'horizon_num': H,
                 'is_holdout': is_holdout,
+                'zero_as_missing_station': station in ZERO_AS_MISSING_STATIONS,
                 'n_eval': len(y_eval),
+                'n_masked_zero_weeks': int(gap_masked.sum()),
                 'q95_threshold': q95,
                 'test_zero_flow_weeks': int(np.sum(y_eval == 0.0)),
-                'test_zero_flow_pct': float(np.mean(y_eval == 0.0) * 100),
+                'test_zero_flow_pct': float(np.mean(y_eval == 0.0) * 100) if len(y_eval) else np.nan,
                 'test_q95_event_count': m0_b['ObsEvents'],
                 'test_q95_base_rate': m0_b['BaseRate'],
                 # Track A
@@ -471,31 +496,27 @@ def recompute_all_predictions():
                 'm2_nse': m2_gbt_a['NSE'],
                 'm2_kge': m2_gbt_a['KGE'],
                 'delta_nse_recomputed': m2_gbt_a['NSE'] - m1_gbt_a['NSE'],
-                # Track B Q95
-                'm0_far': m0_b['FAR'],
-                'm0_pod': m0_b['POD'],
-                'm0_csi': m0_b['CSI'],
-                'm1_hits': m1_b['Hits'],
-                'm1_fa': m1_b['FalseAlarms'],
-                'm1_miss': m1_b['Misses'],
-                'm1_far': m1_b['FAR'],
-                'm1_pod': m1_b['POD'],
-                'm1_csi': m1_b['CSI'],
-                'm1_pr_auc': m1_b['PR_AUC'],
-                'm2_hits': m2_b['Hits'],
-                'm2_fa': m2_b['FalseAlarms'],
-                'm2_miss': m2_b['Misses'],
-                'm2_far': m2_b['FAR'],
-                'm2_pod': m2_b['POD'],
-                'm2_csi': m2_b['CSI'],
-                'm2_pr_auc': m2_b['PR_AUC'],
+                'delta_kge_recomputed': m2_gbt_a['KGE'] - m1_gbt_a['KGE'],
+            }
+            for tag, mt in (('m0', m0_fix_a), ('m1', m1_gbt_a), ('m2', m2_gbt_a)):
+                for comp in ('r', 'alpha', 'beta', 'RMSE', 'MAE'):
+                    rec[f'{tag}_{comp.lower()}'] = mt[comp]
+            for tag, mb in (('m0', m0_b), ('m1', m1_b), ('m2', m2_b)):
+                rec.update({
+                    f'{tag}_hits': mb['Hits'], f'{tag}_fa': mb['FalseAlarms'], f'{tag}_miss': mb['Misses'],
+                    f'{tag}_far': mb['FAR'], f'{tag}_pod': mb['POD'], f'{tag}_csi': mb['CSI'], f'{tag}_pr_auc': mb['PR_AUC'],
+                })
+            rec.update({
                 # Protocol 2 Zero-Shot
                 'p2_lstm_nse': p2_lstm_a.get('NSE', np.nan),
                 'p2_lstm_kge': p2_lstm_a.get('KGE', np.nan),
                 'p2_gbt_nse': p2_gbt_a.get('NSE', np.nan),
                 'p2_ridge_nse': p2_rdg_a.get('NSE', np.nan),
             })
+            records.append(rec)
             
+    pd.concat(pred_frames, ignore_index=True).to_csv(PREDICTIONS_CSV, index=False, float_format='%.4f')
+    print(f"[+] Saved per-week test predictions to: {PREDICTIONS_CSV}")
     return pd.DataFrame(records)
 
 # ==============================================================================

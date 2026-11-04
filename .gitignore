@@ -53,3 +53,7 @@ __pycache__/
 
 # Local-only agent definitions
 .agents/
+
+# gh-pages worktree (website) checked out locally
+site/
+CLAUDE.md
