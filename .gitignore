@@ -50,3 +50,6 @@ __pycache__/
 *.log
 .DS_Store
 **/.DS_Store
+
+# Local-only agent definitions
+.agents/
