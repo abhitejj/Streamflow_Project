@@ -64,3 +64,4 @@ Karad / Warunji / Yadgir keep only 75–180 scored weeks each, with 0–1 Q95 ev
 - Committed and pushed by the user's instruction, following the CLAUDE.md git rules (user is sole author, no Claude attribution).
 
 - Kantamal recheck (2026-11-04): NSE values verified from three sources; both models are trained on the same Odisha pool with no leakage. GBT − LSTM NSE = +0.022/+0.027/+0.013/+0.028; block-bootstrap 95% CI excludes zero only at 8 weeks; the LSTM has the higher KGE at 1 and 4 weeks. Wording changed from "beats" to "matches".
+- Drought-skill recheck (2026-11-04): "no model has skill at 4 and 8 weeks" was too strong. M1 at 8w: POD 0.28, pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067; M2 pooled CSI 0.03–0.11. Wording changed to "weak skill" on the site (hero, Finding 2, Recommendation 1) and in report §11.3/§12 (pooled values now computed in render_report_results.py).

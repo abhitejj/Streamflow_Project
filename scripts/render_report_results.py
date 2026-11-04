@@ -79,6 +79,11 @@ def summary(d, pr):
             ap0=average_precision_score(y, -sc.m0), ap1=average_precision_score(y, -sc.m1_gbt),
             ap2=average_precision_score(y, -sc.m2_gbt),
         )
+        for tag, col in (("0", "m0"), ("1", "m1_gbt"), ("2", "m2_gbt")):
+            alert = sc[col] <= sc.q95
+            hit, fa, miss = int((alert & (y == 1)).sum()), int((alert & (y == 0)).sum()), int((~alert & (y == 1)).sum())
+            rows[h][f"pcsi{tag}"] = hit / (hit + fa + miss)
+            rows[h][f"ppod{tag}"] = hit / (hit + miss)
     return rows
 
 
@@ -187,12 +192,16 @@ def report_md(d, pr, fi, fg) -> str:
       f"which makes it a noisier version of climatology (median r {s8['r2']:.3f} vs {s8['r0']:.3f}).")
     a("")
     a("### 11.3 Drought warning reliability and severity")
-    a(f"No model gives reliable severe-drought warnings. M2's median Q95 CSI is {s1['c2'].split()[0]} at every lead, "
-      f"and its pooled PR-AUC is below M1's at every lead (e.g. {s2['ap2']:.3f} vs {s2['ap1']:.3f} at 2 weeks). "
+    a(f"No model gives reliable severe-drought warnings. M2's median Q95 CSI is {s1['c2'].split()[0]} at every lead "
+      f"(pooled over all stations {min(S[h]['pcsi2'] for h in HS):.2f}–{max(S[h]['pcsi2'] for h in HS):.2f}), "
+      f"and its pooled PR-AUC is at or below M1's at every lead (e.g. {s2['ap2']:.3f} vs {s2['ap1']:.3f} at 2 weeks). "
       f"Persistence is the best warning at 1 and 2 weeks (median CSI {s1['c0']}, {s2['c0']}; medians are over the "
-      "stations where CSI is defined, so the three models' station sets differ slightly). At 4 and 8 weeks nothing has "
-      "skill, because a weekly climatology almost never falls below the 5th-percentile flow and the trained models "
-      "rarely do either. Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. "
+      "stations where CSI is defined, so the three models' station sets differ slightly; pooled CSI "
+      f"{s1['pcsi0']:.2f} and {s2['pcsi0']:.2f}). At 4 and 8 weeks skill is weak but not zero. Climatology issues no "
+      "alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, "
+      f"detects {100 * s8['ppod1']:.0f}% of severe-drought weeks at 8 weeks (pooled CSI {s8['pcsi1']:.2f}, PR-AUC "
+      f"{s8['ap1']:.2f} against a base rate of {s8['base']:.3f}), and M2 does worse (pooled CSI {s8['pcsi2']:.2f}). "
+      "Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. "
       "Mild and moderate thresholds were not re-scored in this audit.")
     a("")
     a("### 11.4 Zero-shot spatial transfer")
@@ -216,8 +225,10 @@ def report_md(d, pr, fi, fg) -> str:
     a("1. **Baselines are hard to beat.** Persistence wins at 1 week for drought warnings, and climatology wins "
       "at 4–8 weeks for continuous flow. Sub-seasonal models should always be reported against both.")
     a("2. **Past weather adds no significant skill** over flow history in this setup, at any lead.")
-    a("3. **No model detects severe droughts beyond 2 weeks.** That would need information not used here "
-      "(reservoir operations, groundwater, seasonal rainfall forecasts).")
+    a(f"3. **Severe-drought skill beyond 2 weeks is weak.** The best model (M1) catches {100 * s8['ppod1']:.0f}% of "
+      f"severe-drought weeks at 8 weeks (pooled CSI {s8['pcsi1']:.2f}), and the weather inputs make it worse, not better. "
+      "Useful longer-lead warning would need information not used here (reservoir operations, groundwater, "
+      "seasonal rainfall forecasts).")
     a("4. **Zero-shot transfer works only at 1–2 weeks** relative to the held-out station's own baseline.")
     a("")
     a("**Limitations.**")
