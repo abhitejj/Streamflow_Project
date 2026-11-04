@@ -241,7 +241,8 @@
       '<div><dt>Sub-basin</dt><dd>' + s.basin + '</dd></div>' +
       '<div><dt>CAMELS ID</dt><dd>Gauge ' + s.camels_id + '</dd></div>' +
       '<div><dt>Area</dt><dd>' + s.area_km2.toLocaleString('en-IN') + ' km²</dd></div>' +
-      '<div><dt>Aridity</dt><dd>' + s.aridity + '</dd></div>' +
+      '<div><dt>Aridity (PET/P)</dt><dd>' + s.aridity + '</dd></div>' +
+      '<div><dt>Scored test weeks</dt><dd>' + m.n_eval + (m.n_masked_zero_weeks ? ' (' + m.n_masked_zero_weeks + ' unmeasured zero weeks excluded)' : '') + '</dd></div>' +
       '<div style="grid-column:1/-1"><dt>Regime · role</dt><dd>' + s.regime + ' · ' + s.role + '</dd></div>';
     $('#kpi-m0').textContent = fmt(m.m0_nse);
     $('#kpi-m1').textContent = fmt(m.m1_nse);
@@ -253,6 +254,8 @@
     $('#far-m1').textContent = m.far_m1 || '—';
     $('#far-m2').textContent = m.far_m2 || '—';
     $('#csi-m2').textContent = m.csi_m2 || '—';
+    if ($('#csi-m0')) $('#csi-m0').textContent = m.csi_m0 || '—';
+    if ($('#q95-events')) $('#q95-events').textContent = m.q95_events + ' of ' + m.n_eval + ' weeks';
     var mini = $('#station-mini');
     if (mini && window.Plotly && window.Charts) Charts.stationMini(mini, s);
   }

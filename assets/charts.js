@@ -137,7 +137,7 @@
         xaxis: axis({ range: range, type: 'date', showspikes: true, spikemode: 'across', spikethickness: 1, spikecolor: '#b9b3a6', spikedash: 'solid' }),
         yaxis: axis({ title: { text: 'Discharge (m³/s)' }, rangemode: 'tozero' }),
         shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: d.q95, y1: d.q95, line: { color: C.dry, width: 1.5, dash: 'dot' } }],
-        annotations: [{ xref: 'paper', x: 0.01, xanchor: 'left', y: d.q95, yanchor: 'bottom', text: 'Q95 severe-drought threshold · ' + d.q95.toFixed(1) + ' m³/s', showarrow: false, font: { size: 11, color: C.dryText } }]
+        annotations: [{ xref: 'paper', x: 0.01, xanchor: 'left', y: d.q95, yanchor: 'bottom', text: 'Q95 severe-drought threshold · ' + d.q95.toFixed(2) + ' m³/s', showarrow: false, font: { size: 11, color: C.dryText } }]
       }));
     }
     var groups = [];
@@ -223,7 +223,7 @@
   /* ---------- Zero-shot transfer: dot plot per held-out basin ---------- */
   function transfer(el) {
     var F = window.FIGDATA.transfer;
-    var labelM = { m0: 'M0 Climatology', m1: 'M1 Flow-only GBT', m2: 'M2 HydroLSTM' };
+    var labelM = { m0: 'M0 Baseline (own history)', m1: 'M1 Flow-only GBT (pooled)', m2: 'M2 HydroLSTM (pooled)' };
     function render(s) {
       var d = F[s.lead];
       var rows = d.basins.map(function (b, i) { return b + ' · ' + d.states[i]; });
@@ -247,7 +247,7 @@
         yaxis: axis({ showgrid: false, showline: false, autorange: 'reversed', tickfont: { family: FONT, size: 12.5, color: C.ink } })
       }));
     }
-    render(controls(el, [{ key: 'lead', label: 'Lead', value: '4w', options: [{ label: '4 weeks', value: '4w' }, { label: '8 weeks', value: '8w' }] }], render));
+    render(controls(el, [{ key: 'lead', label: 'Lead', value: '4w', options: [{ label: '1 week', value: '1w' }, { label: '2 weeks', value: '2w' }, { label: '4 weeks', value: '4w' }, { label: '8 weeks', value: '8w' }] }], render));
   }
 
   /* ---------- Catchment portfolio: aridity vs area ---------- */
@@ -272,7 +272,7 @@
     });
     draw(el, tr, baseLayout({
       margin: { l: 60, r: 70, t: 12, b: 48 },
-      xaxis: axis({ title: { text: 'Aridity index (P/PET) — wetter to the right' }, range: [0.42, 1.22] }),
+      xaxis: axis({ title: { text: 'Aridity index PET/P (1980–2020) — drier to the right' }, range: [0.6, 1.55] }),
       yaxis: axis({ title: { text: 'Catchment area (km², log scale)' }, type: 'log', range: [3.15, 4.95] })
     }));
   }

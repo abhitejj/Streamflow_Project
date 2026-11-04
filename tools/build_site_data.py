@@ -10,6 +10,9 @@ unmodified in ``visualizations/source/``. This script
 3. writes one clean standalone page per chart to ``visualizations/*.html``
    (same file names as before, so existing links keep working).
 
+4. regenerates the benchmark table in ``index.html`` from ``assets/benchmark-data.js``
+   (between the BENCH_TABLE markers), so the table always matches the data file.
+
 When the pipeline regenerates its widgets, drop the new files into
 ``visualizations/source/`` and rerun:  python3 tools/build_site_data.py
 """
@@ -127,7 +130,7 @@ def transfer() -> dict:
     f = load_fig("interactive_spatial_transfer_grouped_bars")
     out: dict = {}
     for t in f["data"]:
-        h = "4w" if t.get("xaxis") in (None, "x") else "8w"
+        h = {"x": "1w", "x2": "2w", "x3": "4w", "x4": "8w"}[t.get("xaxis") or "x"]
         d = out.setdefault(h, {})
         parts = [[p for p in re.split(r"<[^>]+>", x) if p.strip()] for x in t["x"]]
         d["basins"] = [p[0] for p in parts]
@@ -137,16 +140,69 @@ def transfer() -> dict:
     return out
 
 
+BENCH_JS = ROOT / "assets" / "benchmark-data.js"
+INDEX = ROOT / "index.html"
+TABLE_START, TABLE_END = "<!-- BENCH_TABLE:START -->", "<!-- BENCH_TABLE:END -->"
+
+
+def _medians() -> dict:
+    s = BENCH_JS.read_text()
+    return json.loads(re.search(r"window\.MEDIANS\s*=\s*(\{.*?\});", s, re.S).group(1))
+
+
+def _cls(v: str) -> str:
+    try:
+        x = float(str(v).split()[0])
+    except ValueError:
+        return "num"
+    return "num pos" if x > 0 else ("num neg" if x < 0 else "num")
+
+
+def bench_table_rows() -> str:
+    """Benchmark matrix body, generated from window.MEDIANS so the table cannot drift from the data.
+    Every delta is paired: the median over stations of the per-station difference."""
+    M = _medians()
+    label = {"1w": "1-Week Ahead", "2w": "2-Weeks Ahead", "4w": "4-Weeks Ahead", "8w": "8-Weeks Ahead"}
+    out = []
+    for h in ("1w", "2w", "4w", "8w"):
+        m = M[h]
+        P = lambda k: f" (p{m[k]})" if m[k].startswith("<") else f" (p={m[k]})"
+        rows = [
+            ("Continuous NSE", m["m0_nse"], m["m1_nse"], m["m2_nse"],
+             (m["delta_nse"], P("p_nse_m2_m1")), (m["delta_nse_m2_m0"], P("p_nse_m2_m0"))),
+            ("Continuous KGE", m["m0_kge"], m["m1_kge"], m["m2_kge"],
+             (m["delta_kge"], P("p_kge_m2_m1")), (m["delta_kge_m2_m0"], "")),
+            ("Severe Drought (Q<sub>95</sub>) FAR", m["far_m0"], m["far_m1"], m["far_m2"],
+             (m["far_reduction"].replace(" pp", " pp").replace("(n=", "(paired n="), ""), ("—", "")),
+            ("Severe Drought (Q<sub>95</sub>) CSI", m["csi_m0"], m["csi_m1"], m["csi_m2"],
+             (m["csi_delta"].replace("(n=", "(paired n="), ""), (m["csi_delta_m2_m0"].replace("(n=", "(paired n="), "")),
+        ]
+        for i, (name, a, b, c, d1, d0) in enumerate(rows):
+            head = f'<tr class="group-start"><td class="hz" rowspan="4">{label[h]}</td>' if i == 0 else "<tr>"
+            # Lower FAR is better, so colour FAR deltas inversely.
+            c1 = _cls(d1[0]) if "FAR" not in name else {"num pos": "num neg", "num neg": "num pos"}.get(_cls(d1[0]), "num")
+            out.append(f'            {head}<td>{name}</td><td class="num">{a}</td><td class="num">{b}</td>'
+                       f'<td class="num m2c">{c}</td><td class="{c1}">{d1[0]}{d1[1]}</td><td class="{_cls(d0[0])}">{d0[0]}{d0[1]}</td></tr>')
+    return "\n".join(out)
+
+
+def write_bench_table() -> None:
+    s = INDEX.read_text()
+    i, j = s.index(TABLE_START) + len(TABLE_START), s.index(TABLE_END)
+    INDEX.write_text(s[:i] + "\n" + bench_table_rows() + "\n            " + s[j:])
+    print("wrote benchmark table in index.html from assets/benchmark-data.js")
+
+
 PAGES = {
-    "interactive_hydrographs_dashboard": ("Observed vs forecast hydrographs", "hydro", "Karad and Kantamal, 1-week and 4-week lead, test block 2016–2025."),
+    "interactive_hydrographs_dashboard": ("Observed vs forecast hydrographs", "hydro", "Karad and Kantamal, 1-week and 4-week lead, test block 2016–2025. Gaps are unmeasured weeks."),
     "interactive_hydrograph_karad_h1w": ("Hydrograph · Karad · 1-week lead", "hydro:karad:1w", "Out-of-sample test block 2016–2025."),
     "interactive_hydrograph_karad_h4w": ("Hydrograph · Karad · 4-week lead", "hydro:karad:4w", "Out-of-sample test block 2016–2025."),
     "interactive_hydrograph_kantamal_h1w": ("Hydrograph · Kantamal · 1-week lead", "hydro:kantamal:1w", "Out-of-sample test block 2016–2025."),
     "interactive_hydrograph_kantamal_h4w": ("Hydrograph · Kantamal · 4-week lead", "hydro:kantamal:4w", "Out-of-sample test block 2016–2025."),
     "interactive_pr_curves_severe_drought": ("Severe drought (Q95) precision–recall", "pr", "Hover a curve to read the discharge cutoff and false alarm ratio."),
     "interactive_kge_component_decomposition": ("KGE component decomposition", "kge", "Correlation r, variability ratio α and bias ratio β; 1.0 is ideal."),
-    "interactive_feature_importance_shift": ("Feature importance · 1-week vs 8-week lead", "fi", "Relative importance (%) of the 12 features shown, Karad test fold."),
-    "interactive_spatial_transfer_grouped_bars": ("Zero-shot transfer to held-out basins", "transfer", "NSE on basins excluded from training."),
+    "interactive_feature_importance_shift": ("Feature importance · 1-week vs 8-week lead", "fi", "Share of M2 permutation importance (%), mean over the 8 stations with complete low-flow records."),
+    "interactive_spatial_transfer_grouped_bars": ("Zero-shot transfer to held-out basins", "transfer", "NSE on basins excluded from training, at every lead time."),
 }
 
 TEMPLATE = """<!DOCTYPE html>
@@ -196,6 +252,7 @@ def main() -> None:
     for name, (title, chart, sub) in PAGES.items():
         (VIZ / f"{name}.html").write_text(TEMPLATE.format(title=title, chart=chart, sub=sub))
     print(f"wrote {len(PAGES)} standalone chart pages to visualizations/")
+    write_bench_table()
 
 
 if __name__ == "__main__":
