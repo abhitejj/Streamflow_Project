@@ -13,7 +13,7 @@
 
 Predicting river discharge ($Q$) and providing actionable early warnings for hydrological droughts across peninsular India is vital for reservoir operation, water allocation, and disaster preparedness. Conventional hydrological modeling relies heavily on either purely physical conceptual models (which require dense, poorly available parameterizations) or short-term statistical persistence. 
 
-This project establishes an empirical, leakage-free machine learning benchmark spanning **46 continuous years (1980–2025: 16,802 daily timesteps $\to$ 2,394 weekly timesteps)** across **12 hydrologically decoupled sub-basins** in three climatically diverse states: **Maharashtra (Deccan Plateau / Western Ghats)**, **Odisha (Sub-Humid Eastern Ghats / Deltaic Plains)**, and **Karnataka (Semi-Arid Peninsular Basin / Upper Cauvery)**.
+This project establishes an empirical, leakage-free machine learning benchmark spanning **46 continuous years (1980–2025: 16,802 daily timesteps $\to$ 2,394 weekly timesteps)** across **12 gauges on 10 river systems (9 independent gauges + 1 three-gauge nested cascade)** in three climatically diverse states: **Maharashtra (Deccan Plateau / Western Ghats)**, **Odisha (Sub-Humid Eastern Ghats / Deltaic Plains)**, and **Karnataka (Semi-Arid Peninsular Basin / Upper Cauvery)**.
 
 ### Core Scientific Questions
 1. **Forecast Horizon Decay**: At what forecast horizon ($H \in \{1, 2, 4, 8\}$ weeks ahead) does antecedent river discharge memory ($Q_t, \dots, Q_{t-7}$) lose predictive skill, and at what lead time do hydro-meteorological forcings (precipitation memory, evaporative demand, and climatic water deficit $P - PET$) become the dominant predictor of streamflow?
@@ -48,7 +48,7 @@ After about 2010 CWC operated Karad, Warunji and Yadgir as monsoon-season statio
 
 These are missing measurements, not droughts (about a fifth fall inside the monsoon). At these four stations every week whose issue-time or target flow is a recorded zero is excluded from scoring for all models (`ZERO_AS_MISSING_STATIONS` in `scripts/audit_metrics.py`). This lowers the pooled severe-drought base rate from 0.238 to about 0.065, close to the nominal 0.05. Haralahalli's zeros (dry season only, also present in training) are kept. Drought thresholds are still fitted on the 1980–2010 training fold (Gate AG-TS-07); the models were not retrained, so their inputs still contain the recorded zeros.
 
-**Data Lineage & Overlap Audit (2011–2020)**: To verify that pipeline stitching (`prepare_weekly_dataset.py`) did not overwrite valid discharge, we evaluated all 8,740 station-days where CWC recorded zero flow over the 2011–2020 overlap across the four affected stations. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded exact 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS had positive flow on only 5 days (0.06%). This proves that post-2010 zero inflation is an upstream reporting artifact inherited directly from CWC by CAMELS-IND, rather than a pipeline merge defect.
+**Data Lineage & Overlap Audit (2011–2020)**: To verify that pipeline stitching (`prepare_weekly_dataset.py`) did not overwrite valid discharge, we evaluated all 8,740 station-days where CWC recorded zero flow over the 2011–2020 overlap across the four affected stations (audited via `scripts/audit_overlap_lineage.py`, artifact: `data/processed/validation_reports/overlap_lineage_audit.csv`, reproducible when `data/raw/camels_ind` is present). On 82.8% of those days (7,236 days), published CAMELS-IND already recorded exact 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS had positive flow on only 5 days (0.06% of all CWC-zero days). This proves that post-2010 zero inflation is an upstream reporting artifact inherited directly from CWC by CAMELS-IND, rather than a pipeline merge defect.
 
 
 ```
@@ -76,9 +76,10 @@ These are missing measurements, not droughts (about a fifth fall inside the mons
 ```
 
 ### Outlier Imputation & Data Quality Protocol
-To prevent anomalous clerical errors from distorting loss gradients (e.g. Ashti's unclipped peak of $1,829,351\,\text{m}^3/\text{s}$ on `05-10-2025`):
+To prevent anomalous clerical errors in the test block from severely distorting evaluation metrics (e.g., Ashti's unclipped clerical peak of $1,829,351\,\text{m}^3/\text{s}$ on `05-10-2025` and Kudige's clerical spike on `27-08-2020`, both occurring in the 2016–2025 test period rather than training fold 1980–2010):
 - A physical clipping ceiling of $> 50,000\,\text{m}^3/\text{s}$ is enforced.
-- Values exceeding this threshold are masked to `NaN` and immediately undergo **temporal linear interpolation with a limit of $\le 2$ days** before weekly aggregation. This prevents monsoon storm peaks from being replaced with dry-season medians.
+- Values exceeding this threshold are masked to `NaN` and immediately undergo **temporal linear interpolation with a limit of $\le 2$ days** before weekly aggregation. This prevents unclipped test targets from inflating evaluation squared errors while preserving physical storm peaks.
+- *Recommendation for Future Pipelines*: Because a universal $50,000\,\text{m}^3/\text{s}$ ceiling is physically implausible for smaller headwater catchments (such as Kudige, $1,934\,\text{km}^2$), future operational pipelines should enforce a per-station physical plausibility screen (e.g., flagging or masking observations exceeding $> 20\times$ the station's historical training maximum flow).
 
 ---
 
@@ -102,7 +103,7 @@ Data ingestion spans two observation eras, harmonized to ensure continuous physi
 
 ## 4. Boundary Calibration Audit (2015–2020 Overlap)
 
-To prevent step-change artifacts at the train/test interface (December 31, 2020 / January 1, 2021), a formal boundary calibration was executed over the **2,192 overlapping daily timesteps (2015–2020)**.
+To prevent step-change artifacts at the 2020/2021 data-source seam (CAMELS-IND → CWC/IMD/ERA5-Land), which falls inside the 2016–2025 test block (December 31, 2020 / January 1, 2021), a formal boundary calibration was executed over the **2,192 overlapping daily timesteps (2015–2020)**.
 
 ### Calibration Formulations
 1. **Precipitation Multiplicative Scaling**:
@@ -131,9 +132,9 @@ To prevent step-change artifacts at the train/test interface (December 31, 2020 
 | **Haralahalli**| `4013` | 14,582 | `1.6131` | 0.553 | **0.676** | $-0.52$ | 0.935 | **0.960** | `0.7445` | 0.568 | **0.568** | `Weekly PASS` |
 
 ### Critical Physical Insights Disclosed in Report
-1. **Scale Integration Effect**: In macro-catchments (e.g., Yadgir, $69,863\,\text{km}^2$), localized storms at the gauge outlet have weak daily correlation with upper-catchment rainfall ($r = 0.349\text{--}0.571$). Aggregation to weekly operational timesteps (`W-MON`) eliminates high-frequency spatial mismatch, elevating portfolio mean precipitation correlation to **$\bar{r}_{P, \text{weekly}} = 0.808$**.
+1. **Scale Integration & Extraction Lineage Effect**: In macro-catchments, localized rainfall at the gauge outlet has lower daily correlation with upper-catchment precipitation (daily $r = 0.571$ at Yadgir, $69,863\,\text{km}^2$; daily $r = 0.349$ at Huvinhedigi, $55,150\,\text{km}^2$). The real cause is spatial extraction lineage: 2021–2025 IMD rainfall is extracted at the single nearest grid point to the station coordinates, whereas 1980–2020 CAMELS-IND precipitation represents the basin-wide catchment mean. Aggregation to weekly operational timesteps (`W-MON`) smooths out high-frequency spatial mismatch, elevating weekly correlation to $r = 0.808$ at Yadgir and $r = 0.549$ at Huvinhedigi (portfolio mean $\bar{r}_{P, \text{weekly}} = 0.808$).
 2. **Evaporative Demand Formulation Disparity**: The correlation ceiling in semi-arid Karnataka ($r_{\text{PET}} \approx 0.53$) reflects genuine physical physics: GLEAM is radiation-constrained Priestley-Taylor, whereas ERA5-Land Penman-Monteith incorporates aerodynamic drying (vapor pressure deficit and wind speed). Multiplicative scaling ($\alpha_{\text{PET}} \approx 0.734$) aligns the volumetric evaporative demand seamlessly across the boundary.
-3. **Temperature Bias Structure**: While the arithmetic signed mean bias across all 12 stations is $-0.035\,^\circ\text{C}$ ($r = 0.947$), this reflects cancellation between positive biases in high-elevation Western Ghats headwaters (e.g., Kudige $+2.35\,^\circ\text{C}$, Warunji $+1.45\,^\circ\text{C}$) and negative biases in inland plains (e.g., Ashti $-1.47\,^\circ\text{C}$, Huvinhedigi $-1.17\,^\circ\text{C}$). The true portfolio **Mean Absolute Bias (MAB) is $0.84\,^\circ\text{C}$** ($\text{RMSE} = 1.15\,^\circ\text{C}$), which is fully corrected via station-specific additive bias calibration.
+3. **Temperature Bias Structure**: While the arithmetic signed mean bias across all 12 stations is $-0.035\,^\circ\text{C}$ ($r = 0.947$), this reflects cancellation between positive biases in high-elevation Western Ghats headwaters (e.g., Kudige $+2.35\,^\circ\text{C}$, Warunji $+1.45\,^\circ\text{C}$) and negative biases in inland plains (e.g., Ashti $-1.47\,^\circ\text{C}$, Huvinhedigi $-1.17\,^\circ\text{C}$). The true portfolio **Mean Absolute Bias (MAB) is $0.92\,^\circ\text{C}$** ($\text{RMSE} = 1.15\,^\circ\text{C}$), which is fully corrected via station-specific additive bias calibration.
 
 ---
 
@@ -235,7 +236,8 @@ Model Tiers:
 ├────────────────────────┼─────────────────────────────────────────────────────────────────────────────┤
 │ M2: Hydro-Meteorology  │ Protocol 1: HistGradientBoostingRegressor (26 hydro-met features)           │
 │                        │ Protocol 2: Deep Recurrent PyTorch HydroLSTM (L=8 lookback, 64 hidden units)│
-│                        │ Features: Flow lags + IMD Rainfall memory + ERA5 Temp/PET + Water Deficit   │
+│                        │ Features: Flow lags + IMD Rainfall + Water Deficit (P−PET) +                │
+│                        │ Temp/PET: CAMELS-IND/GLEAM 1980–2020, ERA5-Land (bias-corrected) 2021–2025 │
 │                        │ Status: Fully trained, evaluated, and audited across 12 catchments.         │
 └────────────────────────┴─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -250,7 +252,7 @@ Every strategic, architectural, and data alteration was paused at a formal Human
 | :--- | :--- | :---: | :--- |
 | **AG-01** | Macro-Basin to Sub-Basin Relaxation | **APPROVED** | Relaxed macro-basin constraint to distinct sub-basin networks to guarantee 46-year continuous data without synthetic multi-month gap imputation. |
 | **AG-02** | Contiguous Gap Policy | **APPROVED** | Relaxed 30-day discard rule: retain stations with $<10\%$ missingness; linearly interpolate gaps $\le 35$ days; leave gaps $> 35$ days as unobserved `NaN`. |
-| **AG-03** | Dropping Artificial IMD-Only Constraint | **APPROVED** | Ingested ERA5-Land reanalysis for 2021–2025 non-rainfall forcings ($T$, $\text{PET}$) to eliminate the 2020/2021 train/test structural break. |
+| **AG-03** | Dropping Artificial IMD-Only Constraint | **APPROVED** | Ingested ERA5-Land reanalysis for 2021–2025 non-rainfall forcings ($T$, $\text{PET}$) to mitigate the 2020/2021 data-source seam (CAMELS-IND → CWC/IMD/ERA5-Land), which falls inside the 2016–2025 test block. |
 | **AG-TS-01**| API Weight Vector Chronological Reversal | **APPROVED** | Corrected inverted array weighting in `calc_daily_api` using `weights[::-1]`, assigning weight 1.0 to day $t$ and decaying backwards. |
 | **AG-TS-02**| Terminal $H$-Week Purge Embargo | **APPROVED** | Purged terminal $H$ weeks from Training (2010) and Validation (2015) sets to eliminate target leakage into subsequent folds. |
 | **AG-TS-04**| Upper Physical Discharge Clipping & Interpolation | **APPROVED** | Enforced $50,000\,\text{m}^3/\text{s}$ ceiling and $\le 2$ days linear interpolation to eliminate CWC clerical typos (e.g. Ashti $1.8\times 10^6\,\text{m}^3/\text{s}$). |
@@ -289,6 +291,10 @@ Every strategic, architectural, and data alteration was paused at a formal Human
 | **2w** | -0.185 / +0.282 / +0.294 | +0.012, 0.233 | +0.408 / +0.355 / +0.354 | +0.000, 0.850 | 0.408 / 0.547 / 0.571 | 0 of 12 |
 | **4w** | +0.364 / +0.273 / +0.262 | -0.017, 0.233 | +0.366 / +0.328 / +0.311 | -0.012, 0.424 | 0.616 / 0.541 / 0.548 | 11 of 12 |
 | **8w** | +0.353 / +0.237 / +0.278 | +0.010, 0.622 | +0.367 / +0.327 / +0.348 | -0.003, 0.850 | 0.602 / 0.534 / 0.546 | 8 of 12 |
+
+#### 10.1.1 Pre-Seam Sub-Period (2016–2020: Catchment-Averaged Forcings)
+
+Under true catchment-averaged forcings (CAMELS-IND 2016–2020), M2 gains +0.04 to +0.08 NSE over M1 across all leads (1w: +0.445 vs +0.502, gain +0.057; 2w: +0.263 vs +0.346, gain +0.083; 4w: +0.243 vs +0.285, gain +0.042; 8w: +0.189 vs +0.258, gain +0.069). Post-2020 nearest-grid point forcings degrade this advantage over the full 2016–2025 block.
 
 ### 10.2 Station-by-Station NSE (Protocol 1)
 
@@ -381,7 +387,9 @@ Persistence has a median NSE of +0.284 at 1 week and -0.185 at 2 weeks, so it is
 M2 is not significantly better than M1 on NSE at any lead (*p* = 0.380, 0.233, 0.233, 0.622; M2 better at 5, 6, 4 and 8 of 12 stations). On KGE it is significantly worse at 1 week (*p* = 0.007). The importance analysis (§10.5) explains why. At 1 week M2 leans on recent rainfall rather than current flow, which carries much of the same information. At 8 weeks it relies almost entirely on the calendar, which makes it a noisier version of climatology (median r 0.546 vs 0.602).
 
 ### 11.3 Drought warning reliability and severity
-No model gives reliable severe-drought warnings. M2's median Q95 CSI is 0.000 at every lead (pooled over all stations 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead (e.g. 0.175 vs 0.193 at 2 weeks). Persistence is the best warning at 1 and 2 weeks (median CSI 0.529 (n=9), 0.379 (n=8); medians are over the stations where CSI is defined, so the three models' station sets differ slightly; pooled CSI 0.48 and 0.37). At 4 and 8 weeks skill is weak but not zero. Climatology issues no alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067), and M2 does worse (pooled CSI 0.11). Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels (mild $Q_{80}$ median CSI 0.615 and 0.494; moderate $Q_{90}$ CSI 0.585 and 0.422). At 4 and 8 weeks, climatology drops into the lowest 20th percentile during regular seasonal dry spells, issuing alerts that yield mild-drought CSI of 0.159 (4w) and 0.165 (8w), beating both ML models at 4 weeks. Crucially, across all four horizons and all three severity levels, M2 (hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that ERA5-Land surface weather features provide no early warning benefit across mild, moderate, or severe drought conditions.
+No model gives reliable severe-drought warnings. M2's median Q95 CSI is 0.000 at every lead (pooled over all stations 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead (e.g. 0.175 vs 0.193 at 2 weeks). Persistence is the best warning at 1 and 2 weeks (median CSI 0.529 (n=9), 0.379 (n=8); medians are over the stations where CSI is defined, so the three models' station sets differ slightly; pooled CSI 0.48 and 0.37). At 4 and 8 weeks skill is weak but not zero. Climatology issues no alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067), and M2 does worse (pooled CSI 0.11). Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction.
+
+Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels (mild $Q_{80}$ median CSI 0.615 (n=11) and 0.494 (n=11); moderate $Q_{90}$ CSI 0.585 (n=9) and 0.422 (n=10)). At 4 and 8 weeks, climatology drops into the lowest 20th percentile during regular seasonal dry spells for mild drought ($Q_{80}$), issuing alerts that yield mild-drought CSI of 0.159 (n=11) (4w) and 0.165 (n=11) (8w), beating both ML models at 4 weeks. Across all four horizons and all three severity levels, pooled PR-AUC shows M0 is highest in 11 of 12 lead × severity tests (the exception is Q95 at 8w, where M1 has 0.217 vs 0.194). Crucially, across all four horizons and all three severity levels, M2 (hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that meteorological inputs (IMD rainfall, temperature, PET, P−PET) provide no early warning benefit across mild, moderate, or severe drought conditions.
 
 ### 11.4 Zero-shot spatial transfer
 The pooled HydroLSTM beats each held-out station's own baseline at 1 and 2 weeks (Kantamal +0.514 vs +0.388 at 1 week). At 4 and 8 weeks climatology wins at all three basins (Kantamal +0.483 / +0.481 vs +0.446 / +0.403; Bamni +0.234 vs +0.153 at 4 weeks), and at Bamni the LSTM fails badly at 8 weeks (NSE -1.266). At Kantamal the pooled three-feature flow-only GBT matches the LSTM: NSE differs by only 0.01–0.03 (GBT higher at every lead), within sampling noise at 1–4 weeks on a 52-week block bootstrap, and the LSTM has the higher KGE at 1 and 4 weeks. The weather inputs and the recurrent model therefore add no clear gain there. At Haralahalli the 2-week advantage is between two negative scores (-0.191 vs -0.469). A positive zero-shot NSE should therefore not be read as skill. The held-out basins are gauged, so the baseline uses their own history; an ungauged basin would have no such baseline.
@@ -389,7 +397,7 @@ The pooled HydroLSTM beats each held-out station's own baseline at 1 and 2 weeks
 ## 12. Conclusions and Limitations
 
 1. **Baselines are hard to beat.** Persistence wins at 1 week for drought warnings, and climatology wins at 4–8 weeks for continuous flow. Sub-seasonal models should always be reported against both.
-2. **Past weather adds no significant skill** over flow history in this setup, at any lead.
+2. **Past weather adds no significant skill** over flow history over the full 2016–2025 test block at any lead, though a modest gain (+0.04 to +0.08 NSE) is present during the 2016–2020 sub-period when catchment-averaged forcings are available.
 3. **Severe-drought skill beyond 2 weeks is weak.** The best model (M1) catches 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19), and the weather inputs make it worse, not better. Useful longer-lead warning would need information not used here (reservoir operations, groundwater, seasonal rainfall forecasts).
 4. **Zero-shot transfer works only at 1–2 weeks** relative to the held-out station's own baseline.
 
