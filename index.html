@@ -238,7 +238,7 @@
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
         <div class="big">1–2 wk<small>LSTM beats baseline only here</small></div>
-        <p>On the three held-out basins the pooled <strong>HydroLSTM</strong> beats each station's own persistence at 1 and 2 weeks (Kantamal <strong>+0.514</strong> vs +0.388 at 1 week), but at 4 and 8 weeks <strong>climatology wins at all three</strong> (Kantamal +0.483 / +0.481 vs +0.446 / +0.403). At Kantamal the simpler pooled flow-only GBT beats the LSTM at every lead.</p>
+        <p>On the three held-out basins the pooled <strong>HydroLSTM</strong> beats each station's own persistence at 1 and 2 weeks (Kantamal <strong>+0.514</strong> vs +0.388 at 1 week), but at 4 and 8 weeks <strong>climatology wins at all three</strong> (Kantamal +0.483 / +0.481 vs +0.446 / +0.403). At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead).</p>
       </article>
     </div>
   </div>
@@ -484,7 +484,7 @@
           <a class="fs-link" href="visualizations/interactive_spatial_transfer_grouped_bars.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="transfer" role="img" aria-label="Cross-basin zero-shot spatial transfer results"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>Zero-Shot Insight:</b> A positive NSE is not the same as skill: the test is whether the transferred model beats the station's own baseline. The HydroLSTM does so at 1 and 2 weeks at all three basins. At 4 and 8 weeks climatology is better everywhere (Kantamal +0.483 / +0.481 vs +0.446 / +0.403; Bamni +0.234 vs +0.153 at 4 weeks; Haralahalli +0.210 vs −0.096), and at Kantamal the pooled flow-only GBT beats the LSTM at every lead. At Haralahalli the 2-week "win" is between two negative scores (−0.191 vs −0.469), and at Bamni the LSTM fails badly at 8 weeks (NSE −1.266 vs +0.233 for climatology).<span class="artifact">Artifact: interactive_spatial_transfer_grouped_bars.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>Zero-Shot Insight:</b> A positive NSE is not the same as skill: the test is whether the transferred model beats the station's own baseline. The HydroLSTM does so at 1 and 2 weeks at all three basins. At 4 and 8 weeks climatology is better everywhere (Kantamal +0.483 / +0.481 vs +0.446 / +0.403; Bamni +0.234 vs +0.153 at 4 weeks; Haralahalli +0.210 vs −0.096). At Kantamal the pooled flow-only GBT matches the LSTM: NSE differs by only 0.01–0.03, within sampling noise at 1–4 weeks (52-week block bootstrap), with the GBT slightly better at 8 weeks. At Haralahalli the 2-week "win" is between two negative scores (−0.191 vs −0.469), and at Bamni the LSTM fails badly at 8 weeks (NSE −1.266 vs +0.233 for climatology).<span class="artifact">Artifact: interactive_spatial_transfer_grouped_bars.html</span></div></footer>
       </div>
     </div>
 
@@ -617,7 +617,7 @@
         <span class="q">Finding 3: Zero-Shot Transfer</span>
         <h3>Zero-Shot Transfer Beats the Baseline Only at 1–2 Weeks</h3>
         <div class="num-big" style="color:var(--ochre-ink)">1–2 wk</div>
-        <p>Pooling stations in specific runoff (<i>q</i>, mm/week) lets one model forecast a basin it was not trained on. The HydroLSTM beats each held-out station's own persistence at 1 and 2 weeks, but at 4 and 8 weeks climatology from the station's own record is better at all three basins, and at Kantamal the pooled flow-only GBT beats the LSTM at every lead. At 8 weeks the LSTM fails badly at Bamni (NSE −1.266). The held-out basins are gauged, so this baseline uses their own history; a truly ungauged basin would not have one.</p>
+        <p>Pooling stations in specific runoff (<i>q</i>, mm/week) lets one model forecast a basin it was not trained on. The HydroLSTM beats each held-out station's own persistence at 1 and 2 weeks, but at 4 and 8 weeks climatology from the station's own record is better at all three basins. At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead), so the weather inputs and the LSTM add no clear gain there. At 8 weeks the LSTM fails badly at Bamni (NSE −1.266). The held-out basins are gauged, so this baseline uses their own history; a truly ungauged basin would not have one.</p>
       </article>
     </div>
 
