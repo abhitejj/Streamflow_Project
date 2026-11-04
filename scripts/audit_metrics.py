@@ -304,19 +304,21 @@ def recompute_all_predictions():
             q90 = float(np.percentile(y_tr, 10.0))
             q95 = float(np.percentile(y_tr, 5.0))
             
+            # Climatology & Persistence (All Horizons)
+            train_clim_fixed = df_train.groupby(df_train.index.isocalendar().week)['flow_target_m3s'].mean()
+            target_weeks = (df_test.index + pd.Timedelta(weeks=H)).isocalendar().week
+            preds_clim = target_weeks.map(train_clim_fixed).fillna(float(df_train['flow_target_m3s'].mean())).values
+            preds_pers = df_test['flow_lag_0'].values.copy()
+
             # --- M0 Baseline ---
             if H in [1, 2]:
-                preds_m0_bugged = df_test['flow_lag_0'].values.copy()
-                preds_m0_fixed = df_test['flow_lag_0'].values.copy()
+                preds_m0_bugged = preds_pers.copy()
+                preds_m0_fixed = preds_pers.copy()
             else:
                 # Bugged climatology (double shift: issue week grouping + target week lookup)
                 train_clim_bugged = df_train.groupby(df_train.index.isocalendar().week)[target_col].mean()
-                target_weeks = (df_test.index + pd.Timedelta(weeks=H)).isocalendar().week
                 preds_m0_bugged = target_weeks.map(train_clim_bugged).fillna(float(df_train[target_col].mean())).values
-                
-                # Fixed climatology (horizon-agnostic weekly climatology from historical flow)
-                train_clim_fixed = df_train.groupby(df_train.index.isocalendar().week)['flow_target_m3s'].mean()
-                preds_m0_fixed = target_weeks.map(train_clim_fixed).fillna(float(df_train['flow_target_m3s'].mean())).values
+                preds_m0_fixed = preds_clim.copy()
 
             # --- M1 GBT ---
             m1_gbt_path = MODELS_DIR / "protocol1" / f"m1_gbt_gauge_{gauge_id:05d}_{clean_name}_H{H}.joblib"
@@ -465,7 +467,8 @@ def recompute_all_predictions():
                 'station': station, 'horizon': f"{H}w", 'issue_date': df_test.index.strftime('%Y-%m-%d'),
                 'target_date': (df_test.index + pd.Timedelta(weeks=H)).strftime('%Y-%m-%d'),
                 'y_obs': y_test, 'scored': eval_mask, 'zero_as_missing': gap_masked,
-                'm0': preds_m0_fixed, 'm1_gbt': preds_m1_gbt, 'm1_ridge': preds_m1_ridge, 'm2_gbt': preds_m2_gbt,
+                'm0': preds_m0_fixed, 'clim': preds_clim, 'pers': preds_pers,
+                'm1_gbt': preds_m1_gbt, 'm1_ridge': preds_m1_ridge, 'm2_gbt': preds_m2_gbt,
                 'p2_lstm': preds_p2_lstm, 'p2_gbt': preds_p2_gbt, 'p2_ridge': preds_p2_ridge,
                 'q95': q95, 'q90': q90, 'q80': q80,
             }))
@@ -506,7 +509,20 @@ def recompute_all_predictions():
                     f'{tag}_hits': mb['Hits'], f'{tag}_fa': mb['FalseAlarms'], f'{tag}_miss': mb['Misses'],
                     f'{tag}_far': mb['FAR'], f'{tag}_pod': mb['POD'], f'{tag}_csi': mb['CSI'], f'{tag}_pr_auc': mb['PR_AUC'],
                 })
+            
+            m0clim_a = compute_continuous_metrics(y_eval, preds_clim[eval_mask])
+            m0pers_a = compute_continuous_metrics(y_eval, preds_pers[eval_mask])
+            mask_2016_20 = eval_mask & (df_test.index >= '2016-01-01') & (df_test.index <= '2020-12-31')
+            m1_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m1_gbt[mask_2016_20])
+            m2_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m2_gbt[mask_2016_20])
+            
             rec.update({
+                'm0clim_nse': m0clim_a['NSE'],
+                'm0clim_kge': m0clim_a['KGE'],
+                'm0pers_nse': m0pers_a['NSE'],
+                'm0pers_kge': m0pers_a['KGE'],
+                'm1_nse_2016_20': m1_16_20['NSE'],
+                'm2_nse_2016_20': m2_16_20['NSE'],
                 # Protocol 2 Zero-Shot
                 'p2_lstm_nse': p2_lstm_a.get('NSE', np.nan),
                 'p2_lstm_kge': p2_lstm_a.get('KGE', np.nan),

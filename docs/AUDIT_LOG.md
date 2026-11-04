@@ -100,12 +100,14 @@ A total of **133 discrepancies** were uncovered between the published website (`
 ### Issue E: M1 Anomaly at Ashti & Kudige
 - **Investigation:**
   - In early model runs, Ashti had M1 NSE = 0.024 and Kudige had M1 NSE = 0.074 (worse than persistence), despite having $Q_t$ as an input.
-  - This was traced to extreme unphysical outlier spikes in raw CWC data (e.g. Ashti discharge typos exceeding 100,000 m³/s) that corrupted feature scaling and GBT split histograms in early runs.
+  - This was traced to extreme unphysical clerical outlier spikes in raw CWC test data: Ashti had an unclipped clerical peak of $1,829,351\,\text{m}^3/\text{s}$ on `05-10-2025`, and Kudige had a severe clerical spike on `27-08-2020`.
+  - Because both anomalous spikes occurred strictly after 2016 (inside the 2016–2025 test evaluation fold), they did not affect the 1980–2010 training fold or model weights. Instead, unclipped test targets resulted in massive squared residual penalties $(\hat{y} - y)^2$ during test scoring, artificially driving test NSE to near zero.
 - **Audited Resolution:**
-  - In our clean recomputed run with the physical 50,000 m³/s clipping and linear interpolation patch:
+  - In our clean recomputed run with the physical 50,000 m³/s clipping ceiling and $\le 2$ days linear interpolation patch applied:
     - Ashti M1 GBT NSE: **+0.501** (1w), **+0.354** (2w), **+0.282** (4w), **+0.279** (8w).
     - Kudige M1 GBT NSE: **+0.524** (1w), **+0.407** (2w), **+0.357** (4w), **+0.359** (8w).
   - Both stations now behave consistently with normal hydrological autoregression.
+  - *Recommendation for Future Pipelines:* A uniform $50,000\,\text{m}^3/\text{s}$ ceiling is physically implausible for small headwater catchments (e.g. Kudige, $1,934\,\text{km}^2$). Future operational pipelines should apply a station-specific plausibility screen (such as $> 20\times$ the historical training maximum discharge).
 
 ---
 
@@ -161,7 +163,7 @@ A total of **133 discrepancies** were uncovered between the published website (`
    - *Fix:* Correct text to "Priestley-Taylor Potential Evaporation (GLEAM v3.8a)".
 2. **Temperature Bias Claim:**
    - *Audit Finding:* The published claim of "-0.035 °C bias" was an arithmetic mean of signed biases across 12 stations, where negative biases in coastal stations canceled positive biases in inland stations.
-   - *Fix:* Report **Mean Absolute Bias (MAB) = 0.84 °C** and **RMSE = 1.15 °C**.
+   - *Fix:* Report **Mean Absolute Bias (MAB) = 0.92 °C** and **RMSE = 1.15 °C**.
 3. **Aridity Definition:**
    - *Audit Finding:* In CAMELS-IND, the aridity/wetness index is defined as $\text{Mean Annual Precipitation} / \text{Mean Annual PET}$ ($\bar{P}/\overline{\text{PET}}$).
    - *Fix:* Document values strictly from CAMELS-IND static attributes with the explicit formula cited.
@@ -323,7 +325,7 @@ Full task log: `docs/REVIEW_FIX_PROGRESS.md`.
 
 1. **Reproducibility.** With the new mask switched off, the committed code and saved models reproduce the previously published `audited_metrics_recomputed.csv` exactly (max abs diff 1.8e-15 over 34 columns).
 2. **Unmeasured zero-flow weeks (extends Issue C).** The problem is not limited to Karad. Test-period zero-flow share is 69% at Karad, 70% at Warunji, 62% at Yadgir and 14% at Huvinhedigi, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about 20% of those zeros fall in June–October. At these four stations, weeks whose issue-time or target flow is a recorded zero are now excluded from scoring for all models. This lowers the pooled Q95 base rate from 0.238 to 0.065. Haralahalli (dry-season-only zeros, also present in training) is unchanged. Models were not retrained.
-   - *Lineage & Overlap Audit (2011–2020):* Evaluated all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap across the 4 stations. Published CAMELS-IND already contained exact 0.000 m³/s on 82.8% (7,236 days) and unmeasured NaNs on 17.2% (1,499 days), with positive flow on only 5 days (0.06% at Karad). This rules out a pipeline merge/overwriting defect in `prepare_weekly_dataset.py` and establishes that dry-season zero inflation is an upstream institutional reporting artifact inherited directly from CWC by CAMELS-IND.
+   - *Lineage & Overlap Audit (2011–2020):* Evaluated all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap across the 4 stations. Published CAMELS-IND already contained exact 0.000 m³/s on 82.8% (7,236 days) and unmeasured NaNs on 17.2% (1,499 days), with positive flow on only 5 days (0.06% of all CWC-zero days; audited via `scripts/audit_overlap_lineage.py`, artifact: `data/processed/validation_reports/overlap_lineage_audit.csv`, reproducible when `data/raw/camels_ind` is present). This rules out a pipeline merge/overwriting defect in `prepare_weekly_dataset.py` and establishes that dry-season zero inflation is an upstream institutional reporting artifact inherited directly from CWC by CAMELS-IND.
 3. **M0 drought metrics** now use the fixed climatology at 4–8 weeks (previously the double-shifted version).
 4. **Single source for charts.** `test_predictions.csv` feeds every chart. Hydrographs are plotted at the target week. PR curves and KGE components are recomputed on the scored weeks.
 5. **Feature importance.** The old chart used Karad only, where most test weeks are unmeasured zeros. It is now pooled over the 8 clean stations, with grouped (block) permutation importance: at 1 week, precipitation +84% MSE and flow +22%; at 8 weeks, calendar +86% and flow +1%. Low Q(t) importance is genuine model behaviour, not dilution among correlated lags.

@@ -9,3 +9,4 @@ This log tracks project milestones, pipeline updates, and deployments to `main` 
 - **2026-11-04 15:38:35 IST**: Audited zero-shot HydroLSTM units and paired drought FAR metrics
 - **2026-11-05 00:38:36 IST**: Add 2011-2020 CAMELS-CWC overlap lineage audit note
 - **2026-11-05 01:14:38 IST**: Add drought severity sensitivity audit (Q80, Q90, Q95) and update documentation
+- **2026-11-05 02:15:00 IST**: Finalize merged handoff: pipeline hardening (dynamic metrics lookups, all-lead climatology/persistence medians), report documentation corrections (lineage audit citation, 10 river systems, test-period outlier clarification, 2016-2020 CAMELS forcings sub-period analysis), and frontend deployment sync.

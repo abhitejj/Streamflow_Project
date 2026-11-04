@@ -66,6 +66,7 @@ def summary(d, pr):
         y = (sc.y_obs <= sc.q95).astype(int)
         rows[h] = dict(
             m0=s.m0_nse_fixed.median(), m1=s.m1_nse.median(), m2=s.m2_nse.median(),
+            m1_16_20=s.m1_nse_2016_20.median(), m2_16_20=s.m2_nse_2016_20.median(),
             k0=s.m0_kge_fixed.median(), k1=s.m1_kge.median(), k2=s.m2_kge.median(),
             r0=s.m0_r.median(), r1=s.m1_r.median(), r2=s.m2_r.median(),
             a2=s.m2_alpha.median(), b2=s.m2_beta.median(),
@@ -117,6 +118,15 @@ def report_md(d, pr, fi, fg, sens=None) -> str:
         a(f"| **{h}** | {f3(s['m0'])} / {f3(s['m1'])} / {f3(s['m2'])} | {f3(s['dn'])}, {fp(s['pn'])} | "
           f"{f3(s['k0'])} / {f3(s['k1'])} / {f3(s['k2'])} | {f3(s['dk'])}, {fp(s['pk'])} | "
           f"{s['r0']:.3f} / {s['r1']:.3f} / {s['r2']:.3f} | {s['climwin']} of 12 |")
+    a("")
+    a("#### 10.1.1 Pre-Seam Sub-Period (2016–2020: Catchment-Averaged Forcings)")
+    a("")
+    a("Under true catchment-averaged forcings (CAMELS-IND 2016–2020), M2 gains +0.04 to +0.08 NSE over M1 across all leads "
+      f"(1w: {f3(S['1w']['m1_16_20'])} vs {f3(S['1w']['m2_16_20'])}, gain {f3(S['1w']['m2_16_20'] - S['1w']['m1_16_20'])}; "
+      f"2w: {f3(S['2w']['m1_16_20'])} vs {f3(S['2w']['m2_16_20'])}, gain {f3(S['2w']['m2_16_20'] - S['2w']['m1_16_20'])}; "
+      f"4w: {f3(S['4w']['m1_16_20'])} vs {f3(S['4w']['m2_16_20'])}, gain {f3(S['4w']['m2_16_20'] - S['4w']['m1_16_20'])}; "
+      f"8w: {f3(S['8w']['m1_16_20'])} vs {f3(S['8w']['m2_16_20'])}, gain {f3(S['8w']['m2_16_20'] - S['8w']['m1_16_20'])}). "
+      "Post-2020 nearest-grid point forcings degrade this advantage over the full 2016–2025 block.")
     a("")
     a("### 10.2 Station-by-Station NSE (Protocol 1)")
     a("")
@@ -231,14 +241,33 @@ def report_md(d, pr, fi, fg, sens=None) -> str:
       "alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, "
       f"detects {100 * s8['ppod1']:.0f}% of severe-drought weeks at 8 weeks (pooled CSI {s8['pcsi1']:.2f}, PR-AUC "
       f"{s8['ap1']:.2f} against a base rate of {s8['base']:.3f}), and M2 does worse (pooled CSI {s8['pcsi2']:.2f}). "
-      "Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. "
-      "Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought "
-      "confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels "
-      "(mild $Q_{80}$ median CSI 0.615 and 0.494; moderate $Q_{90}$ CSI 0.585 and 0.422). At 4 and 8 weeks, climatology drops "
-      "into the lowest 20th percentile during regular seasonal dry spells, issuing alerts that yield mild-drought CSI of 0.159 (4w) "
-      "and 0.165 (8w), beating both ML models at 4 weeks. Crucially, across all four horizons and all three severity levels, M2 "
-      "(hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that ERA5-Land surface "
-      "weather features provide no early warning benefit across mild, moderate, or severe drought conditions.")
+      "Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction.")
+    a("")
+    if sens is not None:
+        def csi_val(h, sev, m):
+            sub = sens[(sens.scope == 'station') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == m)]
+            return med_n(sub.CSI)
+
+        csi_m0_q80_1w = csi_val('1w', 'Q80', 'M0')
+        csi_m0_q80_2w = csi_val('2w', 'Q80', 'M0')
+        csi_m0_q90_1w = csi_val('1w', 'Q90', 'M0')
+        csi_m0_q90_2w = csi_val('2w', 'Q90', 'M0')
+        csi_m0_q80_4w = csi_val('4w', 'Q80', 'M0')
+        csi_m0_q80_8w = csi_val('8w', 'Q80', 'M0')
+
+        p_m1_8w_q95 = sens[(sens.scope == 'portfolio_pooled') & (sens.horizon == '8w') & (sens.severity == 'Q95') & (sens.model == 'M1')].iloc[0].PR_AUC_AP
+        p_m0_8w_q95 = sens[(sens.scope == 'portfolio_pooled') & (sens.horizon == '8w') & (sens.severity == 'Q95') & (sens.model == 'M0')].iloc[0].PR_AUC_AP
+
+        a("Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought "
+          "confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels "
+          f"(mild $Q_{{80}}$ median CSI {csi_m0_q80_1w} and {csi_m0_q80_2w}; moderate $Q_{{90}}$ CSI {csi_m0_q90_1w} and {csi_m0_q90_2w}). "
+          "At 4 and 8 weeks, climatology drops into the lowest 20th percentile during regular seasonal dry spells for mild drought ($Q_{80}$), "
+          f"issuing alerts that yield mild-drought CSI of {csi_m0_q80_4w} (4w) and {csi_m0_q80_8w} (8w), beating both ML models at 4 weeks. "
+          "Across all four horizons and all three severity levels, pooled PR-AUC shows M0 is highest in 11 of 12 lead × severity tests "
+          f"(the exception is Q95 at 8w, where M1 has {p_m1_8w_q95:.3f} vs {p_m0_8w_q95:.3f}). "
+          "Crucially, across all four horizons and all three severity levels, M2 "
+          "(hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that "
+          "meteorological inputs (IMD rainfall, temperature, PET, P−PET) provide no early warning benefit across mild, moderate, or severe drought conditions.")
     a("")
     a("### 11.4 Zero-shot spatial transfer")
     k = lambda st, h, c: hold.loc[(st, h), c]
@@ -260,7 +289,8 @@ def report_md(d, pr, fi, fg, sens=None) -> str:
     a("")
     a("1. **Baselines are hard to beat.** Persistence wins at 1 week for drought warnings, and climatology wins "
       "at 4–8 weeks for continuous flow. Sub-seasonal models should always be reported against both.")
-    a("2. **Past weather adds no significant skill** over flow history in this setup, at any lead.")
+    a("2. **Past weather adds no significant skill** over flow history over the full 2016–2025 test block at any lead, "
+      "though a modest gain (+0.04 to +0.08 NSE) is present during the 2016–2020 sub-period when catchment-averaged forcings are available.")
     a(f"3. **Severe-drought skill beyond 2 weeks is weak.** The best model (M1) catches {100 * s8['ppod1']:.0f}% of "
       f"severe-drought weeks at 8 weeks (pooled CSI {s8['pcsi1']:.2f}), and the weather inputs make it worse, not better. "
       "Useful longer-lead warning would need information not used here (reservoir operations, groundwater, "

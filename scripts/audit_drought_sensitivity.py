@@ -28,28 +28,11 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE_DIR / "scripts"))
 from eval_config import ZERO_AS_MISSING_STATIONS  # noqa: E402
 
-TENSORS_DIR = BASE_DIR / "data" / "processed" / "weekly_tensors"
+from audit_metrics import PORTFOLIO, TENSORS_DIR, TRAIN_START, TRAIN_END
+
 RESULTS_DIR = BASE_DIR / "data" / "processed" / "model_results"
 PREDICTIONS_CSV = RESULTS_DIR / "test_predictions.csv"
 OUTPUT_CSV = RESULTS_DIR / "drought_severity_sensitivity.csv"
-
-TRAIN_START = '1980-01-01'
-TRAIN_END   = '2010-12-31'
-
-PORTFOLIO = [
-    {'state': 'Maharashtra', 'station': 'Karad', 'gauge_id': 4021, 'is_holdout': False, 'area_km2': 5462.0},
-    {'state': 'Maharashtra', 'station': 'Warunji', 'gauge_id': 4063, 'is_holdout': False, 'area_km2': 1890.0},
-    {'state': 'Maharashtra', 'station': 'Ashti', 'gauge_id': 3005, 'is_holdout': False, 'area_km2': 50990.0},
-    {'state': 'Maharashtra', 'station': 'Bamni (Ballarsha)', 'gauge_id': 3008, 'is_holdout': True, 'area_km2': 46020.0},
-    {'state': 'Odisha', 'station': 'Anandpur', 'gauge_id': 7002, 'is_holdout': False, 'area_km2': 8570.0},
-    {'state': 'Odisha', 'station': 'Kashinagar', 'gauge_id': 16007, 'is_holdout': False, 'area_km2': 7820.0},
-    {'state': 'Odisha', 'station': 'Gomlai', 'gauge_id': 7007, 'is_holdout': False, 'area_km2': 21950.0},
-    {'state': 'Odisha', 'station': 'Kantamal', 'gauge_id': 8013, 'is_holdout': True, 'area_km2': 19600.0},
-    {'state': 'Karnataka', 'station': 'Yadgir', 'gauge_id': 4064, 'is_holdout': False, 'area_km2': 69863.0},
-    {'state': 'Karnataka', 'station': 'Huvinhedigi', 'gauge_id': 4017, 'is_holdout': False, 'area_km2': 55150.0},
-    {'state': 'Karnataka', 'station': 'KUDIGE', 'gauge_id': 5010, 'is_holdout': False, 'area_km2': 1934.0},
-    {'state': 'Karnataka', 'station': 'Haralahalli', 'gauge_id': 4013, 'is_holdout': True, 'area_km2': 14582.0},
-]
 
 HORIZONS = ['1w', '2w', '4w', '8w']
 SEVERITIES = [
@@ -91,8 +74,7 @@ def fit_training_thresholds() -> dict[tuple[str, str], dict[str, float]]:
             thresholds[(stn, h_str)] = {
                 'Q80': q80,
                 'Q90': q90,
-                'Q95': q95,
-                'n_train': len(y_train)
+                'Q95': q95
             }
     return thresholds
 
@@ -178,7 +160,7 @@ def main():
     df_preds = pd.read_csv(PREDICTIONS_CSV)
     print(f"Loaded {len(df_preds)} prediction rows from {PREDICTIONS_CSV}")
     
-    # 1. Fit Training Fold Thresholds
+    # 1. Fit Training Fold Thresholds with embargo
     print("[*] Computing Training Fold (1980–2010) thresholds with embargo...")
     train_thresh = fit_training_thresholds()
     

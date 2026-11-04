@@ -1,0 +1,5 @@
+station,gauge_id,cwc_zero_days,camels_zero_days,camels_nan_days,camels_positive_days,camels_positive_pct,camels_zero_or_nan_pct
+Karad,4021,2832,2371,456,5,0.1765536723163842,99.82344632768361
+Warunji,4063,2872,2418,454,0,0.0,100.0
+Yadgir,4064,2533,2142,391,0,0.0,100.0
+Huvinhedigi,4017,503,305,198,0,0.0,100.0

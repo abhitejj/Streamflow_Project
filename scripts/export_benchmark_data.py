@@ -343,10 +343,10 @@ def build_benchmark_data(csv_path: Path) -> tuple[list[dict], dict]:
 
         # Climatology and Persistence medians across all lead times (reference traces)
         # Evaluated on identical scored test rows.
-        med_clim_nse = f"{med_m0_nse:+.3f}" if h in ["4w", "8w"] else "+0.348"
-        med_clim_kge = f"{med_m0_kge:+.3f}" if h in ["4w", "8w"] else ("+0.375" if h == "1w" else "+0.372")
-        med_pers_nse = f"{med_m0_nse:+.3f}" if h in ["1w", "2w"] else ("-0.236" if h == "4w" else "-0.816")
-        med_pers_kge = f"{med_m0_kge:+.3f}" if h in ["1w", "2w"] else ("+0.382" if h == "4w" else "+0.093")
+        med_clim_nse = f"{sub['m0clim_nse'].median():+.3f}"
+        med_clim_kge = f"{sub['m0clim_kge'].median():+.3f}"
+        med_pers_nse = f"{sub['m0pers_nse'].median():+.3f}"
+        med_pers_kge = f"{sub['m0pers_kge'].median():+.3f}"
 
         medians_out[h] = {
             "m0_nse": f"{med_m0_nse:+.3f}",
@@ -403,10 +403,6 @@ def export_benchmark_js(stations: list[dict], medians: dict, out_path: Path) -> 
     )
     out_path.write_text(js_content)
     print(f"[+] Successfully exported benchmark metrics to: {out_path} ({out_path.stat().st_size / 1024:.1f} KB)")
-    site_out = out_path.parent.parent / "site" / "assets" / "benchmark-data.js"
-    if site_out.parent.is_dir():
-        site_out.write_text(js_content)
-        print(f"[+] Successfully synced benchmark metrics to: {site_out}")
 
 
 def main():
