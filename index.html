@@ -233,7 +233,7 @@
       <article class="card hover finding blue" data-reveal>
         <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span><span class="chip blue">Drought alerts</span></div>
         <div class="big"><span data-count="0.000">0.000</span><small>M2 drought CSI, every lead</small></div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is below M1's. <strong>Persistence is the best drought warning at 1 and 2 weeks</strong> (median CSI 0.529 and 0.379, over the 8–9 stations where CSI is defined); no model has skill at 4 and 8 weeks. Pooled test base rate: <strong>0.065</strong>, after unmeasured zero-flow weeks are excluded.</p>
+        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong> (pooled over all stations, 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead. <strong>Persistence is the best drought warning at 1 and 2 weeks</strong> (median CSI 0.529 and 0.379; pooled 0.48 and 0.37). At 4 and 8 weeks skill is weak: climatology issues no alerts, and the best model, M1, detects 28% of severe-drought weeks at 8 weeks (CSI 0.19, PR-AUC 0.22 against a base rate of 0.067). Pooled test base rate: <strong>0.064–0.067</strong>, after unmeasured zero-flow weeks are excluded.</p>
       </article>
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
@@ -610,7 +610,7 @@
         <span class="q">Finding 2: Drought Early Warning</span>
         <h3>No Model Gives Reliable Severe-Drought Warnings</h3>
         <div class="num-big" style="color:#244e9e">CSI 0.000</div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is below M1's (0.175 vs 0.193 at 2 weeks). Persistence gives the best warnings at 1 and 2 weeks (CSI 0.529 and 0.379), and nothing has skill at 4 and 8 weeks. Paired false-alarm comparisons are possible at only 2–9 stations and show no consistent reduction; the 1-week median of −49 pp rests on <i>n</i> = 2.</p>
+        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is at or below M1's at every lead (0.175 vs 0.193 at 2 weeks). Persistence gives the best warnings at 1 and 2 weeks (CSI 0.529 and 0.379). At 4 and 8 weeks skill is weak: the best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19), and M2 does worse. Paired false-alarm comparisons are possible at only 2–9 stations and show no consistent reduction; the 1-week median of −49 pp rests on <i>n</i> = 2.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span>
@@ -657,7 +657,7 @@
     <div class="dark-panel" data-reveal>
       <h3><i data-lucide="landmark"></i>Operational Recommendations for Central Water Commission (CWC)</h3>
       <div class="recs">
-        <div class="rec"><span class="n">1</span><div><h4>Use Persistence for Short-Lead Drought Alerts; Expect No Skill Beyond 2 Weeks</h4><p>Persistence gives the best severe-drought warnings at 1 and 2 weeks (CSI 0.529 and 0.379). At 4 and 8 weeks no model here detects severe droughts, M2 included (CSI 0.000). Longer-lead warning needs information this study does not use, such as reservoir releases, groundwater levels or seasonal rainfall forecasts.</p></div></div>
+        <div class="rec"><span class="n">1</span><div><h4>Use Persistence for Short-Lead Drought Alerts; Expect Little Skill Beyond 2 Weeks</h4><p>Persistence gives the best severe-drought warnings at 1 and 2 weeks (CSI 0.529 and 0.379). At 4 and 8 weeks skill is weak: climatology never issues an alert, M2's median CSI is 0.000, and the best model, M1, catches only 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19). Longer-lead warning needs information this study does not use, such as reservoir releases, groundwater levels or seasonal rainfall forecasts.</p></div></div>
         <div class="rec"><span class="n">2</span><div><h4>Benchmark Against Persistence and Climatology</h4><p>Past rainfall and evaporative demand, as used here, add no significant skill over flow history at any lead (Wilcoxon <i>p</i> ≥ 0.23 on NSE), and the station's weekly climatology beats M2 at 11 of 12 stations at 4 weeks and 8 of 12 at 8 weeks. New sub-seasonal models should be judged against these baselines, and gauges should record low flows rather than zeros.</p></div></div>
       </div>
     </div>
