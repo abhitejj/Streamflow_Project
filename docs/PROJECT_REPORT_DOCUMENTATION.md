@@ -363,24 +363,24 @@ Tier M2 benchmarks evaluate whether adding multi-source meteorological memory (I
 
 ### 11.1 Protocol 1: 12-Basin Comparative Portfolio Matrix (Test Block: 2016–2025)
 
-| Horizon ($H$) | Metric Tier | M0: Baseline | M1: Flow-Only GBT | M2: Hydro-Met GBT | ΔNSE Median of Diffs $	ext{Med}(M2_i - M1_i)$ | Wilcoxon Test ($p$-value & Significance) |
+| Horizon ($H$) | Metric Tier | M0: Baseline | M1: Flow-Only GBT | M2: Hydro-Met GBT | ΔNSE Median of Diffs $\text{Med}(M2_i - M1_i)$ | Wilcoxon Test ($p$-value & Significance) |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **1-Week** | **Continuous NSE** | 0.306 | **0.475** | 0.453 | **-0.009** | $W=29.0, p=0.470$ (Not Significant; 6/12 favor M1, 6/12 favor M2) |
 | | **Continuous KGE** | **0.653** | 0.553 | 0.506 | -0.047 | M0 persistence dominates continuous variance tracking |
 | | Severe Drought ($Q_{95}$) CSI | **0.574** | 0.000 | 0.000 | 0.000 | Persistence dominates 1-week alerts |
-| | Severe Drought ($Q_{95}$) FAR | **0.279** | 1.000 | **0.467** | **-0.533 (FAR Slashed)** | M2 suppresses false alarms where M1 issues spurious alarms |
+| | Severe Drought ($Q_{95}$) FAR | **0.279** | 1.000 (n=3) | **0.500 (n=5)** | **-0.441 pp (n=2 paired)** | M2 suppresses false alarms where both alert (n=2 paired) |
 | **2-Week** | **Continuous NSE** | -0.146 | 0.324 | **0.345** | **+0.009** | $W=23.0, p=0.233$ (Not Significant; 6/12 favor M2, 6/12 favor M1) |
 | | **Continuous KGE** | **0.427** | 0.409 | 0.397 | -0.012 | Flow memory and hydro-met are closely matched |
 | | Severe Drought ($Q_{95}$) CSI | **0.429** | 0.024 | 0.003 | -0.021 | Persistence retains residual dry-season correlation |
-| | Severe Drought ($Q_{95}$) FAR | **0.401** | 0.731 | **0.500** | **-0.231 (FAR Slashed)** | M2 eliminates 23.1 percentage points of false alarms |
+| | Severe Drought ($Q_{95}$) FAR | **0.401** | 0.731 (n=9) | **0.500 (n=7)** | **-0.090 pp (n=5 paired)** | M2 eliminates 9.0 percentage points of false alarms on paired catchments |
 | **4-Week** | **Continuous NSE** | **0.349** (Climatology) | 0.308 | 0.267 | **-0.017** | $W=23.0, p=0.233$ (Not Significant; **Climatology outperforms both ML tiers**) |
 | | **Continuous KGE** | 0.386 | **0.399** | 0.380 | -0.019 | Climatology and M1 maintain higher volume fidelity |
 | | Severe Drought ($Q_{95}$) CSI | 0.000 (No Skill) | **0.031** | 0.020 | -0.011 | Climatology fails all drought alerts; ML restores detection |
-| | Severe Drought ($Q_{95}$) FAR | undefined (0 alerts) | **0.556** | 0.610 | +0.054 | M1 and M2 retain operational early warning utility |
+| | Severe Drought ($Q_{95}$) FAR | undefined (0 alerts) | **0.556 (n=11)** | 0.610 (n=10) | +0.000 pp (n=10 paired) | M1 and M2 exhibit comparable false alarm rates at 4 weeks |
 | **8-Week** | **Continuous NSE** | **0.348** (Climatology) | 0.248 | 0.290 | **+0.019** | $W=28.0, p=0.424$ (Not Significant; **Climatology outperforms both ML tiers**) |
 | | **Continuous KGE** | **0.385** | 0.330 | 0.308 | -0.022 | Astronomical seasonality dominates variance |
 | | Severe Drought ($Q_{95}$) CSI | 0.000 (No Skill) | **0.148** | 0.006 | -0.142 | M1 non-linear recession memory captures sustained drawdowns |
-| | Severe Drought ($Q_{95}$) FAR | undefined (0 alerts) | 0.519 | **0.453** | **-0.066** | M2 weather inputs moderately reduce long-range false alarms |
+| | Severe Drought ($Q_{95}$) FAR | undefined (0 alerts) | 0.519 (n=12) | **0.477 (n=6)** | **-0.038 pp (n=6 paired)** | M2 weather inputs moderately reduce long-range false alarms on alerting catchments |
 
 ---
 
@@ -425,36 +425,37 @@ Tier M2 benchmarks evaluate whether adding multi-source meteorological memory (I
 ### 11.4 Key Empirical Answers to Research Sub-Questions
 
 #### 1. Short-Term Drought Alert Reliability (Track B)
-- **False Alarm Suppression**: Most significantly, meteorological forcings drastically curtailed severe drought false alarms:
-  - At $H=1	ext{w}$, median FAR was slashed from **$1.000$ (M1) down to $0.467$ (M2)**.
-  - At $H=2	ext{w}$, median FAR dropped from **$0.731$ (M1) down to $0.500$ (M2)** (a $23.1$ percentage-point reduction).
-  - Antecedent rainfall deficit ($P_{1w \dots 1m} - 	ext{PET}$) prevents the model from crying wolf when low flows are merely temporary fluctuations rather than meteorological droughts.
+- **False Alarm Suppression**: Most significantly, meteorological forcings curtailed severe drought false alarms on catchments where warnings were triggered:
+  - At $H=1\text{w}$, severe drought events were scarce ($Q_{95}$ alerts were triggered at only 3 catchments by M1 and 5 catchments by M2). Across the paired catchments where both models issued alerts ($n=2$), M2 reduced FAR by a median of **44.1 percentage points** (Haralahalli dropped from 1.000 to 0.000, while Huvinhedigi increased from 0.349 to 0.467).
+  - At $H=2\text{w}$, across the catchments where both models issued alerts ($n=5$), M2 achieved a median paired FAR reduction of **9.0 percentage points** (dropping from 0.731 to 0.500 overall, with paired gains at Yadgir and Ashti).
+  - At longer horizons ($H=4\text{w}, 8\text{w}$), paired FAR differences were minimal (+0.0 pp at 4w over $n=10$, and -3.8 pp at 8w over $n=6$), as hydraulic memory decays.
+  - Antecedent rainfall deficit ($P_{1w \dots 1m} - \text{PET}$) prevents the model from issuing spurious low-flow warnings when temporary streamflow recessions are not accompanied by true meteorological drying.
 
 #### 2. Meteorological Value Add Across Forecast Horizons (Track A)
 - **Lack of Statistically Significant Continuous Gain**: Wilcoxon signed-rank tests across the 12 basins show that M2 is **not** statistically significantly better than M1 flow-only autoregression at any horizon:
-  - $H=1	ext{w}$: $\Delta	ext{NSE} = -0.009$ ($W=29.0, p=0.470$; 6 basins favor M1, 6 favor M2).
-  - $H=2	ext{w}$: $\Delta	ext{NSE} = +0.009$ ($W=23.0, p=0.233$; 6 basins favor M2, 6 favor M1).
-  - $H=4	ext{w}$: $\Delta	ext{NSE} = -0.017$ ($W=23.0, p=0.233$; 8 basins favor M1, 4 favor M2).
-  - $H=8	ext{w}$: $\Delta	ext{NSE} = +0.019$ ($W=28.0, p=0.424$; 8 basins favor M2, 4 favor M1).
-- **Dominance of Seasonal Climatology at Long Horizons**: At $H=4	ext{w}$ and $H=8	ext{w}$, seasonal weekly climatology (M0 = +0.349 at 4w, +0.348 at 8w) statistically outperforms both M1 (+0.308, +0.248) and M2 (+0.267, +0.290) in median NSE. Once hydraulic memory collapses (0.0% permutation importance at 8w), multi-week meteorological memory without coupled numerical weather forecasts cannot beat historical astronomical annual cycles.
+  - $H=1\text{w}$: $\Delta\text{NSE} = -0.009$ ($W=29.0, p=0.470$; 6 basins favor M1, 6 favor M2).
+  - $H=2\text{w}$: $\Delta\text{NSE} = +0.009$ ($W=23.0, p=0.233$; 6 basins favor M2, 6 favor M1).
+  - $H=4\text{w}$: $\Delta\text{NSE} = -0.017$ ($W=23.0, p=0.233$; 8 basins favor M1, 4 favor M2).
+  - $H=8\text{w}$: $\Delta\text{NSE} = +0.019$ ($W=28.0, p=0.424$; 8 basins favor M2, 4 favor M1).
+- **Dominance of Seasonal Climatology at Long Horizons**: At $H=4\text{w}$ and $H=8\text{w}$, seasonal weekly climatology (M0 = +0.349 at 4w, +0.348 at 8w) statistically outperforms both M1 (+0.308, +0.248) and M2 (+0.267, +0.290) in median NSE. Once hydraulic memory collapses (0.0% permutation importance at 8w), multi-week meteorological memory without coupled numerical weather forecasts cannot beat historical astronomical annual cycles.
 
 #### 3. Zero-Shot Spatial Transfer Dynamics (Protocol 2)
 - **PyTorch HydroLSTM vs Tabular Linear Models**:
-  - In sub-humid, topographically uniform catchments (Odisha: Kantamal), the HydroLSTM generalized zero-shot across all horizons ($H=1	ext{w}$ $	ext{NSE} = +0.514$, $H=8	ext{w}$ $	ext{NSE} = +0.403$), demonstrating that area-normalized runoff captures regional rainfall-runoff dynamics.
-  - In flashy or semi-arid catchments with extreme seasonal cessation (Karnataka: Haralahalli), deep recurrent networks suffered from error accumulation during prolonged unobserved low-flow periods, whereas parsimonious linear Ridge regression remained more robust ($H=4	ext{w}$ Ridge $	ext{NSE} = +0.255$ vs LSTM $-0.098$).
+  - In sub-humid, topographically uniform catchments (Odisha: Kantamal), the HydroLSTM generalized zero-shot across all horizons ($H=1\text{w}$ $\text{NSE} = +0.514$, $H=8\text{w}$ $\text{NSE} = +0.403$), demonstrating that area-normalized runoff captures regional rainfall-runoff dynamics.
+  - In flashy or semi-arid catchments with extreme seasonal cessation (Karnataka: Haralahalli), deep recurrent networks suffered from error accumulation during prolonged unobserved low-flow periods, whereas parsimonious linear Ridge regression remained more robust ($H=4\text{w}$ Ridge $\text{NSE} = +0.255$ vs LSTM $-0.098$).
 
 ---
 
 ## 12. Project Conclusions & Final Synthesis
 
 1. **Hierarchy of Predictive Drivers**:
-   - $H \le 1	ext{w}$: Autoregressive streamflow memory ($Q_t, \dots, Q_{t-2}$) and persistence dominate continuous hydrograph tracking.
-   - $H = 2	ext{w}$: Critical transition zone where persistence collapses ($	ext{NSE} = -0.146$) and ML autoregression stabilizes continuous predictions (M1: +0.324, M2: +0.345).
-   - $H \ge 4	ext{w}$: Hydraulic streamflow memory collapses completely to 0.0%. Long-term seasonal weekly climatology (M0 = +0.349 at 4w, +0.348 at 8w) outperforms all trained machine learning models in continuous variance tracking.
+   - $H \le 1\text{w}$: Autoregressive streamflow memory ($Q_t, \dots, Q_{t-2}$) and persistence dominate continuous hydrograph tracking.
+   - $H = 2\text{w}$: Critical transition zone where persistence collapses ($\text{NSE} = -0.146$) and ML autoregression stabilizes continuous predictions (M1: +0.324, M2: +0.345).
+   - $H \ge 4\text{w}$: Hydraulic streamflow memory collapses completely to 0.0%. Long-term seasonal weekly climatology (M0 = +0.349 at 4w, +0.348 at 8w) outperforms all trained machine learning models in continuous variance tracking.
 2. **Operational Drought Early Warning**:
-   - While climatology achieves higher continuous NSE at 4–8 weeks, it is completely inoperable for drought alerting ($	ext{CSI} = 0.000$).
+   - While climatology achieves higher continuous NSE at 4–8 weeks, it is completely inoperable for drought alerting ($\text{CSI} = 0.000$).
    - M1 and M2 provide genuine operational utility by successfully issuing severe drought alerts at multi-week lead times.
-   - M2 hydro-meteorological models drastically reduce false alarm rates (FAR) at short lead times (by 23–53 percentage points), preventing costly false emergency mobilizations.
+   - M2 hydro-meteorological models reduce false alarm rates (FAR) on catchments issuing warnings at short lead times (median paired reduction of 9–44 percentage points), preventing spurious emergency mobilizations.
 3. **Regional Zero-Shot Deployability**:
    - Area-normalized specific runoff ($q = Q \cdot 604.8 / A$) enables zero-shot transfer to uncalibrated catchments within homogeneous climatic zones (Kantamal: LSTM NSE $+0.403	ext{--}+0.514$).
    - Data hygiene is paramount: eliminating unphysical clerical spikes via physical clipping ($50,000\,	ext{m}^3/	ext{s}$) and short-gap linear interpolation is essential to prevent corruption of pooled spatial representations.

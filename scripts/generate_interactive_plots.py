@@ -39,7 +39,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 TENSORS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/weekly_tensors')
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/model_results')
 MODELS_DIR  = os.path.join(PROJECT_ROOT, 'models')
-OUTPUT_DIR  = os.path.join(PROJECT_ROOT, 'data/processed/visualizations')
+OUTPUT_DIR  = os.path.join(PROJECT_ROOT, 'visualizations', 'source')
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -697,7 +697,7 @@ def generate_interactive_feature_importance(out_dir):
         
     df_imp = pd.DataFrame({'H1': imp_results[1], 'H8': imp_results[8]})
     df_imp['Max_Imp'] = df_imp.max(axis=1)
-    df_top = df_imp.sort_values('Max_Imp', ascending=True).tail(12)  # Top 12 predictors
+    df_top = df_imp.sort_values('Max_Imp', ascending=True)  # All 28 predictors without truncation
     
     feat_display_names = [FEATURE_LABELS.get(f, f) for f in df_top.index]
     categories = [categorize_feature(f) for f in df_top.index]
@@ -742,7 +742,7 @@ def generate_interactive_feature_importance(out_dir):
         title=dict(
             text="<b>Hydrological Driver Shift: Flow Memory (H=1w) vs Meteorological Memory (H=8w)</b><br>"
                  "<span style='font-size: 13px; color: #4B5563;'>"
-                 "Permutation feature importance on Karad test fold reveals collapse of autoregressive flow memory (0.0% at H=8w) and dominance of calendar seasonality (72.0%) and atmospheric evaporative demand (19.5%)."
+                 "Permutation feature importance on Karad test fold across all 28 predictors reveals collapse of autoregressive flow memory (0.0% at H=8w) and dominance of calendar seasonality (72.0%) and atmospheric evaporative demand (19.5%)."
                  "</span>",
             x=0.03, y=0.96
         ),
@@ -760,7 +760,7 @@ def generate_interactive_feature_importance(out_dir):
             orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0,
             bgcolor="rgba(255,255,255,0.9)", bordercolor="#D1D5DB", borderwidth=1
         ),
-        height=580,
+        height=850,
         margin=dict(l=220, r=40, t=100, b=60)
     )
     

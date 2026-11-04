@@ -261,3 +261,33 @@ Phase 2 investigation and auditing were completed and formally presented to the 
 - **Interactive Visualizations:** Regenerated all 10 Plotly interactive HTML widgets in `data/processed/visualizations/` with audited metrics, accurate axis annotations, and explicit methodology subtitles.
 - **Frontend Assets on `gh-pages`:** Completely updated `assets/benchmark-data.js` and `index.html` with audited metrics, replacing impossible contingency cells with `undefined` and updating conclusions to reflect the approved statistical narrative.
 - **Documentation Synchronization:** Updated `README.md`, `docs/DECISION_LOG.md`, `docs/PROGRESS.md`, and `docs/PROJECT_REPORT_DOCUMENTATION.md` to guarantee 100% numerical consistency across the repository.
+
+---
+
+## 6. Phase 4 Audit Follow-up: Zero-Shot HydroLSTM Unit Inversion & Paired Contingency Resolution (COMPLETED)
+
+### 1. Zero-Shot HydroLSTM Unit Inversion Bug Fix
+- **Defect Discovered:** In `scripts/audit_metrics.py` (lines 412–413), specific runoff predictions $q$ ($\text{mm}/\text{week}$) were converted back to volumetric discharge $Q$ ($\text{m}^3/\text{s}$) by dividing by the conversion factor `conv = area / 604.8` instead of multiplying:
+  ```python
+  # BUGGY (lines 412-413):
+  conv = area / 604.8
+  preds_p2_lstm = np.maximum(0.0, pred_spec / conv)
+  ```
+- **Mathematical Impact:** Dividing by `conv` shriveled predicted discharges by $\text{conv}^2 \approx 500\text{--}5800\times$, collapsing predicted standard deviations to near zero ($\sigma_{\hat{y}} \approx 0.1\text{--}0.6\,\text{m}^3/\text{s}$ vs observed $\sigma_y \approx 600\text{--}1200\,\text{m}^3/\text{s}$). With $\hat{y} \approx 0$, $NSE = 1 - \frac{\sum y^2}{\sum (y-\bar{y})^2} = -\frac{\bar{y}^2}{\text{Var}(y)}$, creating artificial flat negative NSE values across all horizons (Kantamal $\approx -0.326$, Bamni $\approx -0.143$, Haralahalli $\approx -0.245$).
+- **Resolution:** Corrected to `preds_p2_lstm = np.maximum(0.0, pred_spec * conv)`. Rerunning `audit_metrics.py` restored the true verified model metrics matching `protocol2_spatial_results_m2_lstm.csv`:
+  - **Kantamal:** $H=1\text{w}$: **+0.514**, $H=2\text{w}$: **+0.410**, $H=4\text{w}$: **+0.446**, $H=8\text{w}$: **+0.405** (KGE: +0.592, +0.477, +0.501, +0.388).
+  - **Bamni:** $H=1\text{w}$: **+0.339**, $H=2\text{w}$: **+0.031**, $H=4\text{w}$: **+0.153**, $H=8\text{w}$: **-1.266**.
+  - **Haralahalli:** $H=1\text{w}$: **+0.258**, $H=2\text{w}$: **-0.191**, $H=4\text{w}$: **-0.096**, $H=8\text{w}$: **-0.428**.
+
+### 2. Severe Drought ($Q_{95}$) Paired Contingency & Sample Support Audit
+- **Defect Discovered:** Prior reports quoted unpaired differences of independent medians ($\text{Med}(M2) - \text{Med}(M1) = -53.3\,\text{pp}$ at $1\text{w}$, $-23.1\,\text{pp}$ at $2\text{w}$), obscuring that most stations issued 0 alerts ($\text{FAR} = \frac{0}{0} = \text{undefined}$).
+- **Resolution:** Implemented `scripts/export_benchmark_data.py` to calculate paired contingency differences strictly on catchments where BOTH models issued warnings:
+  - $H=1\text{w}$: M1 defined on $n=3$, M2 on $n=5$. Paired subset is **$n=2$** (median paired reduction **-44.1 pp**; Haralahalli -100 pp, Huvinhedigi +11.8 pp).
+  - $H=2\text{w}$: M1 defined on $n=9$, M2 on $n=7$. Paired subset is **$n=5$** (median paired reduction **-9.0 pp**; Ashti -15.9 pp, Yadgir -50.0 pp, Huvinhedigi -9.0 pp, Haralahalli +25.0 pp, Kudige +100 pp).
+  - $H=4\text{w}$: Paired subset is **$n=10$** (median paired diff **+0.0 pp**).
+  - $H=8\text{w}$: Paired subset is **$n=6$** (median paired diff **-3.8 pp**).
+
+### 3. Pipeline & Visualization Standardization
+- **Interactive Widgets:** Updated `scripts/generate_interactive_plots.py` to write directly to `visualizations/source/` and plot all 26 tabular predictors in permutation importance without truncation.
+- **Site Data Compiler:** Created `tools/build_site_data.py` on `main` to build `assets/figdata.js` and render standalone visualization wrappers.
+- **Audited Metrics JS Export:** Implemented `scripts/export_benchmark_data.py` ensuring precomputed benchmark tables in `assets/benchmark-data.js` include explicit sample sizes ($n$) for all contingency metrics.

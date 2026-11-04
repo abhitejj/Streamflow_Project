@@ -409,8 +409,9 @@ def recompute_all_predictions():
                             
                         # Specific runoff to volumetric (mm/week -> m3/s)
                         # conversion factor: Area * 1000 / (7 * 86400) = Area / 604.8
+                        # Q (m3/s) = q (mm/week) * Area / 604.8 = pred_spec * conv
                         conv = area / 604.8
-                        preds_p2_lstm = np.maximum(0.0, pred_spec / conv)
+                        preds_p2_lstm = np.maximum(0.0, pred_spec * conv)
                     except Exception as e:
                         print(f"[-] Error evaluating LSTM for {station} H{H}: {e}")
 
@@ -627,11 +628,19 @@ def run_audit():
         rec_far_m1 = row['m1_far']
         rec_far_m2 = row['m2_far']
         
-        # Check if published FAR ends in .xx0 or .xx5
-        if pub_far_m1 is not None and pub_far_m1 != 'nan':
-            pf1 = float(pub_far_m1)
-            # Check fabrication signature
-            is_mult_005 = (round(pf1 * 1000) % 5 == 0)
+        def parse_pub_val(v):
+            if v is None:
+                return np.nan
+            s = str(v).strip().lower()
+            if s in ['nan', 'undefined', 'null', 'none', '-']:
+                return np.nan
+            try:
+                return float(s)
+            except (ValueError, TypeError):
+                return np.nan
+
+        pf1 = parse_pub_val(pub_far_m1)
+        if not np.isnan(pf1):
             diff1 = abs(pf1 - rec_far_m1) if not np.isnan(rec_far_m1) else 999.0
             if np.isnan(rec_far_m1) or diff1 > 0.02:
                 mismatches.append({
@@ -642,11 +651,11 @@ def run_audit():
                     'Recomputed': f"{rec_far_m1:.3f}" if not np.isnan(rec_far_m1) else "NaN (0 alerts)",
                     'Discrepancy': f"{rec_far_m1 - pf1:+.3f}" if not np.isnan(rec_far_m1) else "Undefined in Code",
                     'Category': 'FAR Fabrication (Issue A)',
-                    'Notes': f"Published is exact multiple of 0.005 ({pf1:.3f}). Recomputed contingency: {row['m1_hits']} hits, {row['m1_fa']} FA."
+                    'Notes': f"Published value is {pf1:.3f}. Recomputed contingency: {row['m1_hits']} hits, {row['m1_fa']} FA."
                 })
                 
-        if pub_far_m2 is not None and pub_far_m2 != 'nan':
-            pf2 = float(pub_far_m2)
+        pf2 = parse_pub_val(pub_far_m2)
+        if not np.isnan(pf2):
             diff2 = abs(pf2 - rec_far_m2) if not np.isnan(rec_far_m2) else 999.0
             if np.isnan(rec_far_m2) or diff2 > 0.02:
                 mismatches.append({
@@ -657,16 +666,16 @@ def run_audit():
                     'Recomputed': f"{rec_far_m2:.3f}" if not np.isnan(rec_far_m2) else "NaN (0 alerts)",
                     'Discrepancy': f"{rec_far_m2 - pf2:+.3f}" if not np.isnan(rec_far_m2) else "Undefined in Code",
                     'Category': 'FAR Fabrication (Issue A)',
-                    'Notes': f"Published is exact multiple of 0.005 ({pf2:.3f}). Recomputed contingency: {row['m2_hits']} hits, {row['m2_fa']} FA."
+                    'Notes': f"Published value is {pf2:.3f}. Recomputed contingency: {row['m2_hits']} hits, {row['m2_fa']} FA."
                 })
 
         # Compare CSI M2 & Impossible cells
         pub_csi_m2 = metrics_pub.get('csi_m2')
         rec_csi_m2 = row['m2_csi']
-        if pub_csi_m2 is not None and pub_csi_m2 != 'nan':
-            pc2 = float(pub_csi_m2)
+        pc2 = parse_pub_val(pub_csi_m2)
+        if not np.isnan(pc2):
             # Impossible cell check: CSI = 0.0 with FAR < 1.0
-            if pc2 == 0.0 and pub_far_m2 is not None and float(pub_far_m2) < 1.0:
+            if pc2 == 0.0 and not np.isnan(pf2) and pf2 < 1.0:
                 mismatches.append({
                     'Station': row['station'],
                     'Horizon': h,
