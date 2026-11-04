@@ -107,7 +107,17 @@
           hovertemplate: '<b>' + MODEL[m].name + '</b><br>%{x} lead · median ' + key.toUpperCase() + ' %{y:+.3f}<extra></extra>'
         };
       });
+      traces.push({
+        x: hs.map(function (h) { return H_LABEL[h]; }),
+        y: hs.map(function (h) { return num(M[h]['clim_' + key]); }),
+        name: 'Weekly Climatology (All Leads)',
+        mode: 'lines+markers',
+        line: { color: C.dryText, width: 1.6, dash: 'dot' },
+        marker: { size: 6, color: C.dryText, symbol: 'diamond' },
+        hovertemplate: '<b>Weekly Climatology (All Leads)</b><br>%{x} lead · median ' + key.toUpperCase() + ' %{y:+.3f}<extra></extra>'
+      });
       draw(el, traces, baseLayout({
+        margin: { l: 56, r: 18, t: 28, b: 44 },
         yaxis: axis({ title: { text: 'Portfolio median ' + key.toUpperCase() }, range: [-0.45, 0.75], zeroline: true, zerolinecolor: C.zero, zerolinewidth: 1 }),
         xaxis: axis({ title: { text: 'Forecast lead time' }, type: 'category' }),
         shapes: [{ type: 'rect', xref: 'x', yref: 'paper', x0: 1.5, x1: 3.5, y0: 0, y1: 1, fillcolor: 'rgba(212,136,28,0.07)', line: { width: 0 }, layer: 'below' }],

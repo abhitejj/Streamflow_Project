@@ -48,6 +48,8 @@ After about 2010 CWC operated Karad, Warunji and Yadgir as monsoon-season statio
 
 These are missing measurements, not droughts (about a fifth fall inside the monsoon). At these four stations every week whose issue-time or target flow is a recorded zero is excluded from scoring for all models (`ZERO_AS_MISSING_STATIONS` in `scripts/audit_metrics.py`). This lowers the pooled severe-drought base rate from 0.238 to about 0.065, close to the nominal 0.05. Haralahalli's zeros (dry season only, also present in training) are kept. Drought thresholds are still fitted on the 1980–2010 training fold (Gate AG-TS-07); the models were not retrained, so their inputs still contain the recorded zeros.
 
+**Data Lineage & Overlap Audit (2011–2020)**: To verify that pipeline stitching (`prepare_weekly_dataset.py`) did not overwrite valid discharge, we evaluated all 8,740 station-days where CWC recorded zero flow over the 2011–2020 overlap across the four affected stations. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded exact 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS had positive flow on only 5 days (0.06%). This proves that post-2010 zero inflation is an upstream reporting artifact inherited directly from CWC by CAMELS-IND, rather than a pipeline merge defect.
+
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐

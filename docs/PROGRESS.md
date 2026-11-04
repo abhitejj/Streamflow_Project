@@ -7,3 +7,4 @@ This log tracks project milestones, pipeline updates, and deployments to `main` 
 - **2026-11-03 22:36:00 IST**: Phase 3 Execution: user approved Options H1 and C1 and strategic pivot; regenerated all 6 model results CSVs, recomputed 10 Plotly interactive HTML widgets with audited metrics, updated benchmark-data.js and index.html on gh-pages, and aligned all technical documentation.
 - **2026-11-03 22:59:06 IST**: Completed metric recomputation, frontend rewrite, and documentation alignment
 - **2026-11-04 15:38:35 IST**: Audited zero-shot HydroLSTM units and paired drought FAR metrics
+- **2026-11-05 00:38:36 IST**: Add 2011-2020 CAMELS-CWC overlap lineage audit note

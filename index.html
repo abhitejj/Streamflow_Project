@@ -352,8 +352,9 @@
       <div>
         <h4>Quality Control, Physical Sanity Ceiling &amp; Anthropogenic Regime Shifts</h4>
         <p>Catchments satisfy a strict missingness threshold (&lt;10% total missing records). Any weekly timestep with fewer than 4 valid daily observations is masked to <code>NaN</code>.</p>
-        <p>Clerical telemetry errors were audited and rectified by enforcing a physical maximum discharge ceiling of <strong>≤ 50,000 m³/s</strong>. At Ashti, a corrupted entry of 235,532 m³/s was masked and patched via temporal linear interpolation (max limit of 2 days) prior to weekly aggregation, preventing non-monsoon distortion during LSTM sequence imputation.</p>
+        <p>Clerical telemetry errors were audited and rectified by enforcing a physical maximum discharge ceiling of <strong>≤ 50,000 m³/s</strong>. At Ashti, a corrupted entry of 1,829,351 m³/s (on 05-10-2025) was masked and patched via temporal linear interpolation (max limit of 2 days) prior to weekly aggregation, preventing non-monsoon distortion during LSTM sequence imputation.</p>
         <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. The models were not retrained, so their inputs still contain the recorded zeros.</p>
+        <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). This confirms that post-2010 dry-season zero inflation is an upstream reporting artifact inherited directly from CWC by CAMELS-IND, rather than a pipeline merge error.</p>
       </div>
     </div>
   </div>
@@ -456,8 +457,8 @@
     </div>
 
     <div class="chart-card" data-reveal>
-      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-basin portfolio median</h3><p>The same medians as the benchmark matrix in Section 06, drawn as curves. The baseline changes from persistence to weekly climatology at 4 weeks (shaded).</p></div></header>
-      <div class="chart-body"><div class="chart" data-chart="skill" role="img" aria-label="Portfolio median NSE or KGE by lead time for M0, M1 and M2"></div></div>
+      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-basin portfolio median</h3><p>The same medians as the benchmark matrix in Section 06, drawn as curves. While M1 (+0.282) and M2 (+0.294) beat 2-week persistence (-0.185), both already drop below the station's weekly climatology (~+0.348 to +0.364) by Week 2. Shaded area marks where the official M0 baseline switches from persistence to weekly climatology.</p></div></header>
+      <div class="chart-body"><div class="chart" data-chart="skill" role="img" aria-label="Portfolio median NSE or KGE by lead time for M0, M1, M2, and Weekly Climatology"></div></div>
     </div>
 
     <div class="chart-card" data-reveal>
@@ -508,7 +509,7 @@
               <button type="button" role="radio" data-h="1w" aria-checked="true" title="H = 1 Week Ahead (Short-Term Inertia)">1 wk</button>
               <button type="button" role="radio" data-h="2w" aria-checked="false" title="H = 2 Weeks Ahead (Persistence Cliff)">2 wk</button>
               <button type="button" role="radio" data-h="4w" aria-checked="false" title="H = 4 Weeks Ahead (Sub-Seasonal Transition)">4 wk</button>
-              <button type="button" role="radio" data-h="8w" aria-checked="false" title="H = 8 Weeks Ahead (Hydro-Met Dominance)">8 wk</button>
+              <button type="button" role="radio" data-h="8w" aria-checked="false" title="H = 8 Weeks Ahead (Climatology Dominance)">8 wk</button>
             </div>
           </div>
         </div>
@@ -680,7 +681,7 @@
 ├── <span class="d">data/</span>
 │   ├── <span class="d">raw/</span>
 │   │   ├── <span class="d">camels_ind/</span>             <span class="c"># 1980–2020 daily hydrology &amp; meteorology (12 catchments)</span>
-│   │   ├── <span class="d">cwc_telemetry/</span>          <span class="c"># 2021–2025 CWC daily river water discharge</span>
+│   │   ├── <span class="d">cwc/</span>                    <span class="c"># 2021–2025 CWC daily river water discharge</span>
 │   │   ├── <span class="d">imd/</span>                    <span class="c"># IMD Pune 0.25° gridded daily rainfall NetCDF4 (1.27 GB)</span>
 │   │   └── <span class="d">era5_land/</span>              <span class="c"># ERA5-Land temperature &amp; PET (calibrated to GLEAM)</span>
 │   └── <span class="d">processed/</span>
@@ -698,6 +699,13 @@
       <div data-reveal style="--d:.1s;min-width:0">
         <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:17px"><i data-lucide="terminal"></i>End-to-End Command Line Pipeline</h3>
         <p style="margin:0 0 14px;color:var(--muted);font-size:14px">To reproduce the benchmark, run these stages in order. Stage 1 needs the raw CWC, IMD, CAMELS-IND and ERA5-Land files in <code>data/raw/</code>, which are not in the repository; stages 2–6 run from the committed weekly tensors and models.</p>
+        <div class="callout warn" style="margin-bottom:14px">
+          <i data-lucide="alert-triangle"></i>
+          <div>
+            <h4>Model Overwrite Warning</h4>
+            <p>Stages 1–3 retrain models and overwrite <code>models/</code> (retrained models, especially the HydroLSTM, may slightly alter published numbers due to hardware non-determinism). To reproduce the exact published numbers from committed models, start directly at <strong>Stage 4</strong> (<code>python3 scripts/audit_metrics.py</code>).</p>
+          </div>
+        </div>
         <div class="steps">
           <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/prepare_weekly_dataset.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 1: Calibration &amp; Features</small></div></div>
           <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/train_forecast_models.py --model all</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 2: M0 &amp; M1 Benchmarks</small></div></div>
@@ -709,7 +717,7 @@
         <div class="card hover" style="margin-top:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <span class="icon-tile it-grey" style="margin:0"><i data-lucide="book-open"></i></span>
           <div style="flex:1;min-width:200px"><h3 style="margin:0 0 2px;font-size:16px">Open Access Research Repository</h3><p style="font-size:14px">Source code, precomputed tensors, and model weights are archived for academic evaluation.</p></div>
-          <a class="btn btn-primary" href="https://github.com/abhitejbhullar/ES335-Streamflow-Drought-Forecasting" target="_blank" rel="noopener"><i data-lucide="github"></i>GitHub Repository</a>
+          <a class="btn btn-primary" href="https://github.com/abhitejj/Streamflow_Project" target="_blank" rel="noopener"><i data-lucide="github"></i>GitHub Repository</a>
         </div>
       </div>
     </div>
@@ -725,7 +733,7 @@
         <p>Developed by <strong>Abhitej Singh Bhullar</strong> (Roll No. 23110009, B.Tech 4th Year, Civil Engineering) &amp; <strong>Dhruv Jalan</strong> (Roll No. 23110099, B.Tech 4th Year, Chemical Engineering)</p>
         <p>Indian Institute of Technology Gandhinagar (IITGN), Palaj, Gandhinagar, Gujarat 382355</p>
       </div>
-      <div class="badges"><span class="chip"><i data-lucide="badge-check"></i>Audited Benchmark v2.0</span><span class="chip"><i data-lucide="shield-check"></i>Leakage-Free Passed</span></div>
+      <div class="badges"><span class="chip"><i data-lucide="badge-check"></i>Audited Benchmark v2.1</span><span class="chip"><i data-lucide="shield-check"></i>Leakage-Free Passed</span></div>
     </div>
     <div class="footer-bottom"><span>© 2026 Abhitej Singh Bhullar &amp; Dhruv Jalan • ES 335 ML Course Project • Academic Open Access</span><span>Fraunces · IBM Plex Sans · IBM Plex Mono</span></div>
   </div>
