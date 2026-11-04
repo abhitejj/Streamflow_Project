@@ -269,7 +269,7 @@
         <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="siren"></i></span><span class="chip ochre">Track B</span></div>
           <h3>Hydrological Drought Early Warning</h3>
-          <p>Three drought severity levels are defined from the training-period flow distribution. The audited results on this page score the <strong>severe (Q<sub>95</sub>)</strong> level only; mild and moderate levels are defined but not reported.</p>
+          <p>Three drought severity levels are defined from the training-period flow distribution. Audited across all three levels, persistence dominates early warning at 1–2 weeks (CSI 0.62–0.38), while weather inputs (M2) fail to improve PR-AUC over flow-only models (M1) across mild, moderate, and severe regimes.</p>
           <div class="ladder">
             <div class="rung"><span class="lvl mild">Q<sub>80</sub></span><span class="txt"><b>Mild Low-Flow Anomaly (Q<sub>80</sub>):</b> Weekly discharge at or below the 20th percentile of baseline flows.</span></div>
             <div class="rung"><span class="lvl mod">Q<sub>90</sub></span><span class="txt"><b>Moderate Drought (Q<sub>90</sub>):</b> Discharge below 10th percentile (SSI ≤ -1.28).</span></div>
@@ -582,7 +582,7 @@
           <h3>The Drought Early Warning Climatology Blindspot</h3>
           <div class="big-stat"><span><span class="from">+0.364</span><span class="lab">NSE · 4 wk</span></span><i data-lucide="arrow-right" class="arrow"></i><span><span class="to">0.000</span><span class="lab">CSI · drought</span></span></div>
           <p>At 4 and 8 weeks the station's weekly climatology has the best continuous scores (median <strong>NSE +0.364 and +0.353</strong>, better than M2 at 11 and 8 of 12 stations), because the seasonal cycle explains most of the variance. But its severe-drought CSI is <strong>0.000</strong> at both leads.</p>
-          <p>A climatology is the average flow for that calendar week over 31 years, and an average almost never drops below the 5th-percentile flow, so it practically never issues a severe-drought alert. The trained models do no better: M2's CSI is also 0.000, and M1's is 0.014 and 0.111.</p>
+          <p>A climatology is the average flow for that calendar week over 31 years, and an average almost never drops below the 5th-percentile (severe) or 10th-percentile (moderate) flow (CSI 0.000). However, during regular seasonal dry spells climatology does drop below the 20th percentile (mild Q<sub>80</sub>), issuing warnings that achieve CSI of 0.159 (4w) and 0.165 (8w)—beating both ML models at 4 weeks. For severe drought, the trained models provide minimal skill: M2's median CSI is 0.000, and M1's is 0.014 (4w) and 0.111 (8w).</p>
         </article>
       </div>
     </div>
@@ -611,7 +611,7 @@
         <span class="q">Finding 2: Drought Early Warning</span>
         <h3>No Model Gives Reliable Severe-Drought Warnings</h3>
         <div class="num-big" style="color:#244e9e">CSI 0.000</div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is at or below M1's at every lead (0.175 vs 0.193 at 2 weeks). Persistence gives the best warnings at 1 and 2 weeks (CSI 0.529 and 0.379). At 4 and 8 weeks skill is weak: the best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19), and M2 does worse. Paired false-alarm comparisons are possible at only 2–9 stations and show no consistent reduction; the 1-week median of −49 pp rests on <i>n</i> = 2.</p>
+        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is at or below M1's at every lead (0.175 vs 0.193 at 2 weeks). Persistence gives the best warnings at 1 and 2 weeks across all three severity levels (mild Q<sub>80</sub> CSI 0.615 and 0.494; moderate Q<sub>90</sub> CSI 0.585 and 0.422; severe Q<sub>95</sub> CSI 0.529 and 0.379). At 4 and 8 weeks skill is weak: M1 detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19), while M2 does worse. Across all leads and severities, M2 weather features yield no gain in PR-AUC over M1.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span>
@@ -658,7 +658,7 @@
     <div class="dark-panel" data-reveal>
       <h3><i data-lucide="landmark"></i>Operational Recommendations for Central Water Commission (CWC)</h3>
       <div class="recs">
-        <div class="rec"><span class="n">1</span><div><h4>Use Persistence for Short-Lead Drought Alerts; Expect Little Skill Beyond 2 Weeks</h4><p>Persistence gives the best severe-drought warnings at 1 and 2 weeks (CSI 0.529 and 0.379). At 4 and 8 weeks skill is weak: climatology never issues an alert, M2's median CSI is 0.000, and the best model, M1, catches only 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19). Longer-lead warning needs information this study does not use, such as reservoir releases, groundwater levels or seasonal rainfall forecasts.</p></div></div>
+        <div class="rec"><span class="n">1</span><div><h4>Use Persistence for Short-Lead Drought Alerts; Expect Little Skill Beyond 2 Weeks</h4><p>Persistence gives the best drought warnings at 1 and 2 weeks across all severity tiers (mild Q<sub>80</sub> CSI 0.615 &amp; 0.494; moderate Q<sub>90</sub> CSI 0.585 &amp; 0.422; severe Q<sub>95</sub> CSI 0.529 &amp; 0.379). At 4 and 8 weeks skill is weak: climatology issues no moderate/severe alerts, M2's median severe CSI is 0.000, and the best model, M1, catches only 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19). Longer-lead warning needs information this study does not use, such as reservoir releases, groundwater levels or seasonal rainfall forecasts.</p></div></div>
         <div class="rec"><span class="n">2</span><div><h4>Benchmark Against Persistence and Climatology</h4><p>Past rainfall and evaporative demand, as used here, add no significant skill over flow history at any lead (Wilcoxon <i>p</i> ≥ 0.23 on NSE), and the station's weekly climatology beats M2 at 11 of 12 stations at 4 weeks and 8 of 12 at 8 weeks. New sub-seasonal models should be judged against these baselines, and gauges should record low flows rather than zeros.</p></div></div>
       </div>
     </div>
