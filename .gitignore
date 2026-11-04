@@ -57,3 +57,12 @@ __pycache__/
 # gh-pages worktree (website) checked out locally
 site/
 CLAUDE.md
+
+# Local knowledge graph workspaces
+graphify-in/
+graphify-out/
+
+# Local screenshots and UI captures
+screenshots/
+
+
