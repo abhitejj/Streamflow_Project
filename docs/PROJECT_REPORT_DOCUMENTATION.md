@@ -320,6 +320,25 @@ Thresholds are the training-period (1980–2010) 5th percentile at each station.
 | **4w** | 0.066 (313 / 4725) | 0.000 (n=9) | 0.014 (n=12) | 0.000 (n=11) | 0.750 (n=11) | 0.733 (n=9) | 0.193 / 0.176 / 0.144 |
 | **8w** | 0.067 (305 / 4552) | 0.000 (n=9) | 0.111 (n=12) | 0.000 (n=9) | 0.696 (n=12) | 0.660 (n=5) | 0.194 / 0.217 / 0.178 |
 
+### 10.3.1 Drought Severity Sensitivity: Mild (Q80) vs Moderate (Q90) vs Severe (Q95)
+
+Thresholds are empirical percentiles fit strictly on each station's purged training fold (1980–2010): Mild ($Q_{80}$, 20th percentile), Moderate ($Q_{90}$, 10th percentile), and Severe ($Q_{95}$, 5th percentile). CSI is the median over stations where it is defined (*n* in brackets). Pooled PR-AUC is average precision across all evaluated test weeks.
+
+| Lead | Severity Level | Pooled base rate (events / weeks) | Median CSI M0 | Median CSI M1 | Median CSI M2 | Pooled PR-AUC M0 / M1 / M2 |
+| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| **1w** | Mild ($Q_{80}$) | 0.181 (882 / 4880) | 0.615 (n=11) | 0.000 (n=11) | 0.000 (n=12) | 0.752 / 0.435 / 0.412 |
+|  | Moderate ($Q_{90}$) | 0.105 (514 / 4880) | 0.585 (n=9) | 0.000 (n=9) | 0.000 (n=10) | 0.671 / 0.265 / 0.257 |
+|  | Severe ($Q_{95}$) | 0.065 (319 / 4880) | 0.529 (n=9) | 0.000 (n=9) | 0.000 (n=10) | 0.561 / 0.160 / 0.159 |
+| **2w** | Mild ($Q_{80}$) | 0.179 (863 / 4819) | 0.494 (n=11) | 0.037 (n=12) | 0.000 (n=12) | 0.643 / 0.428 / 0.398 |
+|  | Moderate ($Q_{90}$) | 0.104 (501 / 4819) | 0.422 (n=10) | 0.019 (n=11) | 0.000 (n=11) | 0.540 / 0.288 / 0.255 |
+|  | Severe ($Q_{95}$) | 0.064 (308 / 4819) | 0.379 (n=8) | 0.026 (n=10) | 0.000 (n=9) | 0.409 / 0.193 / 0.175 |
+| **4w** | Mild ($Q_{80}$) | 0.182 (858 / 4725) | 0.159 (n=11) | 0.029 (n=12) | 0.011 (n=11) | 0.467 / 0.403 / 0.343 |
+|  | Moderate ($Q_{90}$) | 0.106 (503 / 4725) | 0.000 (n=9) | 0.036 (n=12) | 0.000 (n=11) | 0.303 / 0.263 / 0.214 |
+|  | Severe ($Q_{95}$) | 0.066 (313 / 4725) | 0.000 (n=9) | 0.014 (n=12) | 0.000 (n=11) | 0.193 / 0.176 / 0.144 |
+| **8w** | Mild ($Q_{80}$) | 0.184 (839 / 4552) | 0.165 (n=11) | 0.127 (n=12) | 0.016 (n=11) | 0.470 / 0.400 / 0.397 |
+|  | Moderate ($Q_{90}$) | 0.107 (488 / 4552) | 0.000 (n=9) | 0.152 (n=12) | 0.000 (n=9) | 0.305 / 0.290 / 0.275 |
+|  | Severe ($Q_{95}$) | 0.067 (305 / 4552) | 0.000 (n=9) | 0.111 (n=12) | 0.000 (n=9) | 0.194 / 0.217 / 0.178 |
+
 ### 10.4 Protocol 2: Zero-Shot Transfer to Held-Out Basins (NSE)
 
 M0 uses the held-out station's own record. Ridge and GBT are flow-only models pooled over the state's other three stations in specific runoff; the HydroLSTM adds weather inputs.
@@ -362,7 +381,7 @@ Persistence has a median NSE of +0.284 at 1 week and -0.185 at 2 weeks, so it is
 M2 is not significantly better than M1 on NSE at any lead (*p* = 0.380, 0.233, 0.233, 0.622; M2 better at 5, 6, 4 and 8 of 12 stations). On KGE it is significantly worse at 1 week (*p* = 0.007). The importance analysis (§10.5) explains why. At 1 week M2 leans on recent rainfall rather than current flow, which carries much of the same information. At 8 weeks it relies almost entirely on the calendar, which makes it a noisier version of climatology (median r 0.546 vs 0.602).
 
 ### 11.3 Drought warning reliability and severity
-No model gives reliable severe-drought warnings. M2's median Q95 CSI is 0.000 at every lead (pooled over all stations 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead (e.g. 0.175 vs 0.193 at 2 weeks). Persistence is the best warning at 1 and 2 weeks (median CSI 0.529 (n=9), 0.379 (n=8); medians are over the stations where CSI is defined, so the three models' station sets differ slightly; pooled CSI 0.48 and 0.37). At 4 and 8 weeks skill is weak but not zero. Climatology issues no alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067), and M2 does worse (pooled CSI 0.11). Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. Mild and moderate thresholds were not re-scored in this audit.
+No model gives reliable severe-drought warnings. M2's median Q95 CSI is 0.000 at every lead (pooled over all stations 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead (e.g. 0.175 vs 0.193 at 2 weeks). Persistence is the best warning at 1 and 2 weeks (median CSI 0.529 (n=9), 0.379 (n=8); medians are over the stations where CSI is defined, so the three models' station sets differ slightly; pooled CSI 0.48 and 0.37). At 4 and 8 weeks skill is weak but not zero. Climatology issues no alerts at all, because a weekly climatology almost never falls below the 5th-percentile flow. The best model, M1, detects 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067), and M2 does worse (pooled CSI 0.11). Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels (mild $Q_{80}$ median CSI 0.615 and 0.494; moderate $Q_{90}$ CSI 0.585 and 0.422). At 4 and 8 weeks, climatology drops into the lowest 20th percentile during regular seasonal dry spells, issuing alerts that yield mild-drought CSI of 0.159 (4w) and 0.165 (8w), beating both ML models at 4 weeks. Crucially, across all four horizons and all three severity levels, M2 (hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that ERA5-Land surface weather features provide no early warning benefit across mild, moderate, or severe drought conditions.
 
 ### 11.4 Zero-shot spatial transfer
 The pooled HydroLSTM beats each held-out station's own baseline at 1 and 2 weeks (Kantamal +0.514 vs +0.388 at 1 week). At 4 and 8 weeks climatology wins at all three basins (Kantamal +0.483 / +0.481 vs +0.446 / +0.403; Bamni +0.234 vs +0.153 at 4 weeks), and at Bamni the LSTM fails badly at 8 weeks (NSE -1.266). At Kantamal the pooled three-feature flow-only GBT matches the LSTM: NSE differs by only 0.01–0.03 (GBT higher at every lead), within sampling noise at 1–4 weeks on a 52-week block bootstrap, and the LSTM has the higher KGE at 1 and 4 weeks. The weather inputs and the recurrent model therefore add no clear gain there. At Haralahalli the 2-week advantage is between two negative scores (-0.191 vs -0.469). A positive zero-shot NSE should therefore not be read as skill. The held-out basins are gauged, so the baseline uses their own history; an ungauged basin would have no such baseline.

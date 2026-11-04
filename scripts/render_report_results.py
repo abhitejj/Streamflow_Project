@@ -53,7 +53,9 @@ def load():
     pr = pd.read_csv(RES / "test_predictions.csv")
     fi = pd.read_csv(RES / "feature_importance_pooled.csv", index_col=0)
     fg = pd.read_csv(RES / "feature_importance_groups.csv", index_col=0)
-    return d, pr, fi, fg
+    sens_path = RES / "drought_severity_sensitivity.csv"
+    sens = pd.read_csv(sens_path) if sens_path.is_file() else None
+    return d, pr, fi, fg, sens
 
 
 def summary(d, pr):
@@ -87,7 +89,7 @@ def summary(d, pr):
     return rows
 
 
-def report_md(d, pr, fi, fg) -> str:
+def report_md(d, pr, fi, fg, sens=None) -> str:
     S = summary(d, pr)
     L = []
     a = L.append
@@ -140,6 +142,34 @@ def report_md(d, pr, fi, fg) -> str:
         a(f"| **{h}** | {s['base']:.3f} ({s['events']} / {s['weeks']}) | {s['c0']} | {s['c1']} | {s['c2']} | "
           f"{s['f1']} | {s['f2']} | {s['ap0']:.3f} / {s['ap1']:.3f} / {s['ap2']:.3f} |")
     a("")
+    if sens is not None:
+        a("### 10.3.1 Drought Severity Sensitivity: Mild (Q80) vs Moderate (Q90) vs Severe (Q95)")
+        a("")
+        a("Thresholds are empirical percentiles fit strictly on each station's purged training fold (1980–2010): "
+          "Mild ($Q_{80}$, 20th percentile), Moderate ($Q_{90}$, 10th percentile), and Severe ($Q_{95}$, 5th percentile). "
+          "CSI is the median over stations where it is defined (*n* in brackets). Pooled PR-AUC is average precision across all "
+          "evaluated test weeks.")
+        a("")
+        a("| Lead | Severity Level | Pooled base rate (events / weeks) | Median CSI M0 | Median CSI M1 | Median CSI M2 | Pooled PR-AUC M0 / M1 / M2 |")
+        a("| :-- | :-- | :-- | :-- | :-- | :-- | :-- |")
+        sev_labels = [('Q80', 'Mild ($Q_{80}$)'), ('Q90', 'Moderate ($Q_{90}$)'), ('Q95', 'Severe ($Q_{95}$)')]
+        for h in HS:
+            for sev, label in sev_labels:
+                p_m0 = sens[(sens.scope == 'portfolio_pooled') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M0')].iloc[0]
+                p_m1 = sens[(sens.scope == 'portfolio_pooled') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M1')].iloc[0]
+                p_m2 = sens[(sens.scope == 'portfolio_pooled') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M2')].iloc[0]
+                s_m0 = sens[(sens.scope == 'station') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M0')]
+                s_m1 = sens[(sens.scope == 'station') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M1')]
+                s_m2 = sens[(sens.scope == 'station') & (sens.horizon == h) & (sens.severity == sev) & (sens.model == 'M2')]
+                
+                base_str = f"{p_m0.BaseRate:.3f} ({int(p_m0.ObsEvents)} / {int(p_m0.n_eval)})"
+                csi0 = med_n(s_m0.CSI)
+                csi1 = med_n(s_m1.CSI)
+                csi2 = med_n(s_m2.CSI)
+                prauc = f"{p_m0.PR_AUC_AP:.3f} / {p_m1.PR_AUC_AP:.3f} / {p_m2.PR_AUC_AP:.3f}"
+                lead_str = f"**{h}**" if sev == 'Q80' else ""
+                a(f"| {lead_str} | {label} | {base_str} | {csi0} | {csi1} | {csi2} | {prauc} |")
+        a("")
     a("### 10.4 Protocol 2: Zero-Shot Transfer to Held-Out Basins (NSE)")
     a("")
     a("M0 uses the held-out station's own record. Ridge and GBT are flow-only models pooled over the state's other "
@@ -202,7 +232,13 @@ def report_md(d, pr, fi, fg) -> str:
       f"detects {100 * s8['ppod1']:.0f}% of severe-drought weeks at 8 weeks (pooled CSI {s8['pcsi1']:.2f}, PR-AUC "
       f"{s8['ap1']:.2f} against a base rate of {s8['base']:.3f}), and M2 does worse (pooled CSI {s8['pcsi2']:.2f}). "
       "Paired FAR comparisons are possible at only 2–9 stations and show no consistent reduction. "
-      "Mild and moderate thresholds were not re-scored in this audit.")
+      "Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought "
+      "confirms these findings. At 1 and 2 weeks, persistence strongly outperforms ML models across all three severity levels "
+      "(mild $Q_{80}$ median CSI 0.615 and 0.494; moderate $Q_{90}$ CSI 0.585 and 0.422). At 4 and 8 weeks, climatology drops "
+      "into the lowest 20th percentile during regular seasonal dry spells, issuing alerts that yield mild-drought CSI of 0.159 (4w) "
+      "and 0.165 (8w), beating both ML models at 4 weeks. Crucially, across all four horizons and all three severity levels, M2 "
+      "(hydro-met) has lower or equal pooled PR-AUC compared to M1 (flow-only) in every test, demonstrating that ERA5-Land surface "
+      "weather features provide no early warning benefit across mild, moderate, or severe drought conditions.")
     a("")
     a("### 11.4 Zero-shot spatial transfer")
     k = lambda st, h, c: hold.loc[(st, h), c]
@@ -276,8 +312,8 @@ def splice(path: Path, start: str, end: str, body: str) -> None:
 
 
 def main():
-    d, pr, fi, fg = load()
-    splice(REPORT, "<!-- REPORT_RESULTS:START -->", "<!-- REPORT_RESULTS:END -->", report_md(d, pr, fi, fg))
+    d, pr, fi, fg, sens = load()
+    splice(REPORT, "<!-- REPORT_RESULTS:START -->", "<!-- REPORT_RESULTS:END -->", report_md(d, pr, fi, fg, sens))
     splice(README, "<!-- README_RESULTS:START -->", "<!-- README_RESULTS:END -->", readme_md(d, pr))
 
 

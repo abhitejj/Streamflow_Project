@@ -467,7 +467,7 @@ def recompute_all_predictions():
                 'y_obs': y_test, 'scored': eval_mask, 'zero_as_missing': gap_masked,
                 'm0': preds_m0_fixed, 'm1_gbt': preds_m1_gbt, 'm1_ridge': preds_m1_ridge, 'm2_gbt': preds_m2_gbt,
                 'p2_lstm': preds_p2_lstm, 'p2_gbt': preds_p2_gbt, 'p2_ridge': preds_p2_ridge,
-                'q95': q95, 'q90': q90,
+                'q95': q95, 'q90': q90, 'q80': q80,
             }))
             
             rec = {
@@ -817,3 +817,10 @@ if __name__ == '__main__':
     print(df_recomputed[cols_show].to_string(index=False))
     
     print("\n[+] Audit recomputation script completed successfully.")
+    
+    # Run drought severity sensitivity audit (Q80, Q90, Q95)
+    print("\n" + "=" * 100)
+    print(" 4. RUNNING DROUGHT SEVERITY SENSITIVITY AUDIT (MILD Q80, MODERATE Q90, SEVERE Q95)")
+    print("=" * 100)
+    import audit_drought_sensitivity
+    audit_drought_sensitivity.main()
