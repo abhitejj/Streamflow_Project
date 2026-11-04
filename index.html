@@ -232,13 +232,13 @@
       </article>
       <article class="card hover finding blue" data-reveal>
         <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span><span class="chip blue">Drought alerts</span></div>
-        <div class="big"><span data-count="-23.1">-23.1</span><small>pp FAR (2w)</small></div>
-        <p>Integrating IMD rainfall and evaporative deficits reduced severe drought false alarm ratios from <strong>0.731 down to 0.500</strong> at 2-weeks and <strong>1.000 down to 0.467</strong> at 1-week, against a pooled empirical test base rate of <strong>0.238</strong>.</p>
+        <div class="big"><span data-count="-9.0">-9.0</span><small>pp paired FAR (2w)</small></div>
+        <p>Integrating IMD rainfall and evaporative deficits reduced severe drought false alarm ratios by a median of <strong>9.0 percentage points</strong> across paired alerting catchments (<i>n</i>=5) at 2 weeks (slashing overall median from 0.731 to 0.500) and <strong>44.1 pp</strong> (<i>n</i>=2) at 1 week, against a pooled empirical test base rate of <strong>0.238</strong>.</p>
       </article>
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
         <div class="big"><span data-count="0.403" data-prefix="+">+0.403</span><small>LSTM NSE (8w)</small></div>
-        <p>Zero-shot cross-basin transfer via <strong>PyTorch HydroLSTM</strong> achieved <strong>NSE = +0.403</strong> on held-out Kantamal (H=8w), while linear Ridge proved more resilient in semi-arid Karnataka (Haralahalli H=4w: <strong>+0.255</strong> vs -0.098 for LSTM).</p>
+        <p>Zero-shot cross-basin transfer via <strong>PyTorch HydroLSTM</strong> achieved <strong>NSE = +0.514</strong> at 1w and <strong>+0.403</strong> at 8w on held-out Kantamal (Odisha), while pooled linear Ridge avoided negative transfer in semi-arid Karnataka (Haralahalli H=4w: <strong>+0.255</strong> vs -0.098 for LSTM).</p>
       </article>
     </div>
   </div>
@@ -484,7 +484,7 @@
           <a class="fs-link" href="visualizations/interactive_spatial_transfer_grouped_bars.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="transfer" role="img" aria-label="Cross-basin zero-shot spatial transfer results"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>Zero-Shot Insight:</b> PyTorch HydroLSTM achieves positive zero-shot skill on Kantamal (H=8w: NSE = +0.403) and Bamni (H=4w: NSE = +0.153). However, pooled linear Ridge proves more resilient against negative transfer in semi-arid Karnataka (Haralahalli H=4w: NSE = +0.255 vs -0.098 for LSTM).<span class="artifact">Artifact: interactive_spatial_transfer_grouped_bars.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>Zero-Shot Insight:</b> PyTorch HydroLSTM achieves positive zero-shot skill across sub-humid catchments (Kantamal H=1w: NSE = +0.514, H=8w: +0.403; Bamni H=1w: +0.339, H=4w: +0.153). However, pooled linear Ridge proves more resilient against negative transfer in semi-arid Karnataka (Haralahalli H=4w: NSE = +0.255 vs -0.098 for LSTM).<span class="artifact">Artifact: interactive_spatial_transfer_grouped_bars.html</span></div></footer>
       </div>
     </div>
 
@@ -607,15 +607,15 @@
         <span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span>
         <span class="q">Finding 2: False Alarm Suppression</span>
         <h3>Drying Deficits Suppress Short-Lead False Alarms</h3>
-        <div class="num-big" style="color:#244e9e">−23.1 pp</div>
-        <p>Incorporating antecedent rainfall and evaporative deficits reduced severe drought False Alarm Ratios from <strong>0.731 down to 0.500</strong> at 2-week lead and from <strong>1.000 down to 0.467</strong> at 1-week lead. However, drought alert reliability is heavily conditioned by non-monsoon base rates and anthropogenic upstream diversions (such as Karad's 69.2% zero-flow rate).</p>
+        <div class="num-big" style="color:#244e9e">−9.0 pp</div>
+        <p>Incorporating antecedent rainfall and evaporative deficits reduced severe drought False Alarm Ratios by a median of <strong>9.0 percentage points</strong> across paired alerting catchments (<i>n</i>=5) at 2-week lead (dropping overall median from 0.731 to 0.500) and by <strong>44.1 pp</strong> (<i>n</i>=2) at 1-week lead. Antecedent rainfall deficits prevent spurious emergency warnings during temporary streamflow recessions.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span>
         <span class="q">Finding 3: Zero-Shot Transfer</span>
         <h3>Regional Transfer: Deep vs Linear Trade-offs</h3>
         <div class="num-big" style="color:var(--ochre-ink)">+0.403 NSE</div>
-        <p>Normalizing discharge into specific runoff (<i>q</i> in mm/week) enabled positive zero-shot spatial transfer to completely unmonitored catchments. Deep PyTorch HydroLSTM demonstrated superior transfer in sub-humid Odisha (<strong>NSE = +0.403</strong> on Kantamal at 8w), while pooled linear Ridge avoided negative transfer in semi-arid Karnataka (Haralahalli H=4w: <strong>+0.255</strong> vs -0.098 for LSTM).</p>
+        <p>Normalizing discharge into specific runoff (<i>q</i> in mm/week) enabled positive zero-shot spatial transfer to completely unmonitored catchments. Deep PyTorch HydroLSTM demonstrated strong transfer in sub-humid Odisha (<strong>NSE = +0.514</strong> at 1w, <strong>+0.403</strong> at 8w on Kantamal), while pooled linear Ridge avoided negative transfer in semi-arid Karnataka (Haralahalli H=4w: <strong>+0.255</strong> vs -0.098 for LSTM).</p>
       </article>
     </div>
 
@@ -630,19 +630,19 @@
           <tbody>
             <tr class="group-start"><td class="hz" rowspan="4">1-Week Ahead</td><td>Continuous NSE</td><td class="num">+0.306</td><td class="num">+0.475</td><td class="num m2c">+0.453</td><td class="num neg">-0.009 (p=0.470)</td><td class="num pos">+0.147</td></tr>
             <tr><td>Continuous KGE</td><td class="num">+0.653</td><td class="num">+0.553</td><td class="num m2c">+0.506</td><td class="num neg">-0.047</td><td class="num neg">-0.147</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">1.000</td><td class="num m2c">0.467</td><td class="num pos">-0.533 (Slashed)</td><td class="num">N/A</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">1.000 (n=3)</td><td class="num m2c">0.500 (n=5)</td><td class="num pos">-44.1 pp (n=2 paired)</td><td class="num">N/A</td></tr>
             <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.574</td><td class="num">0.000</td><td class="num m2c">0.000</td><td class="num">+0.000</td><td class="num neg">-0.574</td></tr>
             <tr class="group-start"><td class="hz" rowspan="4">2-Weeks Ahead</td><td>Continuous NSE</td><td class="num">-0.146</td><td class="num">+0.324</td><td class="num m2c">+0.345</td><td class="num pos">+0.009 (p=0.233)</td><td class="num pos">+0.491</td></tr>
             <tr><td>Continuous KGE</td><td class="num">+0.427</td><td class="num">+0.409</td><td class="num m2c">+0.397</td><td class="num neg">-0.012</td><td class="num neg">-0.030</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.731</td><td class="num m2c">0.500</td><td class="num pos">-0.231 (Slashed)</td><td class="num">N/A</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.731 (n=9)</td><td class="num m2c">0.500 (n=7)</td><td class="num pos">-9.0 pp (n=5 paired)</td><td class="num">N/A</td></tr>
             <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.429</td><td class="num">0.024</td><td class="num m2c">0.003</td><td class="num neg">-0.021</td><td class="num neg">-0.426</td></tr>
             <tr class="group-start"><td class="hz" rowspan="4">4-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.349</td><td class="num">+0.308</td><td class="num m2c">+0.267</td><td class="num neg">-0.017 (p=0.233)</td><td class="num neg">-0.082</td></tr>
             <tr><td>Continuous KGE</td><td class="num">+0.386</td><td class="num">+0.399</td><td class="num m2c">+0.380</td><td class="num neg">-0.019</td><td class="num neg">-0.006</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.556</td><td class="num m2c">0.610</td><td class="num neg">+0.054</td><td class="num">N/A</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.556 (n=11)</td><td class="num m2c">0.610 (n=10)</td><td class="num">+0.0 pp (n=10 paired)</td><td class="num">N/A</td></tr>
             <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (No Skill)</td><td class="num">0.031</td><td class="num m2c">0.020</td><td class="num neg">-0.011</td><td class="num pos">+0.020</td></tr>
             <tr class="group-start"><td class="hz" rowspan="4">8-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.348</td><td class="num">+0.248</td><td class="num m2c">+0.290</td><td class="num pos">+0.019 (p=0.424)</td><td class="num neg">-0.058</td></tr>
             <tr><td>Continuous KGE</td><td class="num">+0.385</td><td class="num">+0.330</td><td class="num m2c">+0.308</td><td class="num neg">-0.022</td><td class="num neg">-0.077</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.519</td><td class="num m2c">0.453</td><td class="num pos">-0.066</td><td class="num">N/A</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined</td><td class="num">0.519 (n=12)</td><td class="num m2c">0.477 (n=6)</td><td class="num pos">-3.8 pp (n=6 paired)</td><td class="num">N/A</td></tr>
             <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (No Skill)</td><td class="num">0.148</td><td class="num m2c">0.006</td><td class="num neg">-0.142</td><td class="num pos">+0.006</td></tr>
           </tbody>
         </table>
