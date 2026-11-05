@@ -65,3 +65,15 @@ Karad / Warunji / Yadgir keep only 75–180 scored weeks each, with 0–1 Q95 ev
 
 - Kantamal recheck (2026-11-04): NSE values verified from three sources; both models are trained on the same Odisha pool with no leakage. GBT − LSTM NSE = +0.022/+0.027/+0.013/+0.028; block-bootstrap 95% CI excludes zero only at 8 weeks; the LSTM has the higher KGE at 1 and 4 weeks. Wording changed from "beats" to "matches".
 - Drought-skill recheck (2026-11-04): "no model has skill at 4 and 8 weeks" was too strong. M1 at 8w: POD 0.28, pooled CSI 0.19, PR-AUC 0.22 against a base rate of 0.067; M2 pooled CSI 0.03–0.11. Wording changed to "weak skill" on the site (hero, Finding 2, Recommendation 1) and in report §11.3/§12 (pooled values now computed in render_report_results.py).
+
+## Phase 6: Rainfall Rebuild, Low-Flow Retraining, and CAMELS Robustness (2026-11-05)
+
+- [x] Rebuilt 2021–2025 precipitation as exact area-weighted catchment means using IMD 0.25° grid and CAMELS shapefiles (`scripts/rebuild_rainfall_catchment_mean.py`, `scripts/catchment_mean.py`). Boundary calibration achieves parity ($\bar{\alpha}_P = 1.0009$, daily $r = 0.9994$, weekly $r = 0.9998$).
+- [x] Temperature and PET retained at gauge points based on dynamic permutation importance showing atmospheric demand accounts for only ~2.6% (~3.1%) of M2's predictive importance at 1w.
+- [x] Enforced zero-flow masking on training and validation folds for the 4 zero-inflated stations (`ZERO_AS_MISSING_STATIONS`) in `train_forecast_models.py` and `train_m2_models.py`.
+- [x] Added log-target regression (`--target log`) fitting $\ln(1 + q)$ for specific runoff, recovering severe-drought warning skill (`M2-log` 1w CSI = 0.229, Log-NSE = 0.844).
+- [x] Retrained M1, M2, M1-log, M2-log models and updated all test predictions and evaluation artifacts.
+- [x] Created and executed `scripts/robustness_camels_era.py` evaluating the historical CAMELS-IND record (Train 1980–2000, Val 2001–2004, Test 2005–2010; 223 pooled severe-drought events), independently replicating 2016–2025 findings.
+- [x] Corrected 5 inaccurate claims across docs and site (Q95 event counts, test-block continuity, persistence dominance strictly on drought CSI, FAR reduction pairing, zero overlap retired for 3-gauge cascade).
+- [x] Regenerated all plots, tables, benchmarks, report sections, README, and site assets.
+

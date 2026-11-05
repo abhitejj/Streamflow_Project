@@ -43,7 +43,9 @@ SEVERITIES = [
 MODELS = [
     ('M0', 'm0', 'Persistence (1-2w) / Fixed Climatology (4-8w)'),
     ('M1', 'm1_gbt', 'M1 GBT (Autoregressive Flow History)'),
-    ('M2', 'm2_gbt', 'M2 GBT (Autoregressive Flow + Meteorology)')
+    ('M2', 'm2_gbt', 'M2 GBT (Autoregressive Flow + Meteorology)'),
+    ('M1-log', 'm1_gbt_log', 'M1-log GBT (Log Specific Runoff)'),
+    ('M2-log', 'm2_gbt_log', 'M2-log GBT (Log Specific Runoff + Meteorology)')
 ]
 
 

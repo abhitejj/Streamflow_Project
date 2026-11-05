@@ -75,8 +75,8 @@ python3 scripts/export_benchmark_data.py > /dev/null
 python3 scripts/generate_interactive_plots.py > /dev/null
 python3 scripts/uncertainty_tests.py > /dev/null
 python3 scripts/render_report_results.py > /dev/null
-git add data/processed/model_results/ assets/benchmark-data.js visualizations/source/
-git add docs/PROGRESS.md README.md docs/DECISION_LOG.md docs/PROJECT_REPORT_DOCUMENTATION.md deploy.sh
+git add data/processed/model_results/ data/processed/validation_reports/ assets/benchmark-data.js visualizations/source/ scripts/ models/
+git add docs/PROGRESS.md README.md docs/DECISION_LOG.md docs/PROJECT_REPORT_DOCUMENTATION.md docs/AUDIT_LOG.md docs/REVIEW_FIX_PROGRESS.md deploy.sh
 git add -u
 
 if git diff-index --quiet HEAD --; then

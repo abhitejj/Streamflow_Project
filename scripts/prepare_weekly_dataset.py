@@ -28,11 +28,18 @@ import xarray as xr
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 
-CWC_DIR = os.path.join(PROJECT_ROOT, 'data/raw/cwc')
-IMD_NC_PATH = os.path.join(PROJECT_ROOT, 'data/raw/imd/imd_rainfall_2001_2025.nc')
-CAMELS_DIR = os.path.join(PROJECT_ROOT, 'data/raw/camels_ind')
-ERA5_DIR = os.path.join(PROJECT_ROOT, 'data/raw/era5_land')
+RAW_DIR = os.environ.get("RAW_DIR", os.path.join(PROJECT_ROOT, 'data/raw'))
+
+CWC_DIR = os.path.join(RAW_DIR, 'cwc')
+IMD_NC_PATH = os.path.join(RAW_DIR, 'imd/imd_rainfall_2001_2025.nc')
+CAMELS_DIR = os.path.join(RAW_DIR, 'camels_ind')
+ERA5_DIR = os.path.join(PROJECT_ROOT, 'data/raw/era5_land') if os.path.isdir(os.path.join(PROJECT_ROOT, 'data/raw/era5_land')) else os.path.join(RAW_DIR, 'era5_land')
 CATALOG_PATH = os.path.join(PROJECT_ROOT, 'data/processed/station_catalog.csv')
+
+try:
+    from scripts.catchment_mean import catchment_mean
+except ImportError:
+    from catchment_mean import catchment_mean
 
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/validation_reports')
 OUTPUT_TENSORS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/weekly_tensors')
@@ -132,6 +139,20 @@ def validate_protocol2_holdout(test_station, metric_scaled=False):
     print(f"[+] Holdout Validation Check: Station '{test_station}' cleared for Protocol 2.")
 
 # ==============================================================================
+# 5. ANTECEDENT PRECIPITATION INDEX (API) CALCULATION
+# ==============================================================================
+def calc_daily_api(series, gamma=0.85, window=30):
+    """
+    Decayed Antecedent Precipitation Index: gamma=0.85 decayed 30-day sum,
+    with chronological decay (day t has weight 1.0, decaying backwards).
+    """
+    weights = gamma ** np.arange(window)
+    weights_chronological = (weights / weights.sum())[::-1]
+    return series.rolling(window, min_periods=1).apply(
+        lambda w: np.dot(w, weights_chronological[-len(w):]), raw=True
+    )
+
+# ==============================================================================
 # 5. BASELINE CORRECTION ENGINE (M0)
 # ==============================================================================
 def calculate_m0_baseline(train_series, eval_series, horizon_weeks):
@@ -191,9 +212,9 @@ def calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_n
     camels_tmin = slice_camels['tmin(C)']
     camels_pet = slice_camels['pet_gleam(mm/day)']
     
-    # 1. IMD Rainfall point extraction (nearest grid cell to gauge lat/lon)
-    imd_pt = ds_imd_lazy['rain'].sel(lat=lat, lon=lon, method='nearest').sel(time=slice('2015-01-01', '2020-12-31')).to_series()
-    imd_pt.index = imd_pt.index.normalize()
+    # 1. IMD Rainfall catchment-mean extraction (area-weighted zonal mean)
+    rain_slice_15_20 = ds_imd_lazy['rain'].sel(time=slice('2015-01-01', '2020-12-31'))
+    imd_pt = catchment_mean(rain_slice_15_20, gauge_id)
     
     # Rainfall calibration metrics
     comp_p = pd.DataFrame({'camels': camels_p, 'imd': imd_pt}).dropna()
@@ -403,10 +424,10 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     tmin_camels = df_f['tmin(C)'].loc['1980-01-01':'2020-12-31']
     pet_camels = df_f['pet_gleam(mm/day)'].loc['1980-01-01':'2020-12-31']
     
-    # B. 2021–2025 IMD Rainfall with spatial calibration applied
-    imd_pt_21_25 = ds_imd_lazy['rain'].sel(lat=lat, lon=lon, method='nearest').sel(time=slice('2021-01-01', '2025-12-31')).to_series()
-    imd_pt_21_25.index = imd_pt_21_25.index.normalize()
-    p_calibrated_21_25 = imd_pt_21_25 * alpha_p
+    # B. 2021–2025 IMD Rainfall with spatial calibration applied (catchment-mean)
+    rain_slice_21_25 = ds_imd_lazy['rain'].sel(time=slice('2021-01-01', '2025-12-31'))
+    imd_cm_21_25 = catchment_mean(rain_slice_21_25, gauge_id)
+    p_calibrated_21_25 = imd_cm_21_25 * alpha_p
     
     # C. 2021–2025 ERA5-Land Temperature & PET with boundary calibrations applied
     era5_file = os.path.join(ERA5_DIR, f'era5_land_{gauge_id:05d}_{station_name}.csv')
@@ -467,12 +488,6 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     daily_roll_90d = df_daily['rainfall_mm'].rolling(90, min_periods=1).sum().resample('W-MON').last()
     
     # Decayed Antecedent Precipitation Index (API: gamma=0.85 decayed 30-day sum, chronological decay)
-    def calc_daily_api(series, gamma=0.85, window=30):
-        weights = gamma ** np.arange(window)
-        weights_chronological = (weights / weights.sum())[::-1]
-        return series.rolling(window, min_periods=1).apply(
-            lambda w: np.dot(w, weights_chronological[-len(w):]), raw=True
-        )
     daily_api = calc_daily_api(df_daily['rainfall_mm']).resample('W-MON').last()
     
     # Temperature aggregations

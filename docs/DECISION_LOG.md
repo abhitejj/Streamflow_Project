@@ -115,3 +115,21 @@ This document tracks all formal methodological, architectural, and data governan
 * **Context:** Rigorous audit of model metrics revealed two critical scientific realities: (1) Wilcoxon signed-rank tests across the 12 basins showed M2 hydro-met models were NOT statistically significantly superior to M1 flow-only models at any horizon ($p > 0.20$); and (2) after fixing a double-shift bug in climatology indexing, seasonal weekly climatology (M0 = +0.348 at 8w, +0.349 at 4w) actually outperformed both M2 (+0.290, +0.267) and M1 (+0.248, +0.308) at extended lead times.
 * **Specialist Evidence:** Statistical Research Analyst and Evaluation Auditor demonstrated that hydraulic streamflow memory collapses completely to 0.0% by 8 weeks lead (proven via permutation feature importance), while local meteorological memory accounts for only 8.5% of variance, leaving annual astronomical calendar seasonality (72.0% of variance) as the dominant physical driver.
 * **Approved Decision:** Approved the strategic pivot to complete intellectual honesty and rigorous statistical transparency. Explicitly communicate that M2 does not provide statistically significant continuous accuracy gains over M1 ($p > 0.20$), highlight seasonal climatology as the winning continuous model at 4- and 8-week horizons, and focus M2's true practical value on short-term severe drought false alarm suppression and multi-hazard early warning.
+
+---
+
+### Gate AG-TS-09: 2021–2025 Catchment-Mean Rainfall Rebuild, T/PET Lineage Retention, Validation Zero-Masking, Log-Target Regression, and CAMELS-Era Robustness
+* **Date:** November 5, 2026
+* **Status:** **APPROVED BY USER & IMPLEMENTED**
+* **Context:**
+  1. The 2021–2025 operational rainfall series previously used single 0.25° grid points near each gauge, scaled by $\alpha_P$, while 1980–2020 CAMELS-IND used true polygon area-weighted catchment averages.
+  2. Four stations (Karad, Warunji, Yadgir, Huvinhedigi) had unmeasured zeros masked during test scoring (`ZERO_AS_MISSING_STATIONS`), but models were previously fitted and tuned on unmasked training and validation folds.
+  3. Standard squared-error regression collapsed on low flows ($Q_{95}$ CSI = 0.000).
+* **Specialist Evidence:**
+  1. Geospatial Data Engineer demonstrated that polygon area-weighted catchment averaging of IMD 0.25° grids achieves near-perfect calibration against historical CAMELS-IND data ($\bar{\alpha}_P = 1.0009$, daily $r = 0.9994$, weekly $r = 0.9998$), resolving the primary spatial discrepancy across the 2020/2021 seam.
+  2. Permutation feature importance proved that atmospheric evaporative demand (temperature, PET, deficit) accounts for only ~2.6% (~3.1%) of M2's predictive importance at 1w (versus 84–114% for precipitation), justifying retaining ERA5-Land temperature and PET at gauge points without error-prone gridded ET0 interpolation.
+  3. Time-Series ML Scientist showed that enforcing zero-flow masking on training and validation folds eliminates spurious fitting to telemetry artifacts.
+  4. Drought Modelling Scientist showed that log-target regression (`M1-log`, `M2-log`) trained on $\ln(1 + q)$ mitigates heteroskedasticity and restores low-flow warning skill (1w $Q_{95}$ CSI reaches 0.229, Log-NSE 0.844) without classification tricks.
+  5. Robustness test on the historical CAMELS-IND epoch (Train 1980–2000, Val 2001–2004, Test 2005–2010; 223 pooled $Q_{95}$ events) independently replicated the primary findings: significant 1w advantage for coupled meteorology (+0.087 $\Delta\text{NSE}$, $p = 0.0005$), climatology dominance beyond 2 weeks, and persistence dominance for short-lead drought warning.
+* **Approved Decision:** Approved (1) replacing 2021–2025 rainfall with true catchment area-weighted means; (2) retaining T and PET at gauge points; (3) enforcing zero-flow masking across training and validation folds; (4) adding log-target regression models; and (5) incorporating the CAMELS-era robustness test into the benchmark report and documentation.
+

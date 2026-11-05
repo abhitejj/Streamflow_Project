@@ -47,6 +47,10 @@ from torch.utils.data import Dataset, DataLoader
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
+from eval_config import ZERO_AS_MISSING_STATIONS
+
 TENSORS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/weekly_tensors')
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/model_results')
 REPORTS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/validation_reports')
@@ -56,6 +60,63 @@ os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(REPORTS_DIR, exist_ok=True)
 os.makedirs(os.path.join(MODELS_DIR, 'protocol1'), exist_ok=True)
 os.makedirs(os.path.join(MODELS_DIR, 'protocol2'), exist_ok=True)
+
+NON_NEG_FLOW_FEATS = [
+    'flow_lag_0', 'flow_lag_1', 'flow_lag_2', 'flow_lag_3', 'flow_lag_4', 'flow_lag_7',
+    'flow_min_7d', 'flow_max_7d', 'flow_std_7d'
+]
+
+def filter_zero_flow_rows(df: pd.DataFrame, station_name: str, target_col: str) -> pd.DataFrame:
+    """
+    At ZERO_AS_MISSING_STATIONS, exclude any week whose issue-time flow
+    (flow_lag_0 or flow_target_m3s) or target flow (target_col) is <= 0.0.
+    """
+    if station_name in ZERO_AS_MISSING_STATIONS:
+        flow_col = 'flow_lag_0' if 'flow_lag_0' in df.columns else 'flow_target_m3s'
+        zero_issue = (df[flow_col] <= 0.0)
+        if 'flow_target_m3s' in df.columns and flow_col != 'flow_target_m3s':
+            zero_issue = zero_issue | (df['flow_target_m3s'] <= 0.0)
+        zero_target = (df[target_col] <= 0.0)
+        return df[~(zero_issue | zero_target)].copy()
+    return df
+
+def mask_zero_flows_for_sequences(df: pd.DataFrame, station_name: str, target_col: str) -> pd.DataFrame:
+    """
+    For LSTM sequence generation: sets target to NaN whenever issue-time flow or target
+    is <= 0.0 at ZERO_AS_MISSING_STATIONS, ensuring the week is excluded from model fitting,
+    hyperparameter tuning, and early stopping without breaking temporal index lookbacks.
+    """
+    if station_name in ZERO_AS_MISSING_STATIONS:
+        df_masked = df.copy()
+        flow_col = 'flow_lag_0' if 'flow_lag_0' in df_masked.columns else 'flow_target_m3s'
+        zero_issue = (df_masked[flow_col] <= 0.0)
+        if 'flow_target_m3s' in df_masked.columns and flow_col != 'flow_target_m3s':
+            zero_issue = zero_issue | (df_masked['flow_target_m3s'] <= 0.0)
+        if 'flow_target_specific_mm' in df_masked.columns:
+            zero_issue = zero_issue | (df_masked['flow_target_specific_mm'] <= 0.0)
+        zero_target = (df_masked[target_col] <= 0.0)
+        bad_mask = zero_issue | zero_target
+        df_masked.loc[bad_mask, target_col] = np.nan
+        return df_masked
+    return df
+
+def prepare_log_features(df: pd.DataFrame, feature_cols: list, area_km2: float) -> pd.DataFrame:
+    """
+    Transforms non-negative flow features to log1p specific runoff:
+    conv = 604.8 / area_km2
+    q = Q * conv
+    non_negative_q -> log1p(maximum(0, q))
+    recession slope -> slope * conv
+    Weather (rain, pet, deficit, temp, api, dry_days) and harmonics remain standard.
+    """
+    df_out = df[feature_cols].copy()
+    conv = 604.8 / area_km2
+    for col in feature_cols:
+        if col in NON_NEG_FLOW_FEATS and col in df_out.columns:
+            df_out[col] = np.log1p(np.maximum(0.0, df_out[col].values * conv))
+        elif col == 'flow_recession_slope' and col in df_out.columns:
+            df_out[col] = df_out[col].values * conv
+    return df_out
 
 # ==============================================================================
 # 2. EXPERIMENTAL SPLIT BOUNDARIES & EMBARGO RULES (AG-TS-02)
@@ -359,29 +420,65 @@ def predict_m0_baseline(df_train, df_eval, horizon_weeks, target_col='target_H1'
 # ==============================================================================
 # 6. PROTOCOL 1: M2 HIST-GRADIENT-BOOSTING ENGINE
 # ==============================================================================
-def train_and_predict_m2_gbt(df_train, df_val, df_test, feature_cols, target_col, save_path=None):
+def train_and_predict_m2_gbt(df_train, df_val, df_test, feature_cols, target_col,
+                             target_mode='raw', area_km2=None, save_path=None):
     """
     Trains HistGradientBoostingRegressor on the 26 hydro-meteorological features.
-    Tuning: Evaluates hyperparameter combinations on chronological df_val.
-    Models are never refit on Train+Val, preserving parameter estimation integrity.
+    - If target_mode == 'raw': trains on volumetric streamflow (m³/s).
+    - If target_mode == 'log': trains on np.log1p(specific runoff mm/week) and applies
+      np.log1p to non-negative flow features scaled to mm/week (weather remains standard).
+    - Tuning: Evaluates hyperparameter combinations on chronological df_val against volumetric RMSE.
+    - Models are never refit on Train+Val, preserving parameter estimation integrity.
+    - Serializes trained estimator bundle (model, scaler, metadata) to disk via joblib.
+    - Enforces physical non-negativity constraint: streamflow >= 0.
     """
-    tr_clean = df_train.dropna(subset=[target_col])
-    X_train = tr_clean[feature_cols].copy()
-    y_train = tr_clean[target_col].values
-    
-    val_clean = df_val.dropna(subset=[target_col])
-    X_val = val_clean[feature_cols].copy()
-    y_val = val_clean[target_col].values
-    
-    # Feature imputation: compute medians strictly on Training fold
-    feat_medians = X_train.median()
-    X_train = X_train.fillna(feat_medians)
-    X_val   = X_val.fillna(feat_medians)
-    X_test  = df_test[feature_cols].fillna(feat_medians)
+    if target_mode == 'log':
+        if area_km2 is None:
+            raise ValueError("area_km2 must be provided when target_mode is 'log'.")
+        target_spec_col = target_col.replace('target_H', 'target_specific_H')
+        
+        # Prepare log features (flow features in log1p specific mm; weather in standard physical units)
+        X_tr_df = prepare_log_features(df_train, feature_cols, area_km2)
+        X_va_df = prepare_log_features(df_val, feature_cols, area_km2)
+        X_te_df = prepare_log_features(df_test, feature_cols, area_km2)
+        
+        valid_tr = (~df_train[target_spec_col].isna()) & (~X_tr_df.isna().any(axis=1))
+        valid_va = (~df_val[target_spec_col].isna()) & (~X_va_df.isna().any(axis=1))
+        
+        if valid_tr.sum() == 0:
+            raise ValueError(f"[-] Training set contains 0 valid rows for {target_spec_col}.")
+        if valid_va.sum() == 0:
+            raise ValueError(f"[-] Validation set contains 0 valid rows for {target_spec_col}.")
+            
+        X_train = X_tr_df[valid_tr].copy()
+        y_train = np.log1p(np.maximum(0.0, df_train.loc[valid_tr, target_spec_col].values))
+        
+        X_val = X_va_df[valid_va].copy()
+        y_val_vol = df_val.loc[valid_va, target_col].values
+        
+        feat_medians = X_train.median()
+        X_train = X_train.fillna(feat_medians)
+        X_val   = X_val.fillna(feat_medians)
+        X_test  = X_te_df.fillna(feat_medians)
+    else:
+        tr_clean = df_train.dropna(subset=[target_col])
+        X_train = tr_clean[feature_cols].copy()
+        y_train = tr_clean[target_col].values
+        
+        val_clean = df_val.dropna(subset=[target_col])
+        X_val = val_clean[feature_cols].copy()
+        y_val_vol = val_clean[target_col].values
+        
+        # Feature imputation: compute medians strictly on Training fold
+        feat_medians = X_train.median()
+        X_train = X_train.fillna(feat_medians)
+        X_val   = X_val.fillna(feat_medians)
+        X_test  = df_test[feature_cols].fillna(feat_medians)
     
     # Hyperparameter tuning on validation fold
     best_score = float('inf')
     best_model = None
+    best_params = {}
     
     depth_grid = [3, 5, 7]
     l2_grid = [0.0, 1.0, 10.0]
@@ -398,32 +495,56 @@ def train_and_predict_m2_gbt(df_train, df_val, df_test, feature_cols, target_col
                     random_state=42
                 )
                 est.fit(X_train, y_train)
-                val_preds = est.predict(X_val)
-                score = float(np.sqrt(np.mean((y_val - val_preds) ** 2)))
+                if target_mode == 'log':
+                    val_preds_log = est.predict(X_val)
+                    val_preds_spec = np.maximum(0.0, np.expm1(val_preds_log))
+                    val_preds = val_preds_spec * (area_km2 / 604.8)
+                else:
+                    val_preds = np.maximum(0.0, est.predict(X_val))
+                score = float(np.sqrt(np.mean((y_val_vol - val_preds) ** 2)))
                 if score < best_score:
                     best_score = score
                     best_model = est
+                    best_params = {'max_depth': d, 'l2_regularization': l2, 'learning_rate': lr}
                     
-    preds_test = best_model.predict(X_test)
-    preds_test = np.maximum(0.0, preds_test)
+    if target_mode == 'log':
+        test_preds_log = best_model.predict(X_test)
+        test_preds = np.maximum(0.0, np.expm1(test_preds_log)) * (area_km2 / 604.8)
+    else:
+        test_preds = np.maximum(0.0, best_model.predict(X_test))
     
     if save_path:
-        joblib.dump(best_model, save_path)
+        os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
+        artifact = {
+            'model': best_model,
+            'scaler': None,
+            'model_type': 'gbt',
+            'target_type': target_mode,
+            'area_km2': area_km2,
+            'best_score': float(best_score),
+            'best_params': best_params,
+            'feature_cols': feature_cols,
+            'target_col': target_col if target_mode == 'raw' else target_spec_col,
+            'train_medians': feat_medians.to_dict(),
+            'saved_at': datetime.datetime.now().isoformat()
+        }
+        joblib.dump(artifact, save_path)
         
-    return preds_test
+    return test_preds
 
-def execute_protocol_1(horizons=[1, 2, 4, 8]):
+def execute_protocol_1(horizons=[1, 2, 4, 8], target_mode='raw'):
     """
     Executes Protocol 1 (Temporal Multi-Horizon Benchmarking):
     - Evaluates M2 (HistGradientBoosting) vs M0 Baseline on the 10-year Test block (2016–2025).
     - Features: Complete 26-feature hydro-meteorological matrix.
     - Slices 46-year dataset for each of the 12 catchments with H-week purge embargo.
+    - Applies ZERO_AS_MISSING_STATIONS zero-flow filtering on Train and Val folds.
     - Evaluates on identical test row intersections.
     """
     print("\n" + "=" * 80)
     print(" EXECUTION: PROTOCOL 1 (Station-Specific Multi-Horizon Benchmarking)")
-    print(" Model Type: M2 (HistGradientBoosting: Flow Lags + Multi-Source Weather)")
-    print(f" Horizons  : {horizons} weeks")
+    print(f" Model Type : M2 (HistGradientBoosting: Flow Lags + Multi-Source Weather) [Target Mode: {target_mode.upper()}]")
+    print(f" Horizons   : {horizons} weeks")
     print("=" * 80)
     
     results = []
@@ -456,17 +577,26 @@ def execute_protocol_1(horizons=[1, 2, 4, 8]):
             q90 = drought_thresholds['Q90_moderate']
             q95 = drought_thresholds['Q95_severe']
             
+            # Enforce zero-flow masking on Train and Val folds for unmeasured stations
+            df_train_fit = filter_zero_flow_rows(df_train, station, target_col)
+            df_val_fit   = filter_zero_flow_rows(df_val, station, target_col)
+            
             # 2. Generate M0 predictions
             preds_m0 = predict_m0_baseline(df_train, df_test, horizon_weeks=H, target_col=target_col)
             
             # 3. Generate M2 predictions & serialize trained estimator
             clean_name = station.replace(' ', '_').replace('(', '').replace(')', '')
-            save_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gauge_id:05d}_{clean_name}_H{H}.joblib")
+            if target_mode == 'log':
+                save_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gauge_id:05d}_{clean_name}_log_H{H}.joblib")
+            else:
+                save_path = os.path.join(MODELS_DIR, 'protocol1', f"m2_gbt_gauge_{gauge_id:05d}_{clean_name}_H{H}.joblib")
             
             preds_m2 = train_and_predict_m2_gbt(
-                df_train, df_val, df_test,
+                df_train_fit, df_val_fit, df_test,
                 feature_cols=M2_TABULAR_FEATURES,
                 target_col=target_col,
+                target_mode=target_mode,
+                area_km2=area_km2,
                 save_path=save_path
             )
             
@@ -510,7 +640,7 @@ def execute_protocol_1(horizons=[1, 2, 4, 8]):
                 'Gauge_ID': gauge_id,
                 'Catchment_Area_km2': area_km2,
                 'Horizon_Weeks': H,
-                'Model_Family': 'M2_GBT',
+                'Model_Family': 'M2_GBT_LOG' if target_mode == 'log' else 'M2_GBT',
                 'N_Obs': m2_track_a['N_obs'],
                 'Unstable_Metrics_Flag': unstable_flag,
                 'Obs_Mean_m3s': mean_y,
@@ -560,7 +690,10 @@ def execute_protocol_1(horizons=[1, 2, 4, 8]):
             })
             
     df_results = pd.DataFrame(results)
-    out_csv = os.path.join(RESULTS_DIR, 'protocol1_temporal_results_m2_gbt.csv')
+    if target_mode == 'log':
+        out_csv = os.path.join(RESULTS_DIR, 'protocol1_temporal_results_m2_gbt_log.csv')
+    else:
+        out_csv = os.path.join(RESULTS_DIR, 'protocol1_temporal_results_m2_gbt.csv')
     df_results.to_csv(out_csv, index=False)
     print(f"\n[+] Protocol 1 models saved to: {os.path.join(MODELS_DIR, 'protocol1')}")
     print(f"[+] Protocol 1 results saved to: {out_csv}")
@@ -789,11 +922,13 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
             target_spec_col = f'target_specific_H{H}'
             target_vol_col  = f'target_H{H}'
             
-            # Pool training stations with embargo
+            # Pool training stations with embargo and zero-flow sequence masking
             pooled_train_dfs = []
             pooled_val_dfs   = []
             for s_info, df_s in dfs_train_list:
                 tr, va, _ = partition_splits_with_embargo(df_s, horizon_weeks=H)
+                tr = mask_zero_flows_for_sequences(tr, s_info['station'], target_spec_col)
+                va = mask_zero_flows_for_sequences(va, s_info['station'], target_spec_col)
                 pooled_train_dfs.append(tr)
                 pooled_val_dfs.append(va)
                 
@@ -1021,6 +1156,12 @@ if __name__ == '__main__':
         default='auto',
         help="Compute device for PyTorch: auto, cpu, mps, cuda (default: auto)"
     )
+    parser.add_argument(
+        '--target',
+        choices=['raw', 'log'],
+        default='raw',
+        help="Target regression formulation: 'raw' (standard m3/s) or 'log' (log1p specific runoff mm/week)"
+    )
     args = parser.parse_args()
     
     print("\n" + "#" * 80)
@@ -1030,7 +1171,7 @@ if __name__ == '__main__':
     print("#" * 80)
     
     if args.protocol in ['1', 'all']:
-        execute_protocol_1(horizons=args.horizons)
+        execute_protocol_1(horizons=args.horizons, target_mode=args.target)
     if args.protocol in ['2', 'all']:
         execute_protocol_2(
             horizons=args.horizons,

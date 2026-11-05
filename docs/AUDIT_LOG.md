@@ -333,3 +333,31 @@ Full task log: `docs/REVIEW_FIX_PROGRESS.md`.
 7. **Station metadata.** Areas corrected from the tensors (Kashinagar 7,820, Gomlai 21,950, Yadgir 69,863 km²). Aridity is now the Budyko index PET/P computed from the 1980–2020 tensors.
 
 8. **Issue K recomputed** on the masked set with `scripts/uncertainty_tests.py` (Section 3, Issue K).
+
+---
+
+## 8. Issue L — 2021–2025 Catchment-Mean Rainfall Rebuild, Validation Zero Masking, Log-Target Regression, and CAMELS-Era Robustness (2026-11-05)
+
+### 1. 2021–2025 Catchment-Mean Rainfall Rebuild
+- **Defect Discovered:** The operational period (2021–2025) previously extracted precipitation from the nearest 0.25° IMD grid cell to each gauge, scaled by $\alpha_P$, while CAMELS-IND historical data (1980–2020) represented true polygon area-weighted catchment averages. For large catchments (up to 69,863 km²), single-cell point extractions diverged significantly from basin averages ($r \approx 0.660$).
+- **Resolution:** Built `scripts/rebuild_rainfall_catchment_mean.py` and `scripts/catchment_mean.py` to calculate exact area-weighted catchment means using polygon-cell intersection weights with latitude cosine corrections against official CAMELS catchment shapefiles (`camels_ind/shapefiles_catchment/catchments.shp`).
+- **Validation:** Over the 2015–2020 overlap period against CAMELS-IND, the catchment-mean reconstruction achieved physical parity: mean scaling factor collapsed to $\bar{\alpha}_P = 1.0009$ (range 0.9833–1.0045, eliminating former point-scale distortions of 0.782–2.180), daily correlation increased from $r = 0.660$ to $r = 0.9994$, and weekly correlation increased to $r = 0.9998$. Artifact: `data/processed/validation_reports/rainfall_catchment_mean_rebuild.md`.
+- **Forcing Lineage Decision (Temperature & PET):** Temperature and PET remain gauge-point extractions from ERA5-Land. Dynamic permutation feature importance confirmed that atmospheric evaporative demand accounts for only ~2.6% (~3.1%) of M2's predictive importance at 1w (versus 84–114% for precipitation), rendering the spatial aggregation effect negligible.
+
+### 2. Zero-Flow Masking on Training and Validation Folds
+- **Defect Discovered:** While test-period unmeasured zeros were masked via `ZERO_AS_MISSING_STATIONS`, models had previously been trained and tuned on unmasked training/validation folds at Karad, Warunji, Yadgir, and Huvinhedigi, exposing gradient boosting and early stopping to spurious zero records.
+- **Resolution:** Enforced `ZERO_AS_MISSING_STATIONS` filtering on both Training (1980–2010) and Validation (2011–2015) folds in `scripts/train_forecast_models.py` and `scripts/train_m2_models.py`. Any week where issue-time flow or target flow is $\le 0.0$ at these four stations is dropped from fitting and early-stopping loss calculations.
+
+### 3. Log-Target Regression Models (`M1-log`, `M2-log`)
+- **Methodology:** Implemented `--target {raw, log}` in `scripts/train_forecast_models.py` and `scripts/train_m2_models.py`. When `--target log` is selected, models train on $\ln(1 + q)$ (specific runoff in mm/week) and log-transformed flow lags. Predictions are inverted via $\max(0, \exp(\hat{z}) - 1)$ and converted back to volumetric discharge ($Q = q \cdot \text{Area} / 604.8$).
+- **Impact:** Alleviates extreme heteroskedasticity and prevents model collapse on low flows. At 1w, `M2-log` achieves Log-NSE of +0.844 and recovers severe drought ($Q_{95}$) CSI to 0.229 (versus 0.000 for raw regression).
+
+### 4. CAMELS-Era Robustness Test (1980–2010)
+- **Execution:** Created and ran `scripts/robustness_camels_era.py` evaluated strictly on CAMELS-IND historical data (Train 1980–2000, Val 2001–2004, Test 2005–2010; 6 out-of-sample test years, ~3,500 total scored weeks) with terminal $H$-week purge embargoes at each split seam.
+- **Sample Support:** Verified pooled $Q_{95}$ severe drought events = 223 events ($\ge 100$ verification requirement passed).
+- **Benchmark Findings:**
+  - **1w:** Median NSE: M0 0.186, M1 0.443, M2 0.493, M2-log 0.530. Paired $\Delta\text{NSE}$ (M2 − M1) = **+0.087** ($p = 0.0005$, statistically significant advantage for M2). $Q_{95}$ CSI: M0 0.512, M1 0.004, M2 0.000, M2-log 0.150.
+  - **2w:** Median NSE: M0 -0.262, M1 0.327, M2 0.339. Paired $\Delta\text{NSE}$ = +0.017 ($p = 0.2661$). $Q_{95}$ CSI: M0 0.365, M1 0.053, M2 0.013, M2-log 0.087.
+  - **4w & 8w:** Climatology dominates both M1 and M2 at 8w (M0 0.293 vs M1 0.274, M2 0.288; paired $\Delta\text{NSE} = -0.036$, $p = 0.0771$).
+  - **Conclusion:** Replicates 2016–2025 findings across an independent historical epoch: (1) coupled meteorology has a significant 1-week advantage; (2) climatology dominates beyond 2 weeks; (3) persistence dominates short-lead drought warning; and (4) log-target regression recovers low-flow early warning skill. Artifact: `data/processed/model_results/robustness_camels_era.csv`.
+

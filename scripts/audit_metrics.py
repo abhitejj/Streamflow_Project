@@ -86,6 +86,29 @@ M2_SEQUENTIAL_FEATURES = [
     'temp_mean_1w', 'temp_max_1w', 'api_30d', 'dry_days_count', 'sin_week', 'cos_week'
 ]
 
+NON_NEG_FLOW_FEATS = [
+    'flow_lag_0', 'flow_lag_1', 'flow_lag_2', 'flow_lag_3', 'flow_lag_4', 'flow_lag_7',
+    'flow_min_7d', 'flow_max_7d', 'flow_std_7d'
+]
+
+def prepare_log_features(df: pd.DataFrame, feature_cols: list, area_km2: float) -> pd.DataFrame:
+    """
+    Transforms non-negative flow features to log1p specific runoff:
+    conv = 604.8 / area_km2
+    q = Q * conv
+    non_negative_q -> log1p(maximum(0, q))
+    recession slope -> slope * conv
+    Weather and harmonics remain standard.
+    """
+    df_out = df[feature_cols].copy()
+    conv = 604.8 / area_km2
+    for col in feature_cols:
+        if col in NON_NEG_FLOW_FEATS and col in df_out.columns:
+            df_out[col] = np.log1p(np.maximum(0.0, df_out[col].values * conv))
+        elif col == 'flow_recession_slope' and col in df_out.columns:
+            df_out[col] = df_out[col].values * conv
+    return df_out
+
 # ==============================================================================
 # PYTORCH LSTM ARCHITECTURE (FOR PROTOCOL 2 ZERO-SHOT EVALUATION)
 # ==============================================================================
@@ -126,7 +149,7 @@ def compute_continuous_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     n = len(y)
     if n < 5:
         return {
-            'N': n, 'NSE': np.nan, 'KGE': np.nan, 'r': np.nan,
+            'N': n, 'NSE': np.nan, 'log_nse': np.nan, 'KGE': np.nan, 'r': np.nan,
             'alpha': np.nan, 'beta': np.nan, 'RMSE': np.nan, 'MAE': np.nan
         }
         
@@ -142,6 +165,17 @@ def compute_continuous_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         nse = 1.0 if ss_res < 1e-6 else -10.0
     else:
         nse = float(np.clip(1.0 - (ss_res / ss_tot), -10.0, 1.0))
+
+    # Log-NSE
+    z = np.log1p(np.maximum(y, 0.0))
+    z_hat = np.log1p(np.maximum(y_hat, 0.0))
+    ss_res_log = float(np.sum((z - z_hat) ** 2))
+    z_mean = float(np.mean(z))
+    ss_tot_log = float(np.sum((z - z_mean) ** 2))
+    if ss_tot_log < 1e-6:
+        log_nse = 1.0 if ss_res_log < 1e-6 else -10.0
+    else:
+        log_nse = float(np.clip(1.0 - (ss_res_log / ss_tot_log), -10.0, 1.0))
         
     # KGE
     std_y = float(np.std(y))
@@ -173,6 +207,7 @@ def compute_continuous_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     return {
         'N': n,
         'NSE': nse,
+        'log_nse': log_nse,
         'KGE': kge,
         'r': r,
         'alpha': alpha,
@@ -351,6 +386,43 @@ def recompute_all_predictions():
             else:
                 preds_m2_gbt = np.full(len(df_test), np.nan)
 
+            # --- M1 GBT Log ---
+            m1_gbt_log_path = MODELS_DIR / "protocol1" / f"m1_gbt_gauge_{gauge_id:05d}_{clean_name}_log_H{H}.joblib"
+            m1_gbt_log_est, _, med1_gbt_log = load_estimator(m1_gbt_log_path)
+            if m1_gbt_log_est is not None:
+                X1_log_df = prepare_log_features(df_test, M1_FEATURES, area)
+                impute_val = med1_gbt_log if med1_gbt_log is not None else X1_log_df.median()
+                X1_log = X1_log_df.fillna(impute_val)
+                preds_log = m1_gbt_log_est.predict(X1_log.values)
+                preds_m1_gbt_log = np.maximum(0.0, np.expm1(preds_log)) * (area / 604.8)
+            else:
+                preds_m1_gbt_log = np.full(len(df_test), np.nan)
+
+            # --- M1 Ridge Log ---
+            m1_rdg_log_path = MODELS_DIR / "protocol1" / f"m1_ridge_gauge_{gauge_id:05d}_{clean_name}_log_H{H}.joblib"
+            m1_rdg_log_est, scaler1_log, med1_rdg_log = load_estimator(m1_rdg_log_path)
+            if m1_rdg_log_est is not None:
+                X1r_log_df = prepare_log_features(df_test, M1_FEATURES, area)
+                impute_val = med1_rdg_log if med1_rdg_log is not None else X1r_log_df.median()
+                X1r_log = X1r_log_df.fillna(impute_val)
+                X1r_logs = scaler1_log.transform(X1r_log) if scaler1_log else X1r_log.values
+                preds_log = m1_rdg_log_est.predict(X1r_logs)
+                preds_m1_ridge_log = np.maximum(0.0, np.expm1(preds_log)) * (area / 604.8)
+            else:
+                preds_m1_ridge_log = np.full(len(df_test), np.nan)
+
+            # --- M2 GBT Log ---
+            m2_gbt_log_path = MODELS_DIR / "protocol1" / f"m2_gbt_gauge_{gauge_id:05d}_{clean_name}_log_H{H}.joblib"
+            m2_gbt_log_est, _, med2_gbt_log = load_estimator(m2_gbt_log_path)
+            if m2_gbt_log_est is not None:
+                X2_log_df = prepare_log_features(df_test, M2_TABULAR_FEATURES, area)
+                impute_val = med2_gbt_log if med2_gbt_log is not None else X2_log_df.median()
+                X2_log = X2_log_df.fillna(impute_val)
+                preds_log = m2_gbt_log_est.predict(X2_log.values)
+                preds_m2_gbt_log = np.maximum(0.0, np.expm1(preds_log)) * (area / 604.8)
+            else:
+                preds_m2_gbt_log = np.full(len(df_test), np.nan)
+
             # --- Protocol 2 Spatial Transfer (Holdouts only) ---
             preds_p2_lstm = np.full(len(df_test), np.nan)
             preds_p2_gbt = np.full(len(df_test), np.nan)
@@ -458,6 +530,14 @@ def recompute_all_predictions():
             m1_b = compute_drought_metrics(y_eval, preds_m1_gbt[eval_mask], q95)
             m2_b = compute_drought_metrics(y_eval, preds_m2_gbt[eval_mask], q95)
             
+            # Protocol 1 Log Models
+            m1_gbt_log_a = compute_continuous_metrics(y_eval, preds_m1_gbt_log[eval_mask])
+            m1_rdg_log_a = compute_continuous_metrics(y_eval, preds_m1_ridge_log[eval_mask])
+            m2_gbt_log_a = compute_continuous_metrics(y_eval, preds_m2_gbt_log[eval_mask])
+            
+            m1_gbt_log_b = compute_drought_metrics(y_eval, preds_m1_gbt_log[eval_mask], q95)
+            m2_gbt_log_b = compute_drought_metrics(y_eval, preds_m2_gbt_log[eval_mask], q95)
+
             # Protocol 2 Metrics
             p2_lstm_a = compute_continuous_metrics(y_eval, preds_p2_lstm[eval_mask]) if is_holdout else {}
             p2_gbt_a  = compute_continuous_metrics(y_eval, preds_p2_gbt[eval_mask]) if is_holdout else {}
@@ -469,6 +549,7 @@ def recompute_all_predictions():
                 'y_obs': y_test, 'scored': eval_mask, 'zero_as_missing': gap_masked,
                 'm0': preds_m0_fixed, 'clim': preds_clim, 'pers': preds_pers,
                 'm1_gbt': preds_m1_gbt, 'm1_ridge': preds_m1_ridge, 'm2_gbt': preds_m2_gbt,
+                'm1_gbt_log': preds_m1_gbt_log, 'm1_ridge_log': preds_m1_ridge_log, 'm2_gbt_log': preds_m2_gbt_log,
                 'p2_lstm': preds_p2_lstm, 'p2_gbt': preds_p2_gbt, 'p2_ridge': preds_p2_ridge,
                 'q95': q95, 'q90': q90, 'q80': q80,
             }))
@@ -491,20 +572,36 @@ def recompute_all_predictions():
                 # Track A
                 'm0_nse_bugged': m0_bug_a['NSE'],
                 'm0_nse_fixed': m0_fix_a['NSE'],
+                'm0_log_nse': m0_fix_a['log_nse'],
                 'm0_kge_bugged': m0_bug_a['KGE'],
                 'm0_kge_fixed': m0_fix_a['KGE'],
                 'm1_nse': m1_gbt_a['NSE'],
+                'm1_log_nse': m1_gbt_a['log_nse'],
                 'm1_kge': m1_gbt_a['KGE'],
                 'm1_ridge_nse': m1_rdg_a['NSE'],
                 'm2_nse': m2_gbt_a['NSE'],
+                'm2_log_nse': m2_gbt_a['log_nse'],
                 'm2_kge': m2_gbt_a['KGE'],
                 'delta_nse_recomputed': m2_gbt_a['NSE'] - m1_gbt_a['NSE'],
                 'delta_kge_recomputed': m2_gbt_a['KGE'] - m1_gbt_a['KGE'],
+                # Track A: Log Models
+                'm1_gbt_log_nse': m1_gbt_log_a['NSE'],
+                'm1_gbt_log_log_nse': m1_gbt_log_a['log_nse'],
+                'm1_gbt_log_kge': m1_gbt_log_a['KGE'],
+                'm1_gbt_log_rmse': m1_gbt_log_a['RMSE'],
+                'm1_gbt_log_mae': m1_gbt_log_a['MAE'],
+                'm1_ridge_log_nse': m1_rdg_log_a['NSE'],
+                'm2_gbt_log_nse': m2_gbt_log_a['NSE'],
+                'm2_gbt_log_log_nse': m2_gbt_log_a['log_nse'],
+                'm2_gbt_log_kge': m2_gbt_log_a['KGE'],
+                'm2_gbt_log_rmse': m2_gbt_log_a['RMSE'],
+                'm2_gbt_log_mae': m2_gbt_log_a['MAE'],
+                'delta_nse_log_recomputed': m2_gbt_log_a['NSE'] - m1_gbt_log_a['NSE'],
             }
             for tag, mt in (('m0', m0_fix_a), ('m1', m1_gbt_a), ('m2', m2_gbt_a)):
                 for comp in ('r', 'alpha', 'beta', 'RMSE', 'MAE'):
                     rec[f'{tag}_{comp.lower()}'] = mt[comp]
-            for tag, mb in (('m0', m0_b), ('m1', m1_b), ('m2', m2_b)):
+            for tag, mb in (('m0', m0_b), ('m1', m1_b), ('m2', m2_b), ('m1_gbt_log', m1_gbt_log_b), ('m2_gbt_log', m2_gbt_log_b)):
                 rec.update({
                     f'{tag}_hits': mb['Hits'], f'{tag}_fa': mb['FalseAlarms'], f'{tag}_miss': mb['Misses'],
                     f'{tag}_far': mb['FAR'], f'{tag}_pod': mb['POD'], f'{tag}_csi': mb['CSI'], f'{tag}_pr_auc': mb['PR_AUC'],
@@ -515,6 +612,19 @@ def recompute_all_predictions():
             mask_2016_20 = eval_mask & (df_test.index >= '2016-01-01') & (df_test.index <= '2020-12-31')
             m1_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m1_gbt[mask_2016_20])
             m2_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m2_gbt[mask_2016_20])
+            m0clim_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_clim[mask_2016_20])
+            m0pers_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_pers[mask_2016_20])
+
+            mask_2021_25 = eval_mask & (df_test.index >= '2021-01-01') & (df_test.index <= '2025-12-31')
+            m1_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_m1_gbt[mask_2021_25])
+            m2_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_m2_gbt[mask_2021_25])
+            m0clim_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_clim[mask_2021_25])
+            m0pers_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_pers[mask_2021_25])
+
+            m1_gbt_log_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m1_gbt_log[mask_2016_20])
+            m2_gbt_log_16_20 = compute_continuous_metrics(y_test[mask_2016_20], preds_m2_gbt_log[mask_2016_20])
+            m1_gbt_log_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_m1_gbt_log[mask_2021_25])
+            m2_gbt_log_21_25 = compute_continuous_metrics(y_test[mask_2021_25], preds_m2_gbt_log[mask_2021_25])
             
             rec.update({
                 'm0clim_nse': m0clim_a['NSE'],
@@ -523,6 +633,16 @@ def recompute_all_predictions():
                 'm0pers_kge': m0pers_a['KGE'],
                 'm1_nse_2016_20': m1_16_20['NSE'],
                 'm2_nse_2016_20': m2_16_20['NSE'],
+                'm0clim_nse_2016_20': m0clim_16_20['NSE'],
+                'm0pers_nse_2016_20': m0pers_16_20['NSE'],
+                'm1_nse_2021_25': m1_21_25['NSE'],
+                'm2_nse_2021_25': m2_21_25['NSE'],
+                'm0clim_nse_2021_25': m0clim_21_25['NSE'],
+                'm0pers_nse_2021_25': m0pers_21_25['NSE'],
+                'm1_gbt_log_nse_2016_20': m1_gbt_log_16_20['NSE'],
+                'm2_gbt_log_nse_2016_20': m2_gbt_log_16_20['NSE'],
+                'm1_gbt_log_nse_2021_25': m1_gbt_log_21_25['NSE'],
+                'm2_gbt_log_nse_2021_25': m2_gbt_log_21_25['NSE'],
                 # Protocol 2 Zero-Shot
                 'p2_lstm_nse': p2_lstm_a.get('NSE', np.nan),
                 'p2_lstm_kge': p2_lstm_a.get('KGE', np.nan),
