@@ -347,8 +347,8 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
     a(f"Across the full 10-year test block, M2 achieves a paired median gain over M1 of {f3(s1['dn'])} at 1 week (*p* = {fp(s1['pn'])}) "
       f"and {f3(s2['dn'])} at 2 weeks (*p* = {fp(s2['pn'])}). When isolating the 2021–2025 sub-period where rainfall was reconstructed "
       f"as exact catchment area-weighted means, M2 demonstrates an unambiguous, statistically significant advantage over M1 at 1 week: "
-      f"paired median ΔNSE = **{f3(s1['dn_21_25'])}** (*p* = **{fp(s1['pn_21_25'])}**). In the historical CAMELS-only era (1980–2010), "
-      f"this 1-week coupled gain is **+0.087** (*p* = **<0.001**). Beyond 2 weeks, however, meteorological memory decays and climatology wins.")
+      f"paired median ΔNSE = **{f3(s1['dn_21_25'])}** (*p* = **{fp(s1['pn_21_25'])}**). In the historical CAMELS-IND robustness test "
+      f"(1980–2000 train, 2005–2010 test; 223 pooled Q95 events), this 1-week coupled gain is **+0.087** (*p* = **0.0005**). Beyond 2 weeks, however, meteorological memory decays and climatology wins.")
     a("")
     a("### 11.3 Drought warning reliability and severity")
     a(f"Standard regression models trained under squared-error loss exhibit severe threshold collapse on low flows (M2 median Q95 CSI is 0.000 at 1–4w). "
@@ -416,8 +416,8 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
       "Kashinagar 9, Kantamal 0. Short-lead persistence dominance holds strictly for drought CSI; on continuous NSE, "
       "ML models beat persistence at 1–2 weeks.")
     a("- **Forcing Resolution:** 2021–2025 precipitation was reconstructed as exact area-weighted catchment means from IMD 0.25° grids, "
-      "whereas ERA5-Land temperature and PET remain gauge-point extractions. Feature importance analysis confirms that atmospheric demand "
-      "accounts for only 3.1% of M2's permutation importance (versus 114% for precipitation), rendering the spatial aggregation effect negligible.")
+      "whereas ERA5-Land temperature and PET remain gauge-point extractions. Feature importance analysis confirms that shuffling the atmospheric-demand "
+      "group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%), rendering the spatial aggregation effect negligible.")
     a("- Models were retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, preventing hyperparameter tuning from fitting to artificial unmeasured zeros.")
     a("- There are only 12 stations (10 river systems, three of them nested), so the Wilcoxon tests have modest power.")
     u = pd.read_csv(RES / "uncertainty_station_block_bootstrap.csv")
@@ -443,11 +443,11 @@ def readme_md(d, pr) -> str:
                  f"{f3(s['m0_log_nse'])} / {f3(s['m2_log_log_nse'])} | {c(s['c0'])} / {c(s['c2'])} / {c(s['c2_log'])} | "
                  f"{s['climwin']} of 12 |")
     L += ["", "**Key findings.**",
-          f"- **Coupled meteorology adds significant skill at 1 week:** With reconstructed catchment-mean rainfall, M2 outperforms flow-only M1 by **+0.069** paired ΔNSE (*p* = 0.003) in 2021–2025 and **+0.087** (*p* < 0.001) in the historical CAMELS-only era (1980–2010).",
+          f"- **Coupled meteorology adds significant skill at 1 week:** With reconstructed catchment-mean rainfall, M2 outperforms flow-only M1 by **+0.069** paired ΔNSE (*p* = 0.003) in 2021–2025 and **+0.087** (*p* = 0.0005) in the historical CAMELS-IND robustness test (1980–2000 train, 2005–2010 test; 223 pooled Q95 events).",
           f"- **Memory decay beyond 2 weeks:** From 4 weeks, seasonal weekly climatology beats M2 at {S['4w']['climwin']} and {S['8w']['climwin']} of 12 stations.",
           f"- **Persistence is the drought benchmark across 1–4 weeks:** Lagged persistence achieves Q95 CSI of {S['1w']['c0'].split()[0]} (1w), {S['2w']['c0'].split()[0]} (2w), and 0.234 at 4w (pooled 0.48, 0.37, 0.25 vs M2's 0.04). While log-target regression (M2-log) recovers severe-drought warning skill over raw regression (1w CSI reaches 0.229 vs 0.000), three trade-offs apply: persistence still dominates (CSI 0.529, pooled 0.48 vs 0.20), persistence low-flow accuracy matches it (log-NSE 0.829 vs 0.844), and log training degrades continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).",
           "- **Zero-shot spatial transfer:** Pooled HydroLSTM beats the held-out station's own baseline only at 1–2 weeks.",
-          "- **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that atmospheric evaporative demand (temperature, PET, and deficit) accounts for only 3.1% of M2's predictive importance at 1w, while precipitation features contribute 114% (versus 28% for flow features). Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.", ""]
+          "- **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%). Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.", ""]
     return "\n".join(L)
 
 

@@ -166,7 +166,7 @@ def bench_table_rows() -> str:
     out = []
     for h in ("1w", "2w", "4w", "8w"):
         m = M[h]
-        P = lambda k: f" (p{m[k]})" if m[k].startswith("<") else f" (p={m[k]})"
+        P = lambda k: f" (p{m[k].replace('<', '&lt;')})" if m[k].startswith("<") else f" (p={m[k]})"
         rows = [
             ("Continuous NSE", m["m0_nse"], m["m1_nse"], m["m2_nse"],
              (m["delta_nse"], P("p_nse_m2_m1")), (m["delta_nse_m2_m0"], P("p_nse_m2_m0"))),
