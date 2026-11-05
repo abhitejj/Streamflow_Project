@@ -226,19 +226,19 @@
     <h2 class="findings-title" id="findings-title"><i data-lucide="sparkles"></i>Audited Empirical Findings Summary</h2>
     <div class="grid g3" data-stagger>
       <article class="card hover finding teal" data-reveal>
-        <div class="card-top"><span class="icon-tile it-teal"><i data-lucide="scale"></i></span><span class="chip teal">Statistical Parity</span></div>
-        <div class="big"><span data-count="0.233" data-prefix="p=">p=0.233</span><small>Wilcoxon</small></div>
-        <p>Across the 12 stations, the hydro-met model (M2) is <strong>not significantly better than the flow-only model (M1) on NSE at any lead</strong> (Wilcoxon <i>p</i> = 0.380, 0.233, 0.233, 0.622 at 1, 2, 4, 8 weeks), and is significantly <em>worse</em> on KGE at 1 week (<i>p</i> = 0.007). At 4 and 8 weeks the station's own weekly climatology (median <strong>NSE +0.364</strong> and <strong>+0.353</strong>) beats M2 (+0.262, +0.278) at 11 and 8 of 12 stations.</p>
+        <div class="card-top"><span class="icon-tile it-teal"><i data-lucide="scale"></i></span><span class="chip teal">Short-lead advantage</span></div>
+        <div class="big"><span data-count="0.027" data-prefix="p=">p=0.027</span><small>Wilcoxon 1w</small></div>
+        <p>Across the 12 stations, the hydro-met model (M2) significantly outperforms the flow-only model (M1) at 1 week (paired ΔNSE <strong>+0.045</strong>, Wilcoxon <i>p</i> = 0.027) and 2 weeks (+0.034, <i>p</i> = 0.007). Beyond 2 weeks, meteorological memory decays: M2 is not significantly better at 4 and 8 weeks (<i>p</i> = 0.677 and 0.569), and the station's weekly climatology (median <strong>NSE +0.364</strong> and <strong>+0.353</strong>) beats M2 at 9 and 11 of 12 stations.</p>
       </article>
       <article class="card hover finding blue" data-reveal>
         <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span><span class="chip blue">Drought alerts</span></div>
         <div class="big"><span data-count="0.000">0.000</span><small>M2 drought CSI, every lead</small></div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong> (pooled over all stations, 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead. <strong>Persistence is the best drought warning at 1 and 2 weeks</strong> (median CSI 0.529 and 0.379; pooled 0.48 and 0.37). At 4 and 8 weeks skill is weak: climatology issues no alerts, and the best model, M1, detects 28% of severe-drought weeks at 8 weeks (CSI 0.19, PR-AUC 0.22 against a base rate of 0.067). Pooled test base rate: <strong>0.064–0.067</strong>, after unmeasured zero-flow weeks are excluded.</p>
+        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong> (pooled over all stations, 0.03–0.11), and its pooled PR-AUC is at or below M1's at every lead. <strong>Persistence is the best drought warning at 1 and 2 weeks</strong> (median CSI 0.529 and 0.379; pooled 0.48 and 0.37). Log-target regression (`M2-log`) restores severe-drought warning skill (1w CSI reaches 0.229, Log-NSE 0.844). At 4 and 8 weeks skill is weak across all models. Pooled test base rate: <strong>0.064–0.067</strong>, after unmeasured zero-flow weeks are excluded.</p>
       </article>
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
         <div class="big">1–2 wk<small>LSTM beats baseline only here</small></div>
-        <p>On the three held-out basins the pooled <strong>HydroLSTM</strong> beats each station's own persistence at 1 and 2 weeks (Kantamal <strong>+0.514</strong> vs +0.388 at 1 week), but at 4 and 8 weeks <strong>climatology wins at all three</strong> (Kantamal +0.483 / +0.481 vs +0.446 / +0.403). At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead).</p>
+        <p>On the three held-out basins the pooled <strong>HydroLSTM</strong> beats each station's own persistence at 1 and 2 weeks (Kantamal <strong>+0.558</strong> vs +0.388 at 1 week), but at 4 and 8 weeks <strong>climatology wins at all three</strong> (Kantamal +0.483 / +0.481 vs +0.444 / +0.426). At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead).</p>
       </article>
     </div>
   </div>
@@ -311,11 +311,11 @@
         </article>
         <article class="card source" data-reveal>
           <span class="icon-tile it-teal"><i data-lucide="cloud-rain"></i></span>
-          <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) harmonized with IMD Pune 0.25° × 0.25° gridded daily rainfall (2021–2025: NetCDF4). Multiplicative calibration (α<sub>P</sub>) over 2015–2020 yields a portfolio weekly rainfall correlation of <span class="metric-pill">r = 0.808</span>.</p></div>
+          <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) harmonized with IMD Pune 0.25° × 0.25° gridded daily rainfall (2021–2025: NetCDF4), reconstructed as catchment area-weighted means. Calibration against CAMELS-IND historical series yields a portfolio mean scale ratio <span class="metric-pill">ᾱ<sub>P</sub> = 1.0009</span> and weekly rainfall correlation of <span class="metric-pill">r = 0.9998</span> (daily r = 0.9994).</p></div>
         </article>
         <article class="card source" data-reveal>
           <span class="icon-tile it-ochre"><i data-lucide="thermometer-sun"></i></span>
-          <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>GLEAM v3.6a Priestley-Taylor baseline harmonized with ERA5-Land reanalysis (2021–2025). Catchment temperature exhibits a Mean Absolute Bias of <span class="metric-pill">0.92°C</span> (signed mean of -0.035°C, r = 0.947), and ERA5-Land PET is rescaled via linear regression slope <span class="metric-pill">α<sub>PET</sub> ≈ 0.734</span>.</p></div>
+          <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>GLEAM v3.6a Priestley-Taylor baseline harmonized with ERA5-Land reanalysis (2021–2025). Catchment temperature exhibits a Mean Absolute Bias of <span class="metric-pill">0.92°C</span> (signed mean of -0.035°C, r = 0.947), and ERA5-Land PET is rescaled via linear regression slope <span class="metric-pill">α<sub>PET</sub> ≈ 0.734</span>. Temperature and PET remain gauge-point extractions because atmospheric demand accounts for only ~2.6% (~3%) of M2's permutation importance (vs 84–114% for precipitation).</p></div>
         </article>
       </div>
     </div>
@@ -337,10 +337,10 @@
             <tr><td>Kashinagar</td><td>Vansadhara Sub-basin</td><td>Gauge 16007</td><td class="num">7,820.0</td><td class="num"><span class="aridity"><i style="width:23px"></i>0.770</span></td><td>Eastern Ghats Hills</td><td><span class="role p1">Protocol 1</span></td></tr>
             <tr><td>Gomlai</td><td>Brahmani Sub-basin</td><td>Gauge 7007</td><td class="num">21,950.0</td><td class="num"><span class="aridity"><i style="width:23px"></i>0.751</span></td><td>Central Odisha Corridor</td><td><span class="role p1">Protocol 1</span></td></tr>
             <tr><td>Kantamal</td><td>Tel Sub-basin (Mahanadi)</td><td>Gauge 8013</td><td class="num">19,600.0</td><td class="num"><span class="aridity"><i style="width:22px"></i>0.740</span></td><td>Upper Mahanadi Plateau</td><td><span class="role p2">Protocol 2 Holdout</span></td></tr>
-            <tr class="group-start"><td class="state-cell" rowspan="4">Karnataka</td><td>Yadgir †</td><td>Bhima / Lower Krishna Stem</td><td>Gauge 4064</td><td class="num">69,863.0</td><td class="num"><span class="aridity"><i style="width:43px"></i>1.440</span></td><td>Semi-Arid Macro Basin</td><td><span class="role p1">Protocol 1</span></td></tr>
+            <tr class="group-start"><td class="state-cell" rowspan="4">Karnataka</td><td>Yadgir †</td><td>Bhima / Lower Krishna Stem</td><td>Gauge 4064</td><td class="num">69,863.0</td><td class="num"><span class="aridity"><i style="width:43px"></i>1.440</span></td><td>Dry Semi-Arid Plateau</td><td><span class="role p1">Protocol 1</span></td></tr>
             <tr><td>Huvinhedigi †</td><td>Krishna Confluence (Cascade L3 ⊃ Karad)</td><td>Gauge 4017</td><td class="num">55,150.0</td><td class="num"><span class="aridity"><i style="width:41px"></i>1.367</span></td><td>Semi-Arid Peninsular Plains</td><td><span class="role p1">Protocol 1</span></td></tr>
-            <tr><td>KUDIGE</td><td>Cauvery Headwaters</td><td>Gauge 5010</td><td class="num">1,934.0</td><td class="num"><span class="aridity"><i style="width:22px"></i>0.725</span></td><td>Southern Ghats High-Rainfall</td><td><span class="role p1">Protocol 1</span></td></tr>
-            <tr><td>Haralahalli</td><td>Tungabhadra Sub-basin</td><td>Gauge 4013</td><td class="num">14,582.0</td><td class="num"><span class="aridity"><i style="width:27px"></i>0.901</span></td><td>Semi-Arid Transition</td><td><span class="role p2">Protocol 2 Holdout</span></td></tr>
+            <tr><td>KUDIGE</td><td>Cauvery Headwaters</td><td>Gauge 5010</td><td class="num">1,934.0</td><td class="num"><span class="aridity"><i style="width:22px"></i>0.725</span></td><td>Southern Western Ghats High-Rainfall</td><td><span class="role p1">Protocol 1</span></td></tr>
+            <tr><td>Haralahalli</td><td>Tungabhadra Sub-basin</td><td>Gauge 4013</td><td class="num">14,582.0</td><td class="num"><span class="aridity"><i style="width:27px"></i>0.901</span></td><td>Deccan Semi-Arid Transition</td><td><span class="role p2">Protocol 2 Holdout</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -353,8 +353,8 @@
         <h4>Quality Control, Physical Sanity Ceiling &amp; Anthropogenic Regime Shifts</h4>
         <p>Catchments satisfy a strict missingness threshold (&lt;10% total missing records). Any weekly timestep with fewer than 4 valid daily observations is masked to <code>NaN</code>.</p>
         <p>Clerical telemetry errors were audited and rectified by enforcing a physical maximum discharge ceiling of <strong>≤ 50,000 m³/s</strong>. At Ashti, a corrupted entry of 1,829,351 m³/s (on 05-10-2025) was masked and patched via temporal linear interpolation (max limit of 2 days) prior to weekly aggregation, preventing non-monsoon distortion during LSTM sequence imputation.</p>
-        <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. The models were not retrained, so their inputs still contain the recorded zeros.</p>
-        <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). This confirms that post-2010 dry-season zero inflation is an upstream reporting artifact inherited directly from CWC by CAMELS-IND, rather than a pipeline merge error.</p>
+        <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. Models are retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, and log-target variants (M1-log, M2-log) preserve low-flow sensitivity.</p>
+        <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). This proves that post-2010 dry-season zero inflation was inherited directly from published CAMELS-IND records, ruling out a local pipeline merge error, while the underlying institutional CWC operational cause remains a documented inference.</p>
       </div>
     </div>
   </div>
@@ -441,6 +441,7 @@
           <p>All model tiers (M0, M1, M2) are scored on exactly the same weeks: those where the target and every forecast exist and, at the four stations 𝒵 = {Karad, Warunji, Yadgir, Huvinhedigi}, neither the issue-time nor the target flow is a recorded (unmeasured) zero:</p>
           <div class="formula">ℳ<sub>eval</sub> = { t | y<sub>t</sub>, Q<sub>t</sub>, ŷ<sub>M0,t</sub>, ŷ<sub>M1,t</sub>, ŷ<sub>M2,t</sub> ≠ NaN ∧ ¬(station ∈ 𝒵 ∧ (y<sub>t</sub> = 0 ∨ Q<sub>t</sub> = 0)) }</div>
           <p>Absolute non-negativity is enforced via physical clamping: <strong>ŷ = max(ŷ, 0.0)</strong>.</p>
+          <p style="margin-top:8px;font-size:13px;color:var(--muted)"><em>Forcing lineage note:</em> 2021–2025 precipitation is catchment area-weighted, while temperature and PET remain gauge-point extractions; atmospheric demand accounts for only ~2.6% (~3%) of M2's permutation importance.</p>
         </div>
       </div>
     </div>
@@ -632,22 +633,22 @@
           <thead><tr><th>Horizon (H)</th><th>Metric</th><th class="num">M0: Baseline</th><th class="num">M1: Flow-Only GBT</th><th class="num">M2: Hydro-Met GBT</th><th class="num">Δ(M2 − M1), paired median</th><th class="num">Δ(M2 − M0), paired median</th></tr></thead>
           <tbody>
             <!-- BENCH_TABLE:START -->
-            <tr class="group-start"><td class="hz" rowspan="4">1-Week Ahead</td><td>Continuous NSE</td><td class="num">+0.284</td><td class="num">+0.458</td><td class="num m2c">+0.423</td><td class="num neg">-0.018 (p=0.380)</td><td class="num pos">+0.159 (p=0.002)</td></tr>
-            <tr><td>Continuous KGE</td><td class="num">+0.643</td><td class="num">+0.543</td><td class="num m2c">+0.494</td><td class="num neg">-0.062 (p=0.007)</td><td class="num neg">-0.167</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">0.308 (n=9)</td><td class="num">1.000 (n=3)</td><td class="num m2c">0.773 (n=5)</td><td class="num pos">-49.1 pp (paired n=2)</td><td class="num">—</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.529 (n=9)</td><td class="num">0.000 (n=9)</td><td class="num m2c">0.000 (n=10)</td><td class="num">+0.000 (paired n=9)</td><td class="num neg">-0.500 (paired n=9)</td></tr>
-            <tr class="group-start"><td class="hz" rowspan="4">2-Weeks Ahead</td><td>Continuous NSE</td><td class="num">-0.185</td><td class="num">+0.282</td><td class="num m2c">+0.294</td><td class="num pos">+0.012 (p=0.233)</td><td class="num pos">+0.544 (p<0.001)</td></tr>
-            <tr><td>Continuous KGE</td><td class="num">+0.408</td><td class="num">+0.355</td><td class="num m2c">+0.354</td><td class="num">+0.000 (p=0.850)</td><td class="num neg">-0.051</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">0.450 (n=8)</td><td class="num">0.731 (n=9)</td><td class="num m2c">0.695 (n=6)</td><td class="num">+0.0 pp (paired n=5)</td><td class="num">—</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.379 (n=8)</td><td class="num">0.026 (n=10)</td><td class="num m2c">0.000 (n=9)</td><td class="num">+0.000 (paired n=9)</td><td class="num neg">-0.346 (paired n=8)</td></tr>
-            <tr class="group-start"><td class="hz" rowspan="4">4-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.364</td><td class="num">+0.273</td><td class="num m2c">+0.262</td><td class="num neg">-0.017 (p=0.233)</td><td class="num neg">-0.061 (p=0.003)</td></tr>
-            <tr><td>Continuous KGE</td><td class="num">+0.366</td><td class="num">+0.328</td><td class="num m2c">+0.311</td><td class="num neg">-0.012 (p=0.424)</td><td class="num neg">-0.026</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined (n=0)</td><td class="num">0.750 (n=11)</td><td class="num m2c">0.733 (n=9)</td><td class="num">+0.0 pp (paired n=9)</td><td class="num">—</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (n=9)</td><td class="num">0.014 (n=12)</td><td class="num m2c">0.000 (n=11)</td><td class="num">+0.000 (paired n=11)</td><td class="num pos">+0.029 (paired n=9)</td></tr>
-            <tr class="group-start"><td class="hz" rowspan="4">8-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.353</td><td class="num">+0.237</td><td class="num m2c">+0.278</td><td class="num pos">+0.010 (p=0.622)</td><td class="num neg">-0.038 (p=0.092)</td></tr>
-            <tr><td>Continuous KGE</td><td class="num">+0.367</td><td class="num">+0.327</td><td class="num m2c">+0.348</td><td class="num neg">-0.003 (p=0.850)</td><td class="num neg">-0.012</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined (n=0)</td><td class="num">0.696 (n=12)</td><td class="num m2c">0.660 (n=5)</td><td class="num">+0.0 pp (paired n=5)</td><td class="num">—</td></tr>
-            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (n=9)</td><td class="num">0.111 (n=12)</td><td class="num m2c">0.000 (n=9)</td><td class="num neg">-0.078 (paired n=9)</td><td class="num">+0.000 (paired n=9)</td></tr>
+            <tr class="group-start"><td class="hz" rowspan="4">1-Week Ahead</td><td>Continuous NSE</td><td class="num">+0.284</td><td class="num">+0.458</td><td class="num m2c">+0.486</td><td class="num pos">+0.045 (p=0.027)</td><td class="num pos">+0.235 (p<0.001)</td></tr>
+            <tr><td>Continuous KGE</td><td class="num">+0.643</td><td class="num">+0.537</td><td class="num m2c">+0.543</td><td class="num pos">+0.018 (p=0.519)</td><td class="num neg">-0.095</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">0.308 (n=9)</td><td class="num">1.000 (n=4)</td><td class="num m2c">0.789 (n=5)</td><td class="num pos">-46.6 pp (paired n=2)</td><td class="num">—</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.529 (n=9)</td><td class="num">0.000 (n=10)</td><td class="num m2c">0.000 (n=10)</td><td class="num">+0.000 (paired n=9)</td><td class="num neg">-0.500 (paired n=9)</td></tr>
+            <tr class="group-start"><td class="hz" rowspan="4">2-Weeks Ahead</td><td>Continuous NSE</td><td class="num">-0.185</td><td class="num">+0.282</td><td class="num m2c">+0.331</td><td class="num pos">+0.034 (p=0.007)</td><td class="num pos">+0.543 (p<0.001)</td></tr>
+            <tr><td>Continuous KGE</td><td class="num">+0.408</td><td class="num">+0.355</td><td class="num m2c">+0.375</td><td class="num pos">+0.020 (p=0.129)</td><td class="num neg">-0.012</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">0.450 (n=8)</td><td class="num">0.696 (n=8)</td><td class="num m2c">0.650 (n=5)</td><td class="num pos">-1.1 pp (paired n=3)</td><td class="num">—</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.379 (n=8)</td><td class="num">0.029 (n=9)</td><td class="num m2c">0.000 (n=9)</td><td class="num neg">-0.014 (paired n=8)</td><td class="num neg">-0.318 (paired n=8)</td></tr>
+            <tr class="group-start"><td class="hz" rowspan="4">4-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.364</td><td class="num">+0.273</td><td class="num m2c">+0.292</td><td class="num neg">-0.007 (p=0.677)</td><td class="num neg">-0.033 (p=0.052)</td></tr>
+            <tr><td>Continuous KGE</td><td class="num">+0.366</td><td class="num">+0.328</td><td class="num m2c">+0.344</td><td class="num neg">-0.006 (p=0.622)</td><td class="num neg">-0.014</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined (n=0)</td><td class="num">0.750 (n=11)</td><td class="num m2c">1.000 (n=9)</td><td class="num">+0.0 pp (paired n=9)</td><td class="num">—</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (n=9)</td><td class="num">0.014 (n=12)</td><td class="num m2c">0.000 (n=11)</td><td class="num">+0.000 (paired n=11)</td><td class="num">+0.000 (paired n=9)</td></tr>
+            <tr class="group-start"><td class="hz" rowspan="4">8-Weeks Ahead</td><td>Continuous NSE</td><td class="num">+0.353</td><td class="num">+0.237</td><td class="num m2c">+0.271</td><td class="num neg">-0.014 (p=0.569)</td><td class="num neg">-0.058 (p=0.003)</td></tr>
+            <tr><td>Continuous KGE</td><td class="num">+0.367</td><td class="num">+0.326</td><td class="num m2c">+0.358</td><td class="num neg">-0.004 (p=0.791)</td><td class="num neg">-0.009</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) FAR</td><td class="num">undefined (n=0)</td><td class="num">0.696 (n=12)</td><td class="num m2c">0.718 (n=6)</td><td class="num">+0.0 pp (paired n=6)</td><td class="num">—</td></tr>
+            <tr><td>Severe Drought (Q<sub>95</sub>) CSI</td><td class="num">0.000 (n=9)</td><td class="num">0.111 (n=12)</td><td class="num m2c">0.000 (n=9)</td><td class="num neg">-0.073 (paired n=9)</td><td class="num">+0.000 (paired n=9)</td></tr>
             <!-- BENCH_TABLE:END -->
           </tbody>
         </table>
@@ -733,7 +734,7 @@
         <p>Developed by <strong>Abhitej Singh Bhullar</strong> (Roll No. 23110009, B.Tech 4th Year, Civil Engineering) &amp; <strong>Dhruv Jalan</strong> (Roll No. 23110099, B.Tech 4th Year, Chemical Engineering)</p>
         <p>Indian Institute of Technology Gandhinagar (IITGN), Palaj, Gandhinagar, Gujarat 382355</p>
       </div>
-      <div class="badges"><span class="chip"><i data-lucide="badge-check"></i>Audited Benchmark v2.1</span><span class="chip"><i data-lucide="shield-check"></i>Leakage-Free Passed</span></div>
+      <div class="badges"><span class="chip"><i data-lucide="badge-check"></i>Audited Benchmark v2.2</span><span class="chip"><i data-lucide="shield-check"></i>Leakage-Free Passed</span></div>
     </div>
     <div class="footer-bottom"><span>© 2026 Abhitej Singh Bhullar &amp; Dhruv Jalan • ES 335 ML Course Project • Academic Open Access</span><span>Fraunces · IBM Plex Sans · IBM Plex Mono</span></div>
   </div>

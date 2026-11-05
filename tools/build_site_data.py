@@ -141,7 +141,7 @@ def transfer() -> dict:
 
 
 BENCH_JS = ROOT / "assets" / "benchmark-data.js"
-INDEX = ROOT / "index.html"
+INDEX = ROOT / "index.html" if (ROOT / "index.html").exists() else ROOT / "site" / "index.html"
 TABLE_START, TABLE_END = "<!-- BENCH_TABLE:START -->", "<!-- BENCH_TABLE:END -->"
 
 
