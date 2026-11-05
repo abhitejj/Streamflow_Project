@@ -301,7 +301,7 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
     a(f"Single-feature shares at 1 week: `{top1.index[0]}` {top1.iloc[0]:.1f}%, current flow `flow_lag_0` "
       f"{fi.loc['flow_lag_0', 'H1_share_pct']:.1f}%, all ten flow features {flow1:.1f}%. At 8 weeks the calendar "
       f"harmonics take {cal8:.1f}%. Permutation importance of atmospheric demand (temperature, PET, and water deficit) "
-      f"is only ~3% at 1 week (0.026 ΔMSE/MSE), demonstrating that precipitation recharge drives nearly all meteorological skill.")
+      f"is only 3.1% at 1 week (0.031 ΔMSE/MSE), demonstrating that precipitation recharge drives nearly all meteorological skill.")
     a("")
     
     if rob is not None:
@@ -352,9 +352,12 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
     a("")
     a("### 11.3 Drought warning reliability and severity")
     a(f"Standard regression models trained under squared-error loss exhibit severe threshold collapse on low flows (M2 median Q95 CSI is 0.000 at 1–4w). "
-      f"Persistence provides the most reliable non-parametric severe drought warning at 1 and 2 weeks (median CSI {s1['c0']}, {s2['c0']}; "
-      f"pooled CSI {s1['pcsi0']:.2f} and {s2['pcsi0']:.2f}). To solve threshold collapse within regression, log-target models (`M1-log`, `M2-log`) "
-      f"train on specific logarithmic runoff, dramatically recovering low-flow skill (1-week Q95 CSI reaches 0.229 and Log-NSE reaches 0.844, beating climatology).")
+      f"Persistence provides the most reliable non-parametric severe drought warning across 1 to 4 weeks (median severe CSI: 1w {s1['c0']}, 2w {s2['c0']}, 4w 0.234; "
+      f"pooled CSI: 1w {s1['pcsi0']:.2f}, 2w {s2['pcsi0']:.2f}, 4w 0.25 vs M2's 0.04). While log-target models (M1-log, M2-log) "
+      f"dramatically recover low-flow skill over raw regression (1w Q95 CSI reaches 0.229 vs 0.000, Log-NSE reaches 0.844), three key trade-offs apply: "
+      f"(1) persistence still outperforms M2-log on drought alerts (median CSI 0.529 vs 0.229; pooled 0.48 vs 0.20), (2) persistence's low-flow accuracy "
+      f"(Log-NSE 0.829) is comparable to M2-log (0.844), and (3) training on log-scale targets degrades general hydrograph tracking across the full flow range "
+      f"(median NSE drops from 0.486 to 0.464 at 1w, and from 0.292 to 0.208 at 4w).")
     a("")
     if sens is not None:
         def csi_val(h, sev, m):
@@ -398,8 +401,10 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
       "at 4–8 weeks for continuous flow. Sub-seasonal forecasting benchmarks should always report against both.")
     a("2. **Coupled meteorology provides verifiable short-range gains.** Catchment-mean rainfall coupling provides a statistically "
       "significant +0.069 to +0.087 NSE advantage at 1 week (*p* < 0.01), but its predictive value decays beyond 2 weeks.")
-    a(f"3. **Severe-drought skill requires loss function re-weighting.** Standard squared-error regression collapses on low flows, "
-      f"while log-target regression restores severe-drought warning skill (Q95 CSI = 0.229 at 1w) without artificial classification balancing.")
+    a(f"3. **Severe-drought skill requires loss function re-weighting, but introduces trade-offs.** Standard squared-error regression collapses on low flows, "
+      f"while log-target regression (M2-log) restores severe-drought warning skill (Q95 CSI = 0.229 at 1w) without artificial classification balancing. "
+      f"However, persistence still outperforms M2-log on drought warnings (0.529 vs 0.229), persistence matches M2-log on low-flow tracking (Log-NSE 0.829 vs 0.844), "
+      f"and log models sacrifice continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).")
     a("4. **Zero-shot transfer works only at 1–2 weeks** relative to the held-out station's own baseline.")
     a("")
     a("**Limitations.**")
@@ -412,7 +417,7 @@ def report_md(d, pr, fi, fg, sens=None, rob=None) -> str:
       "ML models beat persistence at 1–2 weeks.")
     a("- **Forcing Resolution:** 2021–2025 precipitation was reconstructed as exact area-weighted catchment means from IMD 0.25° grids, "
       "whereas ERA5-Land temperature and PET remain gauge-point extractions. Feature importance analysis confirms that atmospheric demand "
-      "accounts for only ~3% of M2's permutation importance (versus ~84% for precipitation), rendering the spatial aggregation effect negligible.")
+      "accounts for only 3.1% of M2's permutation importance (versus 114% for precipitation), rendering the spatial aggregation effect negligible.")
     a("- Models were retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, preventing hyperparameter tuning from fitting to artificial unmeasured zeros.")
     a("- There are only 12 stations (10 river systems, three of them nested), so the Wilcoxon tests have modest power.")
     u = pd.read_csv(RES / "uncertainty_station_block_bootstrap.csv")
@@ -440,9 +445,9 @@ def readme_md(d, pr) -> str:
     L += ["", "**Key findings.**",
           f"- **Coupled meteorology adds significant skill at 1 week:** With reconstructed catchment-mean rainfall, M2 outperforms flow-only M1 by **+0.069** paired ΔNSE (*p* = 0.003) in 2021–2025 and **+0.087** (*p* < 0.001) in the historical CAMELS-only era (1980–2010).",
           f"- **Memory decay beyond 2 weeks:** From 4 weeks, seasonal weekly climatology beats M2 at {S['4w']['climwin']} and {S['8w']['climwin']} of 12 stations.",
-          f"- **Persistence is the drought benchmark to beat at 1–2 weeks:** Lagged persistence achieves Q95 CSI of {S['1w']['c0'].split()[0]} (1w) and {S['2w']['c0'].split()[0]} (2w); standard regression collapses on low flows, but log-target regression (`M2-log`) recovers drought warning skill (1w CSI reaches 0.229, Log-NSE 0.844).",
+          f"- **Persistence is the drought benchmark across 1–4 weeks:** Lagged persistence achieves Q95 CSI of {S['1w']['c0'].split()[0]} (1w), {S['2w']['c0'].split()[0]} (2w), and 0.234 at 4w (pooled 0.48, 0.37, 0.25 vs M2's 0.04). While log-target regression (M2-log) recovers severe-drought warning skill over raw regression (1w CSI reaches 0.229 vs 0.000), three trade-offs apply: persistence still dominates (CSI 0.529, pooled 0.48 vs 0.20), persistence low-flow accuracy matches it (log-NSE 0.829 vs 0.844), and log training degrades continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).",
           "- **Zero-shot spatial transfer:** Pooled HydroLSTM beats the held-out station's own baseline only at 1–2 weeks.",
-          "- **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that atmospheric evaporative demand (temperature, PET, and deficit) accounts for only ~3% of M2's predictive importance at 1w, while precipitation features contribute 84–114%. Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.", ""]
+          "- **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that atmospheric evaporative demand (temperature, PET, and deficit) accounts for only 3.1% of M2's predictive importance at 1w, while precipitation features contribute 114% (versus 28% for flow features). Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.", ""]
     return "\n".join(L)
 
 

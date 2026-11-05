@@ -11,3 +11,4 @@ This log tracks project milestones, pipeline updates, and deployments to `main` 
 - **2026-11-05 01:14:38 IST**: Add drought severity sensitivity audit (Q80, Q90, Q95) and update documentation
 - **2026-11-05 02:15:00 IST**: Finalize merged handoff: pipeline hardening (dynamic metrics lookups, all-lead climatology/persistence medians), report documentation corrections (lineage audit citation, 10 river systems, test-period outlier clarification, 2016-2020 CAMELS forcings sub-period analysis), and frontend deployment sync.
 - **2026-11-05 16:06:51 IST**: Rebuild 2021-2025 catchment-mean rainfall, mask validation zeros, add log-flow models and CAMELS-era robustness
+- **2026-11-05 16:52:00 IST**: Fix website text inconsistencies, update chart notes, and add 4-week persistence drought comparison
