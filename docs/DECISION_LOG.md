@@ -133,3 +133,12 @@ This document tracks all formal methodological, architectural, and data governan
   5. Robustness test on the historical CAMELS-IND epoch (Train 1980–2000, Val 2001–2004, Test 2005–2010; 223 pooled $Q_{95}$ events) independently replicated the primary findings: significant 1w advantage for coupled meteorology (+0.087 $\Delta\text{NSE}$, $p = 0.0005$), climatology dominance beyond 2 weeks, and persistence dominance for short-lead drought warning.
 * **Approved Decision:** Approved (1) replacing 2021–2025 rainfall with true catchment area-weighted means; (2) retaining T and PET at gauge points; (3) enforcing zero-flow masking across training and validation folds; (4) adding log-target regression models; and (5) incorporating the CAMELS-era robustness test into the benchmark report and documentation.
 
+---
+
+### Gate AG-DATA-10: Consolidation of Raw Datasets and Retirement of Redundant Workspace ML Project 2
+* **Date:** November 8, 2026
+* **Status:** **APPROVED BY USER & IMPLEMENTED**
+* **Context:** A redundant folder `ML Project 2` was located in `~/Downloads`, holding 2.61 GB of raw IMD NetCDF grids, GRD binary files, and CAMELS-IND source archives created during early data acquisition (October 26, 2026), while the primary active git repository `~/Downloads/ML Project` previously had `data/raw` excluded via `.gitignore` to prevent exceeding GitHub file limits.
+* **Specialist Evidence:** Geospatial Data Engineer verified that all processed outputs, scripts, and documentation in `ML Project 2` were identical duplicates or superseded by current versions in `ML Project`. Moving `data/raw` (307 files, 2608.26 MB) into `ML Project/data/raw/` preserves complete local data lineage and enables offline raw-to-processed reproduction without bloating the Git tree (as `data/raw/` is strictly ignored by `.gitignore` and `sync.py`).
+* **Approved Decision:** Explicit user approval granted to: (1) move `data/raw/` into `~/Downloads/ML Project/data/raw/`; and (2) permanently delete `~/Downloads/ML Project 2`. Completed successfully.
+
