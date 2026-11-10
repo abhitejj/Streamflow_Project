@@ -72,10 +72,11 @@ echo -e "${GREEN}[+] Appended progress entry to docs/PROGRESS.md${NC}"
 echo -e "${YELLOW}[2/8] Rebuilding audited outputs, then committing on 'main'...${NC}"
 python3 scripts/audit_metrics.py > /dev/null
 python3 scripts/export_benchmark_data.py > /dev/null
+python3 scripts/export_explorer_data.py > /dev/null
 python3 scripts/generate_interactive_plots.py > /dev/null
 python3 scripts/uncertainty_tests.py > /dev/null
 python3 scripts/render_report_results.py > /dev/null
-git add data/processed/model_results/ data/processed/validation_reports/ assets/benchmark-data.js visualizations/source/ scripts/ models/
+git add data/processed/model_results/ data/processed/validation_reports/ assets/benchmark-data.js assets/explorer-data.js visualizations/source/ scripts/ models/
 git add docs/PROGRESS.md README.md docs/DECISION_LOG.md docs/PROJECT_REPORT_DOCUMENTATION.md docs/AUDIT_LOG.md docs/REVIEW_FIX_PROGRESS.md deploy.sh
 git add -u
 
@@ -95,7 +96,7 @@ echo -e "${YELLOW}[3/8] Staging rebuilt chart sources and site data...${NC}"
 TEMP_DIR="$(mktemp -d)"
 VIZ_SRC="visualizations/source"
 cp "${VIZ_SRC}"/interactive_*.html "${TEMP_DIR}"/
-cp assets/benchmark-data.js tools/build_site_data.py "${TEMP_DIR}"/
+cp assets/benchmark-data.js assets/explorer-data.js tools/build_site_data.py "${TEMP_DIR}"/
 echo -e "${GREEN}[+] Staged chart sources and site data in ${TEMP_DIR}.${NC}"
 echo -e "${YELLOW}[4/8] (no local folders removed)${NC}"
 
@@ -125,7 +126,7 @@ fi
 echo -e "${YELLOW}[6/8] Rebuilding site data on 'gh-pages'...${NC}"
 mkdir -p visualizations/source tools assets docs
 cp "${TEMP_DIR}"/interactive_*.html visualizations/source/
-cp "${TEMP_DIR}"/benchmark-data.js assets/
+cp "${TEMP_DIR}"/benchmark-data.js "${TEMP_DIR}"/explorer-data.js assets/
 cp "${TEMP_DIR}"/build_site_data.py tools/
 cp "${TEMP_DIR}"/PROJECT_REPORT_DOCUMENTATION.md "${TEMP_DIR}"/DECISION_LOG.md "${TEMP_DIR}"/PROGRESS.md docs/
 python3 tools/build_site_data.py

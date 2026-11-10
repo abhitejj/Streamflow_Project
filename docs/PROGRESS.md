@@ -13,3 +13,4 @@ This log tracks project milestones, pipeline updates, and deployments to `main` 
 - **2026-11-05 16:06:51 IST**: Rebuild 2021-2025 catchment-mean rainfall, mask validation zeros, add log-flow models and CAMELS-era robustness
 - **2026-11-05 16:52:00 IST**: Fix website text inconsistencies, update chart notes, and add 4-week persistence drought comparison
 - **2026-11-06 00:12:29 IST**: Polish website text consistency, escape HTML entities, and document log-target and CAMELS-era scripts
+- **2026-11-10**: Corrected retraining, Log-NSE and aridity documentation; fixed audited heatmap deltas and clipped scores; added linked station/lead controls, shareable selections, and five-model flow/drought comparisons with fixed severity levels. Playwright Chromium desktop/mobile checks and all 240 flow-model / 720 drought-row export checks pass. Historical replay expansion (Priority 3) remains pending.

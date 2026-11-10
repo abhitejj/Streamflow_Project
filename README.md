@@ -25,7 +25,7 @@ An empirical machine learning framework evaluating the predictive value of India
 | **Forecast Horizons ($H$)** | **1-week, 2-week, 4-week, 8-week** | Direct multi-step weekly mean discharge forecasts ($y_{t+H}$) |
 | **Model Tiers** | **M0: Persistence Baseline**<br>**M1: Autoregressive (Flow Only)**<br>**M2: Hydro-Meteorological (Flow + Multi-Source Weather)** | $Q_{t+H} = Q_t$ for $H \le 2\text{w}$; seasonal weekly climatology for $H \ge 4\text{w}$<br>Input: Past discharge lags ($Q_t, \dots, Q_{t-7}$) + recession slope + within-week flow std + calendar Fourier seasonality<br>Input: Flow lags + IMD Rainfall ($P_{1w}, P_{2w}, P_{1m}, P_{2m}, P_{3m}, API_{30d}, \text{dry days}$) + ERA5-Land/GLEAM Temp & PET ($T_{mean}, T_{max}, PET_{1w}, PET_{1m}, \text{Water Deficit}_{1w}, \text{Water Deficit}_{1m}$) |
 | **Drought Severity Levels** | **Mild Drought** ($Q \le Q_{80}$ or $SSI \le -0.8$)<br>**Moderate Drought** ($Q \le Q_{90}$ or $SSI \le -1.2$)<br>**Severe Drought** ($Q \le Q_{95}$ or $SSI \le -1.6$) | Empirically derived from historical baseline distribution |
-| **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), PR-AUC**, scored across Severe ($Q_{95}$), Moderate ($Q_{90}$), and Mild ($Q_{80}$) drought tiers (audited in `scripts/audit_drought_sensitivity.py`, artifact: `data/processed/model_results/drought_severity_sensitivity.csv`; full comparison in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10.3.1). Log-NSE, Brier score and reliability curves are not computed. |
+| **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), PR-AUC**, scored across Severe ($Q_{95}$), Moderate ($Q_{90}$), and Mild ($Q_{80}$) drought tiers (audited in `scripts/audit_drought_sensitivity.py`, artifact: `data/processed/model_results/drought_severity_sensitivity.csv`; full comparison in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10.3.1). Log-NSE is computed and reported; Brier score and reliability curves are not computed. |
 
 ---
 
@@ -51,7 +51,7 @@ Meteorological inputs are harmonized across two continuous observation epochs to
      - $T_{mean, 1w}$ (7-day mean), $T_{max, 1w}$ (7-day max).
      - $PET_{1w}$ (7-day sum), $PET_{1m}$ (30-day sum).
      - **Hydrological Water Deficit**: $\text{Deficit}_{1w} = P_{1w} - PET_{1w}$ and $\text{Deficit}_{1m} = P_{1m} - PET_{1m}$ capturing net atmospheric water deficit and catchment drying stress.
-   - **Aridity Index Definition**: Catchment aridity reported in CAMELS-IND represents the Budyko wetness index $\bar{P} / \overline{\text{PET}}$ (values $< 1.0$ indicate water-limited regimes, $> 1.0$ energy-limited/humid regimes).
+   - **Aridity Index Definition**: Catchment aridity used in this project is the Budyko index $\overline{\text{PET}} / \bar{P}$, computed from the weekly tensors over 1980–2020 (values $> 1.0$ indicate water-limited regimes; values $< 1.0$ indicate energy-limited/humid regimes).
 
 3. **Multi-Depth Soil Moisture Pruning**:
    - As mandated by data integrity rules, multi-depth soil moisture ($sm_1 \dots sm_4$) has been pruned from the operational pipeline to eliminate non-native scraping dependencies and ensure 100% auditable traceability.
