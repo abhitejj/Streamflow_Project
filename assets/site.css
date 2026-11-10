@@ -506,6 +506,21 @@ tr.group-start td { border-top: 1px solid var(--line-2); }
 .chart-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 14px 10px 0 14px; }
 .chart-selection { margin: 12px 14px 0; color: var(--muted); font-size: 14px; }
 .chart-empty { margin-bottom: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+#forecast-replay { scroll-margin-top: calc(var(--nav-h) + 16px); }
+.replay-panel { padding: 12px 14px 18px; }
+.replay-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.replay-controls .field { font-size: 13px; font-weight: 600; }
+.replay-controls select { width: auto; font-size: 13px; }
+.replay-controls button, .replay-retry {
+  min-height: 38px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 8px;
+  color: var(--ink); background: var(--card); font: 500 13px/1.2 var(--sans); cursor: pointer;
+}
+.replay-controls button:disabled { opacity: .55; cursor: default; }
+.replay-retry { margin: 0 14px 14px; }
+.replay-week-status { margin: 12px 0; font-size: 14px; }
+.replay-table th, .replay-table td { padding: 8px; }
+.replay-table th[scope="col"] { white-space: normal; }
+.replay-panel:not(.replay-drought) .replay-outcome { display: none; }
 .seg-group { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
 .seg-label { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
 .seg { display: inline-flex; padding: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; gap: 2px; flex-wrap: wrap; }

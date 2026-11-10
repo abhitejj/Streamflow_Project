@@ -242,6 +242,7 @@
   var updateObjective = objectiveSeg && Charts.radioGroup(objectiveSeg, function (objective) { changeSelection({ objective: objective }); });
   var updateSeverity = severitySeg && Charts.radioGroup(severitySeg, function (severity) { changeSelection({ severity: severity }); });
   var share = $('#share-selection'), selectionStatus = $('#selection-status');
+  var fullscreenReplay = $('#fullscreen-replay');
   if (sel) {
     S.forEach(function (s) {
       var o = document.createElement('option');
@@ -273,6 +274,11 @@
       var url = selectionURL(selected);
       url.hash = 'explorer';
       share.href = url.href;
+    }
+    if (fullscreenReplay) {
+      var replayURL = new URL(fullscreenReplay.href);
+      replayURL.search = selectionURL(selected).search;
+      fullscreenReplay.href = replayURL.href;
     }
     renderExplorer();
     selectionListeners.forEach(function (listener) { listener(selected); });
@@ -369,6 +375,7 @@
   if (window.Charts) Charts.mountAll(document, { selection: selected && {
     get: function () { return selected; },
     set: setSelection,
+    change: changeSelection,
     subscribe: function (listener) { selectionListeners.push(listener); listener(selected); }
   } });
 })();

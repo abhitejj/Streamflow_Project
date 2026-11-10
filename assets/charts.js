@@ -191,68 +191,265 @@
     render(controls(el, [{ key: 'metric', label: 'Metric', value: 'nse', options: [{ label: 'NSE', value: 'nse' }, { label: 'KGE', value: 'kge' }] }], render).state);
   }
 
-  /* ---------- Hydrograph: observed vs M1 vs M2 ---------- */
-  function hydro(el, args, shared) {
-    var F = window.FIGDATA.hydro;
-    var fixed = args.length === 2;
-    var currentStation, currentLead;
-    var status = document.createElement('p');
-    status.className = 'chart-selection';
-    status.setAttribute('role', 'status');
-    function render(s) {
-      currentStation = s.station;
-      currentLead = s.lead;
-      var d = F[s.station] && F[s.station][s.lead];
-      var station = s.station[0].toUpperCase() + s.station.slice(1);
-      var lead = LEADS.find(function (item) { return item.value === s.lead; }).label;
-      status.classList.toggle('chart-empty', !d);
-      status.textContent = d ? station + ' · ' + lead + ' ahead' :
-        'No hydrograph for ' + station + ' at ' + lead + '. This chart covers Karad and Kantamal at 1 and 4 weeks.';
-      el.hidden = !d;
-      if (!d) {
-        if (el.__drawn) Plotly.purge(el);
-        el.__drawn = false;
-        return;
-      }
-      el.setAttribute('aria-label', 'Observed and forecast discharge for ' + station + ' at ' + lead);
-      var traces = [
-        { x: d.x, y: d.obs, name: 'Observed Q', mode: 'lines', line: { color: C.obs, width: 2 }, hovertemplate: 'Observed %{y:,.1f} m³/s<extra></extra>' },
-        { x: d.x, y: d.m1, name: 'M1 Flow-only · NSE ' + d.nse_m1.toFixed(3), mode: 'lines', line: { color: C.m1, width: 1.6, dash: 'dash' }, hovertemplate: 'M1 %{y:,.1f} m³/s<extra></extra>' },
-        { x: d.x, y: d.m2, name: 'M2 Hydro-met · NSE ' + d.nse_m2.toFixed(3), mode: 'lines', line: { color: C.m2, width: 2 }, hovertemplate: 'M2 %{y:,.1f} m³/s<extra></extra>' }
-      ];
-      var range = s.view === 'focus' ? ['2018-01-01', '2019-12-31'] : [d.x[0], d.x[d.x.length - 1]];
-      draw(el, traces, baseLayout({
-        hovermode: 'x unified',
-        xaxis: axis({ range: range, type: 'date', showspikes: true, spikemode: 'across', spikethickness: 1, spikecolor: '#b9b3a6', spikedash: 'solid' }),
-        yaxis: axis({ title: { text: 'Discharge (m³/s)' }, rangemode: 'tozero' }),
-        shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: d.q95, y1: d.q95, line: { color: C.dry, width: 1.5, dash: 'dot' } }],
-        annotations: [{ xref: 'paper', x: 0.01, xanchor: 'left', y: d.q95, yanchor: 'bottom', text: 'Q95 severe-drought threshold · ' + d.q95.toFixed(2) + ' m³/s', showarrow: false, font: { size: 11, color: C.dryText } }]
+  /* ---------- Historical forecast replay ---------- */
+  var replayManifest = window.REPLAY_DATA;
+  var chartAssetURL = document.currentScript.src;
+  var replayCache = new Map();
+
+  function fetchReplay(station, lead) {
+    var entry = replayManifest && replayManifest.chunks[station] && replayManifest.chunks[station][lead];
+    if (!entry) return Promise.reject(new Error('No replay file for this selection'));
+    if (!replayCache.has(entry.file)) {
+      var url = new URL(entry.file, chartAssetURL);
+      url.searchParams.set('v', entry.sha256.slice(0, 12));
+      replayCache.set(entry.file, fetch(url).then(function (response) {
+        if (!response.ok) throw new Error('Replay file could not be loaded');
+        return response.json();
+      }).then(function (chunk) {
+        if (chunk.station !== station || chunk.lead !== lead) throw new Error('Replay selection mismatch');
+        return chunk;
+      }).catch(function (error) {
+        replayCache.delete(entry.file);
+        throw error;
       }));
     }
-    var groups = [];
-    if (shared) {
-      groups.push({ key: 'station', label: 'Hydrograph station', value: shared.get().station, select: true,
-        options: window.STATIONS.map(function (s) {
-          return { label: s.name[0] + s.name.slice(1).toLowerCase(), value: s.id };
-        }) });
-      groups.push({ key: 'lead', label: 'Hydrograph lead', value: shared.get().lead, options: LEADS });
-    } else if (!fixed) {
-      groups.push({ key: 'station', label: 'Station', value: 'karad', options: [{ label: 'Karad · Krishna', value: 'karad' }, { label: 'Kantamal · Mahanadi', value: 'kantamal' }] });
-      groups.push({ key: 'lead', label: 'Lead', value: '1w', options: [{ label: '1 week', value: '1w' }, { label: '4 weeks', value: '4w' }] });
-    }
-    groups.push({ key: 'view', label: 'Window', value: 'focus', options: [{ label: '2018–19', value: 'focus' }, { label: '2016–2025', value: 'all' }] });
+    return replayCache.get(entry.file);
+  }
+
+  function hydro(el, args, shared) {
+    var stations = window.STATIONS;
+    var fixed = args.length === 2;
+    var params = new URLSearchParams(window.location.search);
+    var initial = shared ? shared.get() : {
+      station: fixed ? args[0] : stations.some(function (s) { return s.id === params.get('station'); }) ? params.get('station') : stations[0].id,
+      lead: fixed ? args[1] : Object.keys(H_LABEL).includes(params.get('lead')) ? params.get('lead') : '1w',
+      objective: params.get('objective') === 'drought' ? 'drought' : 'flow',
+      severity: ['Q95', 'Q90', 'Q80'].includes(params.get('severity')) ? params.get('severity') : 'Q95'
+    };
+    var columns = replayManifest && replayManifest.fields;
+    var modelIds = Object.keys(COMPARISON_MODEL);
+    var data, weeks, index, active, request = 0;
+    var status = document.createElement('p');
+    status.className = 'chart-selection replay-status';
+    status.setAttribute('role', 'status');
+    var panel = document.createElement('div');
+    panel.className = 'replay-panel';
+    panel.innerHTML =
+      '<div class="replay-controls">' +
+        '<label class="field">Target week<select aria-label="Target week"></select></label>' +
+        '<button type="button" data-step="-1">Previous scored week</button>' +
+        '<button type="button" data-step="1">Next scored week</button>' +
+        '<button type="button" data-range="focus">Zoom to selected week</button>' +
+        '<button type="button" data-range="full">Reset date range</button>' +
+      '</div>' +
+      '<p class="replay-week-status" role="status"></p>' +
+      '<div class="table-scroll" tabindex="0" role="region" aria-label="Selected week forecasts">' +
+        '<table class="replay-table" aria-label="Selected week forecasts"><thead><tr>' +
+          '<th scope="col">Model</th><th scope="col" class="num">Forecast (m³/s)</th>' +
+          '<th scope="col" class="replay-outcome">Drought outcome</th>' +
+        '</tr></thead><tbody></tbody></table>' +
+      '</div>';
+    var retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = 'Retry loading replay';
+    retry.className = 'replay-retry';
+    var weekSelect = panel.querySelector('select');
+    var weekStatus = panel.querySelector('.replay-week-status');
+    var previous = panel.querySelector('[data-step="-1"]');
+    var next = panel.querySelector('[data-step="1"]');
+    var tbody = panel.querySelector('tbody');
+
+    var groups = fixed ? [] : [
+      { key: 'station', label: 'Hydrograph station', value: initial.station, select: true, options: stations.map(function (s) {
+        return { label: s.name[0] + s.name.slice(1).toLowerCase(), value: s.id };
+      }) },
+      { key: 'lead', label: 'Hydrograph lead', value: initial.lead, options: LEADS }
+    ];
+    groups.push(
+      { key: 'objective', label: 'Replay objective', value: initial.objective, options: [
+        { value: 'flow', label: 'Flow accuracy' }, { value: 'drought', label: 'Drought warnings' }
+      ] },
+      { key: 'severity', label: 'Replay severity', value: initial.severity, options: [
+        { value: 'Q95', label: 'Severe (Q95)' }, { value: 'Q90', label: 'Moderate (Q90)' }, { value: 'Q80', label: 'Mild (Q80)' }
+      ] }
+    );
     var ctrl = controls(el, groups, function (state, key) {
-      if (shared && key !== 'view') shared.set(state.station, state.lead);
-      else render(state);
+      if (shared) shared.change({ [key]: state[key] });
+      else update(Object.assign({}, initial, state));
     });
-    el.parentNode.insertBefore(status, el);
-    if (fixed) { ctrl.state.station = args[0]; ctrl.state.lead = args[1]; }
-    if (shared) shared.subscribe(function (selection) {
-      if (currentStation === selection.station && currentLead === selection.lead) return;
+    el.before(status, retry);
+    el.after(panel);
+    retry.addEventListener('click', function () { load(active); });
+
+    function stationLabel() {
+      var name = stations.find(function (s) { return s.id === active.station; }).name;
+      return name[0] + name.slice(1).toLowerCase();
+    }
+
+    function leadLabel() {
+      return LEADS.find(function (lead) { return lead.value === active.lead; }).label;
+    }
+
+    function adjacent(step) {
+      for (var i = index + step; i >= 0 && i < weeks.length; i += step) if (weeks[i][2]) return i;
+      return -1;
+    }
+
+    function shapes() {
+      var date = weeks[index][1], threshold = data.thresholds[active.severity];
+      return [
+        { type: 'line', xref: 'paper', yref: 'y', x0: 0, x1: 1, y0: threshold, y1: threshold, line: { color: C.dry, width: 1.5, dash: 'dot' } },
+        { type: 'line', xref: 'x', yref: 'paper', x0: date, x1: date, y0: 0, y1: 1, line: { color: C.dryText, width: 2, dash: 'dash' } }
+      ];
+    }
+
+    function formatFlow(value) {
+      return value.toLocaleString('en-IN', { maximumFractionDigits: 4 }) + ' m³/s';
+    }
+
+    function outcome(observed, predicted, threshold) {
+      if (observed <= threshold) return predicted <= threshold ? 'Hit' : 'Miss';
+      return predicted <= threshold ? 'False alarm' : 'Correct negative';
+    }
+
+    function renderWeek() {
+      var row = weeks[index], scored = row[2], threshold = data.thresholds[active.severity];
+      var drought = active.objective === 'drought';
+      weekSelect.value = String(index);
+      previous.disabled = adjacent(-1) < 0;
+      next.disabled = adjacent(1) < 0;
+      panel.classList.toggle('replay-drought', drought);
+      weekStatus.textContent = 'Issued ' + row[0] + ' · Target week ' + row[1] + ' · ' +
+        (scored ? 'Observed ' + formatFlow(row[4]) + ' · Scored in the full test block.' :
+          row[3] ? 'Not scored. A recorded zero at issue or target was treated as unmeasured.' :
+            'Not scored. A required observation or forecast was unavailable.') +
+        ' Frozen ' + active.severity + ' threshold ≤ ' + formatFlow(threshold) + '.';
+      tbody.innerHTML = modelIds.map(function (model) {
+        var value = row[columns.indexOf(model)];
+        return '<tr><th scope="row">' + model + '</th><td class="num">' + (scored ? formatFlow(value) : '—') +
+          '</td><td class="replay-outcome">' + (scored && drought ? outcome(row[4], value, threshold) : '—') + '</td></tr>';
+      }).join('');
+    }
+
+    function range(focus) {
+      var first = focus ? Math.max(0, index - 12) : 0;
+      var last = focus ? Math.min(weeks.length - 1, index + 12) : weeks.length - 1;
+      var dates = [weeks[first][1], weeks[last][1]];
+      if (!focus) return { 'xaxis.range': dates, 'yaxis.autorange': true };
+      var high = weeks.slice(first, last + 1).reduce(function (max, row) {
+        return row[2] ? Math.max.apply(null, [max].concat(row.slice(4))) : max;
+      }, data.thresholds[active.severity]);
+      return { 'xaxis.range': dates, 'yaxis.range': [0, Math.max(1, high * 1.08)], 'yaxis.autorange': false };
+    }
+
+    function selectWeek(value) {
+      if (!weeks || !weeks[value]) return;
+      index = value;
+      renderWeek();
+      var zoom = el._fullLayout && el._fullLayout.xaxis.range;
+      var target = Date.parse(weeks[index][1]);
+      var nextLayout = zoom && (target < Date.parse(zoom[0]) || target > Date.parse(zoom[1])) ? range(true) : {};
+      nextLayout.shapes = shapes();
+      Plotly.relayout(el, nextLayout);
+    }
+
+    weekSelect.addEventListener('change', function () { selectWeek(Number(weekSelect.value)); });
+    previous.addEventListener('click', function () { selectWeek(adjacent(-1)); });
+    next.addEventListener('click', function () { selectWeek(adjacent(1)); });
+    panel.querySelectorAll('[data-range]').forEach(function (button) {
+      button.addEventListener('click', function () { Plotly.relayout(el, range(button.dataset.range === 'focus')); });
+    });
+
+    function updateStatus() {
+      var hasDrought = weeks.some(function (row) { return row[2] && row[4] <= data.thresholds[active.severity]; });
+      status.textContent = stationLabel() + ' · ' + leadLabel() + ' ahead.' +
+        (hasDrought ? '' : ' No scored drought weeks at ' + active.severity + '.') +
+        ' Dates show the target week. Targets after 2025 are excluded from the replay.';
+    }
+
+    function show(chunk) {
+      data = chunk;
+      weeks = data.rows.filter(function (row) { return row[1] <= replayManifest.test_end; });
+      var firstDrought = weeks.findIndex(function (row) { return row[2] && row[4] <= data.thresholds[active.severity]; });
+      var firstScored = weeks.findIndex(function (row) { return row[2]; });
+      index = firstDrought < 0 ? Math.max(0, firstScored) : firstDrought;
+      weekSelect.innerHTML = weeks.map(function (row, i) {
+        return '<option value="' + i + '">' + row[1] + (row[2] ? '' : ' · not scored') + '</option>';
+      }).join('');
+      updateStatus();
+      el.hidden = false;
+      el.setAttribute('aria-label', 'Observed and forecast discharge for ' + stationLabel() + ' at ' + leadLabel());
+      var dates = weeks.map(function (row) { return row[1]; });
+      var traces = ['observed'].concat(modelIds).map(function (name) {
+        var model = COMPARISON_MODEL[name] || { name: 'Observed', color: C.obs };
+        var col = columns.indexOf(name);
+        return {
+          x: dates, y: weeks.map(function (row) { return row[2] ? row[col] : null; }),
+          name: model.name, mode: name === 'observed' ? 'lines+markers' : 'lines', connectgaps: false,
+          marker: { size: 4, color: model.color },
+          line: { color: model.color, width: name === 'observed' ? 2.4 : 1.7, dash: model.dash || 'solid' },
+          hovertemplate: '<b>' + model.name + '</b> %{y:,.4f} m³/s<extra></extra>'
+        };
+      });
+      var focus = range(true);
+      return draw(el, traces, baseLayout({
+        hovermode: 'x unified',
+        xaxis: axis({ title: { text: 'Target week' }, type: 'date', range: focus['xaxis.range'] }),
+        yaxis: axis({ title: { text: 'Discharge (m³/s)' }, range: focus['yaxis.range'] }),
+        shapes: shapes()
+      })).then(function () {
+        if (data !== chunk) return;
+        el.on('plotly_click', function (event) {
+          var point = event.points[0];
+          if (point) selectWeek(point.pointNumber);
+        });
+        renderWeek();
+        panel.hidden = false;
+      });
+    }
+
+    function load(selection) {
+      active = selection;
+      var token = ++request;
+      data = null;
+      weeks = null;
+      panel.hidden = true;
+      tbody.replaceChildren();
+      weekStatus.textContent = '';
+      weekSelect.replaceChildren();
+      el.hidden = true;
+      if (el.__drawn) Plotly.purge(el);
+      el.__drawn = false;
+      retry.hidden = true;
+      status.classList.remove('chart-empty');
+      status.textContent = 'Loading replay for ' + stationLabel() + ' at ' + leadLabel() + '…';
+      fetchReplay(selection.station, selection.lead).then(function (chunk) {
+        if (token === request) return show(chunk);
+      }).catch(function () {
+        if (token !== request) return;
+        el.hidden = true;
+        status.classList.add('chart-empty');
+        status.textContent = 'Could not load replay for ' + stationLabel() + ' at ' + leadLabel() + '.';
+        retry.hidden = false;
+      });
+    }
+
+    function update(selection) {
       ctrl.set(selection);
-      render(ctrl.state);
-    });
-    else render(ctrl.state);
+      if (!active || active.station !== selection.station || active.lead !== selection.lead) {
+        load(selection);
+      } else if (active.objective !== selection.objective || active.severity !== selection.severity) {
+        active = selection;
+        if (data) {
+          updateStatus();
+          renderWeek();
+          Plotly.relayout(el, { shapes: shapes() });
+        }
+      }
+    }
+
+    if (shared) shared.subscribe(update);
+    else update(initial);
   }
 
   /* ---------- Precision–recall for severe drought ---------- */
