@@ -8,6 +8,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from playwright.sync_api import expect, sync_playwright
 from verify_explorer_data import verify_explorer_data
+from verify_replay_browser import check_all_replays, check_prefix, check_replay, check_replay_error, check_replay_race
+from verify_replay_data import verify_replay_data
 
 
 HERE = Path(__file__).resolve().parent
@@ -99,29 +101,20 @@ def check_selection(page, station, lead):
     expect(page.locator("#selection-status")).to_contain_text(f"{lead[0]} week")
 
 
-def check_hydro(page, station, lead, available=True):
+def check_hydro(page, station, lead):
     hydro = page.locator(HYDRO)
     body = hydro.locator("..")
     body.scroll_into_view_if_needed()
     expect(body.get_by_role("combobox", name="Hydrograph station")).to_have_value(station)
     expect(body.locator(f'[aria-label="Hydrograph lead"] [value="{lead}"]')).to_have_attribute("aria-checked", "true")
-    if available:
-        expect(hydro).to_be_visible()
-        expect(hydro).to_have_attribute("aria-label", f"Observed and forecast discharge for {station.title()} at {lead[0]} {'week' if lead == '1w' else 'weeks'}")
-        page.wait_for_function("""({station, lead}) => {
-            const actual = document.querySelector('[data-chart="hydro"]').data?.[0];
-            const expected = window.FIGDATA.hydro[station][lead];
-            return actual?.y.length === expected.obs.length &&
-                expected.obs.every((value, i) => value === actual.y[i]);
-        }""", arg={"station": station, "lead": lead})
-    else:
-        expect(body.get_by_role("status")).to_contain_text(f"No hydrograph for {station.title()} at {lead[0]} weeks")
-        expect(hydro).to_be_hidden()
-        expect(hydro.locator(".scatterlayer")).to_have_count(0)
+    expect(hydro).to_be_visible()
+    expect(hydro).to_have_attribute("aria-label", f"Observed and forecast discharge for {station.title()} at {lead[0]} {'week' if lead == '1w' else 'weeks'}")
+    expect(body.get_by_role("combobox", name="Target week")).to_be_visible()
+    assert hydro.evaluate("chart => chart.data.length") == 6
 
 
 def check_linked_controls(page):
-    check_hydro(page, "karad", "2w", available=False)
+    check_hydro(page, "karad", "2w")
     page.get_by_role("combobox", name="Hydrograph station").select_option("kantamal")
     hydro_leads = page.get_by_role("radiogroup", name="Hydrograph lead")
     hydro_leads.get_by_role("radio", name="2 weeks").press("ArrowRight")
@@ -282,6 +275,13 @@ def check_standalone(page):
             check_worst_score(page, TRANSFER, "x", -1.942)
         else:
             expect(page.locator(HYDRO)).to_have_attribute("aria-label", "Observed and forecast discharge for Karad at 4 weeks")
+            expect(page.get_by_role("combobox", name="Target week")).to_be_visible()
+    for station in ("karad", "kantamal"):
+        for lead in ("1w", "4w"):
+            page.goto(f"{URL}/visualizations/interactive_hydrograph_{station}_h{lead}.html", wait_until="load")
+            check_chart(page, f'[data-chart="hydro:{station}:{lead}"]')
+            expect(page.get_by_role("combobox", name="Target week")).to_be_visible()
+            expect(page.get_by_role("combobox", name="Hydrograph station")).to_have_count(0)
 
 
 def check_mobile(page, output, share_url):
@@ -292,7 +292,7 @@ def check_mobile(page, output, share_url):
     check_chart(page, "#station-mini")
     page.locator('#heat .cell[data-id="warunji"][data-h="2w"]').tap()
     check_selection(page, "warunji", "2w")
-    check_hydro(page, "warunji", "2w", available=False)
+    check_hydro(page, "warunji", "2w")
     widths = page.evaluate("""() => ({
         viewport: document.documentElement.clientWidth,
         document: document.documentElement.scrollWidth,
@@ -315,7 +315,7 @@ def run(output):
             response = page.goto(URL, wait_until="load", timeout=30000)
             assert response and response.ok, "Home page did not return HTTP success"
             assert response.body() == (SITE / "index.html").read_bytes(), "localhost:8000 serves a different index.html"
-            for name in ("site.js", "charts.js", "site.css", "benchmark-data.js", "explorer-data.js", "figdata.js"):
+            for name in ("site.js", "charts.js", "site.css", "benchmark-data.js", "explorer-data.js", "replay-manifest.js", "figdata.js"):
                 asset = page.request.get(f"{URL}/assets/{name}")
                 assert asset.ok and asset.body() == (SITE / "assets" / name).read_bytes(), f"Served {name} differs from site/"
             report["served_worktree"] = str(SITE)
@@ -353,8 +353,14 @@ def run(output):
             check_selection(other, "ashti", "1w")
             check_comparison(other, "ashti", "1w", "drought", "Q80")
             report["direct_links"] = "Fresh load, lazy hydrograph, section anchor, and invalid fallback checked"
+            report["replay_data"] = verify_replay_data()
+            report["replay_interactions"] = check_replay(other, output, check_hydro)
+            report["replay_race"] = check_replay_race(other, URL, check_hydro)
+            report["replay_browser_selections"] = check_all_replays(other, check_hydro)
             check_standalone(other)
-            report["standalone"] = ["hydro", "transfer"]
+            report["standalone"] = ["hydro", "four fixed hydrographs", "transfer"]
+            report["project_prefix"] = check_prefix(other, URL, check_hydro)
+            report["replay_retry"] = check_replay_error(browser, URL, check_hydro)
             mobile = browser.new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, reduced_motion="reduce")
             listen_for_errors(mobile, report)
             report["mobile_widths"] = check_mobile(mobile, output, share_url)
@@ -366,6 +372,10 @@ def run(output):
             assert scroller.evaluate("region => region.scrollLeft > 0")
             assert mobile.evaluate("document.documentElement.scrollWidth === 390 && document.body.scrollWidth === 390")
             screenshot_explorer(mobile, output / "mobile-drought-comparison.png")
+            check_hydro(mobile, "ashti", "1w")
+            mobile.get_by_role("button", name="Next scored week").tap()
+            expect(mobile.locator(".replay-week-status")).to_contain_text("Scored in the full test block")
+            mobile.locator("#forecast-replay").screenshot(path=output / "mobile-replay.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
             assert not report["page_errors"], report["page_errors"]
             assert not report["console_errors"], report["console_errors"]
     except Exception as error:

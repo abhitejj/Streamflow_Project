@@ -94,6 +94,7 @@ fi
 # ------------------------------------------------------------------------------
 echo -e "${YELLOW}[3/8] Staging rebuilt chart sources and site data...${NC}"
 TEMP_DIR="$(mktemp -d)"
+python3 scripts/export_replay_data.py --assets-dir "${TEMP_DIR}"
 VIZ_SRC="visualizations/source"
 cp "${VIZ_SRC}"/interactive_*.html "${TEMP_DIR}"/
 cp assets/benchmark-data.js assets/explorer-data.js tools/build_site_data.py "${TEMP_DIR}"/
@@ -127,6 +128,9 @@ echo -e "${YELLOW}[6/8] Rebuilding site data on 'gh-pages'...${NC}"
 mkdir -p visualizations/source tools assets docs
 cp "${TEMP_DIR}"/interactive_*.html visualizations/source/
 cp "${TEMP_DIR}"/benchmark-data.js "${TEMP_DIR}"/explorer-data.js assets/
+mkdir -p assets/replay
+cp "${TEMP_DIR}"/replay-manifest.js assets/
+cp "${TEMP_DIR}"/replay/*.json assets/replay/
 cp "${TEMP_DIR}"/build_site_data.py tools/
 cp "${TEMP_DIR}"/PROJECT_REPORT_DOCUMENTATION.md "${TEMP_DIR}"/DECISION_LOG.md "${TEMP_DIR}"/PROGRESS.md docs/
 python3 tools/build_site_data.py

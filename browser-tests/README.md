@@ -21,3 +21,11 @@ python3 scripts/export_explorer_data.py
 python3 scripts/export_explorer_data.py --out site/assets/explorer-data.js
 python3 browser-tests/verify_explorer_data.py
 ```
+
+Rebuild and check the historical replay from the saved forecast and threshold files.
+
+```sh
+python3 scripts/export_replay_data.py
+python3 site/tools/build_site_data.py
+python3 browser-tests/verify_replay_data.py
+```

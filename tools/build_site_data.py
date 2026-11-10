@@ -194,11 +194,11 @@ def write_bench_table() -> None:
 
 
 PAGES = {
-    "interactive_hydrographs_dashboard": ("Observed vs forecast hydrographs", "hydro", "Karad and Kantamal, 1-week and 4-week lead, test block 2016–2025. Gaps are unmeasured weeks."),
-    "interactive_hydrograph_karad_h1w": ("Hydrograph · Karad · 1-week lead", "hydro:karad:1w", "Out-of-sample test block 2016–2025."),
-    "interactive_hydrograph_karad_h4w": ("Hydrograph · Karad · 4-week lead", "hydro:karad:4w", "Out-of-sample test block 2016–2025."),
-    "interactive_hydrograph_kantamal_h1w": ("Hydrograph · Kantamal · 1-week lead", "hydro:kantamal:1w", "Out-of-sample test block 2016–2025."),
-    "interactive_hydrograph_kantamal_h4w": ("Hydrograph · Kantamal · 4-week lead", "hydro:kantamal:4w", "Out-of-sample test block 2016–2025."),
+    "interactive_hydrographs_dashboard": ("Historical forecast replay", "hydro", "Saved forecasts for 12 stations and four lead times, 2016–2025. Gaps indicate weeks excluded from scoring."),
+    "interactive_hydrograph_karad_h1w": ("Forecast replay · Karad · 1-week lead", "hydro:karad:1w", "Out-of-sample test block 2016–2025."),
+    "interactive_hydrograph_karad_h4w": ("Forecast replay · Karad · 4-week lead", "hydro:karad:4w", "Out-of-sample test block 2016–2025."),
+    "interactive_hydrograph_kantamal_h1w": ("Forecast replay · Kantamal · 1-week lead", "hydro:kantamal:1w", "Out-of-sample test block 2016–2025."),
+    "interactive_hydrograph_kantamal_h4w": ("Forecast replay · Kantamal · 4-week lead", "hydro:kantamal:4w", "Out-of-sample test block 2016–2025."),
     "interactive_pr_curves_severe_drought": ("Severe drought (Q95) precision–recall", "pr", "Hover a curve to read the discharge cutoff and false alarm ratio."),
     "interactive_kge_component_decomposition": ("KGE component decomposition", "kge", "Correlation r, variability ratio α and bias ratio β; 1.0 is ideal."),
     "interactive_feature_importance_shift": ("Feature importance · 1-week vs 8-week lead", "fi", "Share of M2 permutation importance (%), mean over the 8 stations with complete low-flow records."),
@@ -228,7 +228,7 @@ TEMPLATE = """<!DOCTYPE html>
 <script src="https://cdn.plot.ly/plotly-basic-2.35.2.min.js"></script>
 <script src="../assets/figdata.js"></script>
 <script src="../assets/benchmark-data.js"></script>
-<script src="../assets/charts.js"></script>
+{replay_script}<script src="../assets/charts.js"></script>
 <script>Charts.mountAll(document, {{eager: true}});</script>
 </body>
 </html>
@@ -250,7 +250,8 @@ def main() -> None:
     )
     print(f"wrote {OUT_JS.relative_to(ROOT)} ({OUT_JS.stat().st_size / 1024:.0f} KB)")
     for name, (title, chart, sub) in PAGES.items():
-        (VIZ / f"{name}.html").write_text(TEMPLATE.format(title=title, chart=chart, sub=sub))
+        replay_script = '<script src="../assets/replay-manifest.js"></script>\n' if chart.split(":")[0] == "hydro" else ""
+        (VIZ / f"{name}.html").write_text(TEMPLATE.format(title=title, chart=chart, sub=sub, replay_script=replay_script))
     print(f"wrote {len(PAGES)} standalone chart pages to visualizations/")
     write_bench_table()
 
