@@ -177,7 +177,9 @@
 
   /* ---------- ΔNSE heatmap (M2 − M1) ---------- */
   var S = window.STATIONS || [];
+  var comparisonData = window.EXPLORER_DATA;
   var HS = ['1w', '2w', '4w', '8w'];
+  var SEVERITIES = { Q95: 'severe drought, primary', Q90: 'moderate drought, sensitivity', Q80: 'mild drought, sensitivity' };
   var cap = function (n) { return n.charAt(0) + n.slice(1).toLowerCase(); };
   function heatColor(v) {
     /* diverging: ochre (M1 better) ← neutral grey → teal (M2 better); clamp at ±0.4 */
@@ -188,7 +190,28 @@
     return { bg: 'rgb(' + c.join(',') + ')', fg: a > 0.55 ? '#fff' : '#16202b' };
   }
   var heat = $('#heat');
-  var selected = { id: S.length ? S[0].id : null, h: '1w' };
+  var selected, selectionListeners = [];
+
+  function selectionFromURL() {
+    var params = new URLSearchParams(window.location.search);
+    var station = params.get('station'), lead = params.get('lead'), severity = (params.get('severity') || '').toUpperCase();
+    return {
+      station: S.some(function (s) { return s.id === station; }) ? station : S[0].id,
+      lead: HS.indexOf(lead) >= 0 ? lead : HS[0],
+      objective: params.get('objective') === 'drought' ? 'drought' : 'flow',
+      severity: SEVERITIES[severity] ? severity : 'Q95'
+    };
+  }
+
+  function selectionURL(selection) {
+    var url = new URL(window.location.href);
+    url.searchParams.set('station', selection.station);
+    url.searchParams.set('lead', selection.lead);
+    url.searchParams.set('objective', selection.objective);
+    url.searchParams.set('severity', selection.severity);
+    return url;
+  }
+
   if (heat) {
     var html = '<div></div>' + HS.map(function (h) { return '<div class="hh">' + h.replace('w', ' wk') + '</div>'; }).join('');
     var lastState = null;
@@ -197,10 +220,10 @@
       var nm = cap(s.name);
       html += '<div class="rh">' + nm + '<small>' + (/Holdout/.test(s.role) ? 'Protocol 2 holdout' : s.basin) + '</small></div>';
       HS.forEach(function (h) {
-        var v = parseFloat(s.metrics[h].m2_nse) - parseFloat(s.metrics[h].m1_nse);
+        var v = parseFloat(s.metrics[h].delta_nse_m2_m1);
         var c = heatColor(v);
         html += '<button type="button" class="cell" data-id="' + s.id + '" data-h="' + h + '" style="background:' + c.bg + ';color:' + c.fg +
-          '" aria-label="' + nm + ', ' + h + ' lead: M2 minus M1 NSE ' + fmt(v) + '">' + fmt(v) + '</button>';
+          '" aria-pressed="false" aria-label="' + nm + ', ' + h + ' lead: M2 minus M1 NSE ' + fmt(v) + '">' + fmt(v) + '</button>';
       });
     });
     heat.innerHTML = html;
@@ -208,12 +231,17 @@
       var b = e.target.closest('.cell');
       if (!b) return;
       setSelection(b.getAttribute('data-id'), b.getAttribute('data-h'));
-      if (window.innerWidth < 900) $('#explorer').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      if (window.innerWidth < 900 && e.detail > 0) $('#station-inspector').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     });
   }
 
   /* ---------- station explorer ---------- */
   var sel = $('#station-select'), hSeg = $('#horizon-seg');
+  var updateLead = hSeg && Charts.radioGroup(hSeg, function (lead) { setSelection(selected.station, lead); });
+  var objectiveSeg = $('#objective-seg'), severitySeg = $('#severity-seg');
+  var updateObjective = objectiveSeg && Charts.radioGroup(objectiveSeg, function (objective) { changeSelection({ objective: objective }); });
+  var updateSeverity = severitySeg && Charts.radioGroup(severitySeg, function (severity) { changeSelection({ severity: severity }); });
+  var share = $('#share-selection'), selectionStatus = $('#selection-status');
   if (sel) {
     S.forEach(function (s) {
       var o = document.createElement('option');
@@ -221,22 +249,84 @@
       o.textContent = cap(s.name) + ' — ' + s.state + ' · ' + s.basin;
       sel.appendChild(o);
     });
-    sel.addEventListener('change', function () { setSelection(sel.value, selected.h); });
-    $$('button', hSeg).forEach(function (b) {
-      b.addEventListener('click', function () { setSelection(selected.id, b.getAttribute('data-h')); });
-    });
+    sel.addEventListener('change', function () { setSelection(sel.value, selected.lead); });
   }
-  function setSelection(id, h) {
-    selected.id = id; selected.h = h;
-    if (sel) sel.value = id;
-    if (hSeg) $$('button', hSeg).forEach(function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-h') === h)); });
-    if (heat) $$('.cell', heat).forEach(function (c) { c.classList.toggle('sel', c.getAttribute('data-id') === id && c.getAttribute('data-h') === h); });
+  function sameSelection(selection) {
+    return selected && Object.keys(selection).every(function (key) { return selection[key] === selected[key]; });
+  }
+  function applySelection(selection) {
+    if (sameSelection(selection)) return;
+    selected = selection;
+    if (sel) sel.value = selected.station;
+    if (updateLead) updateLead(selected.lead);
+    if (updateObjective) updateObjective(selected.objective);
+    if (updateSeverity) {
+      updateSeverity(selected.severity);
+      $('#severity-field').hidden = selected.objective !== 'drought';
+    }
+    if (heat) $$('.cell', heat).forEach(function (c) {
+      var active = c.dataset.id === selected.station && c.dataset.h === selected.lead;
+      c.classList.toggle('sel', active);
+      c.setAttribute('aria-pressed', String(active));
+    });
+    if (share) {
+      var url = selectionURL(selected);
+      url.hash = 'explorer';
+      share.href = url.href;
+    }
     renderExplorer();
+    selectionListeners.forEach(function (listener) { listener(selected); });
+  }
+  function setSelection(station, lead) {
+    changeSelection({ station: station, lead: lead });
+  }
+  function changeSelection(values) {
+    var next = Object.assign({}, selected, values);
+    if (sameSelection(next)) return;
+    window.history.pushState(null, '', selectionURL(next));
+    applySelection(next);
+  }
+  function renderComparison(entry) {
+    var mode = selected.objective;
+    var drought = mode === 'drought';
+    var severity = selected.severity;
+    var group = entry.drought[severity];
+    var values = drought ? group.models : entry.flow;
+    var columns = drought ? [['Hits', 'hits'], ['Misses', 'misses'], ['False alarms', 'false_alarms'], ['CSI', 'csi'], ['POD', 'pod'], ['FAR', 'far']] :
+      [['NSE', 'nse'], ['Log-NSE', 'log_nse'], ['KGE', 'kge']];
+    var baseline = selected.lead === '1w' || selected.lead === '2w' ? 'Persistence' : 'Weekly climatology';
+    var source = comparisonData.sources[mode];
+    var download = $('#comparison-download');
+    var common = ['station', 'lead', 'objective', 'severity', 'n_eval', 'observed_events', 'threshold_m3_s', 'model', 'source', 'source_sha256', 'schema'];
+    var rows = [common.concat(columns.map(function (column) { return column[1]; })).join(',')];
+    $('#comparison-context').textContent = drought ? severity + ' (' + SEVERITIES[severity] + ') · ' + group.events + ' observed drought weeks in ' + entry.n_eval +
+      ' scored weeks · frozen threshold ≤ ' + group.threshold.toLocaleString('en-IN', { maximumFractionDigits: 4 }) + ' m³/s' :
+      'Flow accuracy across ' + entry.n_eval + ' scored weeks.';
+    $('#comparison-note').textContent = drought ?
+      'CSI is the share of events or alerts that were hits. POD is the share of observed events caught. FAR is the share of alerts that were false. POD is undefined with no observed events, FAR with no alerts, and CSI with neither. Scroll the table to see all columns.' :
+      'M1 uses flow history. M2 also uses weather. Log-NSE scores all models on log(1 + discharge). M1-log and M2-log were trained on log(1 + specific runoff).';
+    $('#comparison-table thead').innerHTML = '<tr><th scope="col">Model</th>' + columns.map(function (column) {
+      return '<th scope="col" class="num">' + column[0] + '</th>';
+    }).join('') + '</tr>';
+    $('#comparison-table tbody').innerHTML = Object.keys(Charts.comparisonModels).map(function (model) {
+      var numbers = columns.map(function (column) { return values[model][column[1]]; });
+      rows.push([selected.station, selected.lead, mode, drought ? severity : '', entry.n_eval, drought ? group.events : '',
+        drought ? group.threshold : '', model, source.path, source.sha256, comparisonData.schema].concat(numbers).join(','));
+      return '<tr><th scope="row">' + model + (model === 'M0' ? '<span class="comparison-baseline">' + baseline + '</span>' : '') + '</th>' +
+        numbers.map(function (value, index) {
+          var label = value === null ? 'undefined' : drought ? (index < 3 ? String(value) : value.toFixed(3)) : fmt(value);
+          return '<td class="num">' + label + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+    download.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.join('\r\n') + '\r\n');
+    download.download = [selected.station, selected.lead, drought ? severity : mode].join('-') + '.csv';
   }
   function renderExplorer() {
-    var s = S.filter(function (x) { return x.id === selected.id; })[0];
+    var s = S.find(function (x) { return x.id === selected.station; });
     if (!s || !$('#ex-attrs')) return;
-    var m = s.metrics[selected.h];
+    var m = s.metrics[selected.lead];
+    var leadLabel = selected.lead === '1w' ? '1 week' : selected.lead[0] + ' weeks';
+    if (selectionStatus) selectionStatus.textContent = cap(s.name) + ' · ' + leadLabel + ' ahead';
     $('#ex-attrs').innerHTML =
       '<div><dt>Sub-basin</dt><dd>' + s.basin + '</dd></div>' +
       '<div><dt>CAMELS ID</dt><dd>Gauge ' + s.camels_id + '</dd></div>' +
@@ -244,22 +334,23 @@
       '<div><dt>Aridity (PET/P)</dt><dd>' + s.aridity + '</dd></div>' +
       '<div><dt>Scored test weeks</dt><dd>' + m.n_eval + (m.n_masked_zero_weeks ? ' (' + m.n_masked_zero_weeks + ' unmeasured zero weeks excluded)' : '') + '</dd></div>' +
       '<div style="grid-column:1/-1"><dt>Regime · role</dt><dd>' + s.regime + ' · ' + s.role + '</dd></div>';
-    $('#kpi-m0').textContent = fmt(m.m0_nse);
-    $('#kpi-m1').textContent = fmt(m.m1_nse);
-    $('#kpi-m2').textContent = fmt(m.m2_nse);
-    var dEl = $('#kpi-d');
-    dEl.textContent = m.delta_nse_m2_m1 + ' Δ';
-    dEl.className = 'kd ' + (parseFloat(m.delta_nse_m2_m1) >= 0 ? 'pos' : 'neg');
-    $('#kpi-kge').textContent = fmt(m.m2_kge);
-    $('#far-m1').textContent = m.far_m1 || '—';
-    $('#far-m2').textContent = m.far_m2 || '—';
-    $('#csi-m2').textContent = m.csi_m2 || '—';
-    if ($('#csi-m0')) $('#csi-m0').textContent = m.csi_m0 || '—';
-    if ($('#q95-events')) $('#q95-events').textContent = m.q95_events + ' of ' + m.n_eval + ' weeks';
+    var scores = comparisonData && comparisonData.stations[s.camels_id];
+    if (!scores) {
+      $('#comparison-context').textContent = 'Audited comparison data unavailable for this station.';
+      return;
+    }
+    renderComparison(scores[selected.lead]);
     var mini = $('#station-mini');
-    if (mini && window.Plotly && window.Charts) Charts.stationMini(mini, s);
+    if (mini && window.Plotly && window.Charts) {
+      var metric = selected.objective === 'drought' ? selected.severity + ' CSI' : 'NSE';
+      mini.setAttribute('aria-label', metric + ' by lead time for ' + cap(s.name) + '. Selected lead: ' + leadLabel + '.');
+      Charts.stationMini(mini, scores, selected, function (lead) { setSelection(selected.station, lead); });
+    }
   }
-  if (S.length) setSelection(selected.id, selected.h);
+  if (S.length) {
+    applySelection(selectionFromURL());
+    window.addEventListener('popstate', function () { applySelection(selectionFromURL()); });
+  }
 
   /* ---------- copy buttons ---------- */
   $$('.copy').forEach(function (b) {
@@ -275,5 +366,9 @@
   });
 
   /* ---------- charts (mounted lazily) ---------- */
-  if (window.Charts) Charts.mountAll(document);
+  if (window.Charts) Charts.mountAll(document, { selection: selected && {
+    get: function () { return selected; },
+    set: setSelection,
+    subscribe: function (listener) { selectionListeners.push(listener); listener(selected); }
+  } });
 })();

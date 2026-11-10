@@ -504,7 +504,9 @@ tr.group-start td { border-top: 1px solid var(--line-2); }
 .chart-sm { height: 300px; } .chart-lg { height: min(70vh, 560px); } .chart-tall { height: 470px; }
 @media (max-width: 640px) { .chart { height: 330px; } .chart-tall { height: 450px; } }
 .chart-controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 14px 10px 0 14px; }
-.seg-group { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chart-selection { margin: 12px 14px 0; color: var(--muted); font-size: 14px; }
+.chart-empty { margin-bottom: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.seg-group { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
 .seg-label { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
 .seg { display: inline-flex; padding: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; gap: 2px; flex-wrap: wrap; }
 .seg button {
@@ -537,12 +539,13 @@ tr.group-start td { border-top: 1px solid var(--line-2); }
 .heat-legend .ramp { width: 180px; max-width: 40vw; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #c2621b, #eab77a, #ece9e2, #7cc6b2, #0b7a63); }
 
 /* explorer */
-.explorer { padding: 0; overflow: hidden; }
+.explorer { padding: 0; overflow: hidden; scroll-margin-top: calc(var(--nav-h) + 16px); }
 .explorer-top { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end; padding: 20px 22px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .explorer-top .title { margin-right: auto; }
 .explorer-top h3 { margin: 0; font: 600 19px/1.3 var(--sans); }
 .explorer-top p { margin: 4px 0 0; font-size: 14px; color: var(--muted); max-width: 52ch; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field[hidden] { display: none; }
 .field label { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
 select {
   appearance: none; -webkit-appearance: none; font: 500 15px/1.2 var(--sans); color: var(--ink);
@@ -552,6 +555,9 @@ select {
 .explorer-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
 @media (max-width: 900px) { .explorer-grid { grid-template-columns: 1fr; } }
 .explorer-left { padding: 22px; border-right: 1px solid var(--line); }
+.explorer-selection { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 16px; }
+.explorer-selection p { margin: 0; font-size: 15px; font-weight: 600; }
+.selection-link { font-size: 13px; color: var(--teal-ink); }
 @media (max-width: 900px) { .explorer-left { border-right: 0; border-bottom: 1px solid var(--line); } }
 .explorer-right { padding: 18px 16px 10px; display: flex; flex-direction: column; gap: 6px; }
 .explorer-right h4 { margin: 0 6px; font: 600 14.5px/1.3 var(--sans); }
@@ -559,20 +565,14 @@ select {
 .attrs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; margin: 0 0 18px; }
 .attrs dt { font: 500 11px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
 .attrs dd { margin: 0; font-weight: 500; font-size: 14.5px; }
-.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.kpi { border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px 12px 16px; background: var(--card); position: relative; }
-.kpi::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; }
-.kpi.m0::before { background: var(--grey); } .kpi.m1::before { background: var(--blue); } .kpi.m2::before { background: var(--teal); } .kpi.kg::before { background: var(--ochre); }
-.kpi .kl { font: 500 11px/1.2 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--faint); }
-.kpi .kv { font: 600 26px/1.2 var(--serif); margin: 4px 0 2px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.kpi .kd { font: 500 12px/1 var(--mono); padding: 3px 6px; border-radius: 5px; }
-.kpi .kd.pos { background: var(--teal-soft); } .kpi .kd.neg { background: var(--rose-soft); }
-.kpi .ks { font-size: 12.5px; color: var(--muted); }
-.drought-box { margin-top: 14px; border-radius: 11px; background: var(--ochre-soft); border: 1px solid #f1dcb9; padding: 14px 16px; }
-.drought-box h4 { margin: 0 0 4px; font: 600 14px/1.3 var(--sans); display: flex; align-items: center; gap: 8px; color: #5f3a05; }
-.drought-box .sub { font: 500 11px/1.3 var(--mono); color: var(--ochre-ink); margin-bottom: 8px; }
-.dline { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 4px 0; color: #4f3a17; border-top: 1px dashed #efd9b3; }
-.dline b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.comparison h4 { margin: 0; font-size: 16px; }
+.comparison p { margin: 6px 0 10px; color: var(--muted); font-size: 13px; }
+.comparison-scroll { border: 1px solid var(--line); border-radius: 8px; }
+.comparison-table th, .comparison-table td { padding: 8px 9px; }
+.comparison-table .num { font-size: 12px; }
+.comparison-table [scope="row"], .comparison-table thead th:first-child { position: sticky; left: 0; }
+.comparison-table [scope="row"] { background: var(--card); }
+.comparison-baseline { display: block; max-width: 9ch; color: var(--muted); font: 400 11px/1.3 var(--sans); white-space: normal; }
 .explorer-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px 22px; border-top: 1px solid var(--line); background: var(--surface); font-size: 12.5px; color: var(--muted); }
 .explorer-foot .ok { display: inline-flex; align-items: center; gap: 6px; color: var(--teal-ink); font-weight: 500; }
 
@@ -664,7 +664,6 @@ select {
   .dark-panel { padding: 20px 16px; }
   .dark-panel .inner { padding: 16px; }
   .tl-seg { font-size: 10.5px; }
-  .kpi .kv { font-size: 22px; }
 }
 .dark-panel h4 { display: block; }
 .dark-panel h4 .icon { margin-right: 8px; vertical-align: -0.2em; }

@@ -464,7 +464,7 @@
 
     <div class="chart-card" data-reveal>
       <header>
-        <div><span class="kicker">Widget 1</span><h3>Multi-Basin Hydrograph Dashboard: Observed vs M1 vs M2</h3><p>Pan and zoom across 2018–2019 monsoon seasons for Karad (Krishna Basin) and Kantamal (Mahanadi Basin) at H = 1w and H = 4w.</p></div>
+        <div><span class="kicker">Widget 1</span><h3>Multi-Basin Hydrograph Dashboard: Observed vs M1 vs M2</h3><p>Change the station or lead here or in the explorer. Hydrographs cover Karad and Kantamal at 1 and 4 weeks.</p></div>
         <a class="fs-link" href="visualizations/interactive_hydrographs_dashboard.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
       </header>
       <div class="chart-body"><div class="chart chart-tall" data-chart="hydro" role="img" aria-label="Interactive Hydrographs Dashboard comparing observed discharge with M1 and M2 forecasts"></div></div>
@@ -474,7 +474,7 @@
     <div class="grid g2">
       <div class="chart-card" data-reveal>
         <header>
-          <div><span class="kicker">Widget 2</span><h3>Track B: Severe Drought (Q95) Precision-Recall Curves</h3><p>Detection (recall) against precision for severe low-flow weeks at 2- and 4-week lead, pooled over all scored test weeks of the 12 stations.</p></div>
+          <div><span class="kicker">Widget 2</span><h3>Track B: Severe Drought (Q95) Precision-Recall Curves</h3><p>Detection (recall) against precision for severe low-flow weeks at 2- and 4-week lead, pooled over all scored test weeks of the 12 stations. This chart has its own lead control.</p></div>
           <a class="fs-link" href="visualizations/interactive_pr_curves_severe_drought.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="pr" role="img" aria-label="Precision-Recall Curves for Severe Drought early warning"></div></div>
@@ -499,7 +499,7 @@
         <div class="heat-legend"><span>M1 better</span><span class="ramp"></span><span>M2 better</span><span>(colour saturates at ±0.40)</span></div>
       </div>
 
-      <div class="card explorer" data-reveal style="--d:.1s">
+      <div class="card explorer" id="station-inspector" data-reveal style="--d:.1s">
         <div class="explorer-top">
           <div class="title"><span class="kicker">Audited Interactive Inspector · 10-Yr Out-Of-Sample Test Block (2016–2025)</span><h3>Precomputed Station &amp; Horizon Metric Explorer</h3><p>Select any gauging station and forecast lead time to inspect exact precomputed hydrograph accuracy and drought early warning skill metrics.</p></div>
         </div>
@@ -507,34 +507,45 @@
           <div class="field"><label for="station-select">Gauging Station Sub-Basin</label><select id="station-select"></select></div>
           <div class="field"><label id="hz-label">Forecast Lead Horizon (H)</label>
             <div class="seg" id="horizon-seg" role="radiogroup" aria-labelledby="hz-label">
-              <button type="button" role="radio" data-h="1w" aria-checked="true" title="H = 1 Week Ahead (Short-Term Inertia)">1 wk</button>
-              <button type="button" role="radio" data-h="2w" aria-checked="false" title="H = 2 Weeks Ahead (Persistence Cliff)">2 wk</button>
-              <button type="button" role="radio" data-h="4w" aria-checked="false" title="H = 4 Weeks Ahead (Sub-Seasonal Transition)">4 wk</button>
-              <button type="button" role="radio" data-h="8w" aria-checked="false" title="H = 8 Weeks Ahead (Climatology Dominance)">8 wk</button>
+              <button type="button" role="radio" value="1w" aria-checked="true">1 wk</button>
+              <button type="button" role="radio" value="2w" aria-checked="false">2 wk</button>
+              <button type="button" role="radio" value="4w" aria-checked="false">4 wk</button>
+              <button type="button" role="radio" value="8w" aria-checked="false">8 wk</button>
+            </div>
+          </div>
+          <div class="field"><span class="seg-label" id="objective-label">Objective</span>
+            <div class="seg" id="objective-seg" role="radiogroup" aria-labelledby="objective-label">
+              <button type="button" role="radio" value="flow" aria-checked="true">Flow accuracy</button>
+              <button type="button" role="radio" value="drought" aria-checked="false">Drought warnings</button>
+            </div>
+          </div>
+          <div class="field" id="severity-field" hidden><span class="seg-label" id="severity-label">Drought severity</span>
+            <div class="seg" id="severity-seg" role="radiogroup" aria-labelledby="severity-label">
+              <button type="button" role="radio" value="Q95" aria-checked="true">Severe (Q95)</button>
+              <button type="button" role="radio" value="Q90" aria-checked="false">Moderate (Q90)</button>
+              <button type="button" role="radio" value="Q80" aria-checked="false">Mild (Q80)</button>
             </div>
           </div>
         </div>
         <div class="explorer-left" style="border-right:0">
-          <dl class="attrs" id="ex-attrs" aria-live="polite"><div><dt>Station Attributes</dt><dd>Loading station metadata...</dd></div></dl>
-          <div class="kpis" aria-live="polite">
-            <div class="kpi m0"><div class="kl">M0 Baseline NSE</div><div class="kv" id="kpi-m0">-</div><div class="ks">Persistence / Climatology</div></div>
-            <div class="kpi m1"><div class="kl">M1 Flow-Only GBT NSE</div><div class="kv" id="kpi-m1">-</div><div class="ks">Autoregressive Flow Memory</div></div>
-            <div class="kpi m2"><div class="kl">M2 Hydro-Met GBT NSE</div><div class="kv"><span id="kpi-m2">-</span><span class="kd" id="kpi-d">-</span></div><div class="ks">Rainfall + Temp + Water Deficit</div></div>
-            <div class="kpi kg"><div class="kl">M2 Kling-Gupta (KGE)</div><div class="kv" id="kpi-kge">-</div><div class="ks">Correlation, Dispersion, Volume</div></div>
+          <div class="explorer-selection">
+            <p id="selection-status" role="status"></p>
+            <a class="selection-link" id="share-selection" href="#explorer">Link to this selection</a>
           </div>
-          <div class="drought-box">
-            <h4><i data-lucide="siren"></i>Track B: Severe Drought (Q95) Early Warning Diagnostic</h4>
-            <div class="sub">Frozen Threshold: 5th Percentile Baseline Flow</div>
-            <div class="dline"><span>Observed Q95 events (scored weeks):</span><b id="q95-events">-</b></div>
-            <div class="dline"><span>M0 Critical Success Index (CSI):</span><b id="csi-m0">-</b></div>
-            <div class="dline"><span>M1 False Alarm Ratio (FAR):</span><b id="far-m1">-</b></div>
-            <div class="dline"><span>M2 False Alarm Ratio (FAR):</span><b id="far-m2">-</b></div>
-            <div class="dline"><span>M2 Critical Success Index (CSI):</span><b id="csi-m2">-</b></div>
+          <dl class="attrs" id="ex-attrs" aria-live="polite"><div><dt>Station Attributes</dt><dd>Loading station metadata...</dd></div></dl>
+          <div class="comparison">
+            <h4 id="comparison-heading">Full test block · 2016–2025</h4>
+            <p id="comparison-context" role="status"></p>
+            <div class="table-scroll comparison-scroll" tabindex="0" role="region" aria-labelledby="comparison-heading">
+              <table class="comparison-table" id="comparison-table" aria-labelledby="comparison-heading"><thead></thead><tbody></tbody></table>
+            </div>
+            <p id="comparison-note"></p>
+            <a class="selection-link" id="comparison-download" download>Download this comparison (CSV)</a>
           </div>
         </div>
         <div class="explorer-right" style="border-top:1px solid var(--line)">
           <h4>This station across all lead times</h4>
-          <p class="hint">NSE for M0, M1 and M2 at 1, 2, 4 and 8 weeks.</p>
+          <p class="hint">Larger markers show the selected lead. Click a point or use the lead buttons above to change it.</p>
           <div class="chart chart-sm" id="station-mini" role="img" aria-label="NSE by lead time for the selected station"></div>
         </div>
         <div class="explorer-foot"><span>Units: Volumetric Q (m³/s), specific runoff q (mm/week). Missing and unmeasured (recorded-zero) weeks filtered via the shared mask ℳ<sub>eval</sub>.</span><span class="ok"><i data-lucide="circle-check"></i>Terminal Purge Verified</span></div>
@@ -748,6 +759,7 @@
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-basic-2.35.2.min.js"></script>
 <script src="assets/benchmark-data.js"></script>
+<script src="assets/explorer-data.js"></script>
 <script src="assets/figdata.js"></script>
 <script src="assets/charts.js"></script>
 <script src="assets/site.js"></script>

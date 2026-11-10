@@ -16,11 +16,28 @@
     m1: { name: 'M1 Flow-only', color: C.m1 },
     m2: { name: 'M2 Hydro-met', color: C.m2 }
   };
+  var COMPARISON_MODEL = {
+    M0: { name: 'M0', color: C.m0, dash: 'dot' },
+    M1: { name: 'M1', color: C.m1 },
+    M2: { name: 'M2', color: C.m2 },
+    'M1-log': { name: 'M1-log', color: '#8552a5', dash: 'dash' },
+    'M2-log': { name: 'M2-log', color: '#a75b18', dash: 'dash' }
+  };
   var FONT = '"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
   var MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
   var H_LABEL = { '1w': '1 wk', '2w': '2 wk', '4w': '4 wk', '8w': '8 wk' };
+  var LEADS = Object.keys(H_LABEL).map(function (h) {
+    return { value: h, label: h === '1w' ? '1 week' : h[0] + ' weeks' };
+  });
 
   function num(v) { return v === null || v === undefined || v === '' ? null : parseFloat(v); }
+
+  function scoreRange(values) {
+    var scores = [0].concat(values.filter(Number.isFinite));
+    var low = Math.min.apply(null, scores), high = Math.max.apply(null, scores);
+    var pad = Math.max(0.05, (high - low) * 0.08);
+    return [low - pad, high + pad];
+  }
 
   function axis(extra) {
     var a = {
@@ -53,35 +70,70 @@
     return Plotly.newPlot(el, data, layout, CONFIG);
   }
 
-  /* Segmented controls rendered above a chart. Returns the live state object. */
+  function radioGroup(group, onChange) {
+    var buttons = Array.from(group.querySelectorAll('button[role="radio"]'));
+    group.addEventListener('click', function (event) {
+      var button = event.target.closest('button[role="radio"]');
+      if (button) onChange(button.value);
+    });
+    group.addEventListener('keydown', function (event) {
+      var i = buttons.indexOf(event.target), next;
+      if (i < 0) return;
+      switch (event.key) {
+        case 'ArrowRight': case 'ArrowDown': next = (i + 1) % buttons.length; break;
+        case 'ArrowLeft': case 'ArrowUp': next = (i + buttons.length - 1) % buttons.length; break;
+        case 'Home': next = 0; break;
+        case 'End': next = buttons.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      buttons[next].focus();
+      buttons[next].click();
+    });
+    return function (value) {
+      buttons.forEach(function (b) {
+        var checked = b.value === value;
+        b.setAttribute('aria-checked', String(checked));
+        b.tabIndex = checked ? 0 : -1;
+      });
+    };
+  }
+
   function controls(host, groups, onChange) {
     var bar = document.createElement('div');
     bar.className = 'chart-controls';
-    var state = {};
+    var state = {}, update = {};
     groups.forEach(function (g) {
       var lab = document.createElement('span');
       lab.className = 'seg-label';
       lab.textContent = g.label;
-      var wrap = document.createElement('div');
-      wrap.className = 'seg';
-      wrap.setAttribute('role', 'radiogroup');
-      wrap.setAttribute('aria-label', g.label);
       state[g.key] = g.value;
-      g.options.forEach(function (o) {
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = o.label;
-        b.setAttribute('role', 'radio');
-        b.setAttribute('aria-checked', String(o.value === g.value));
-        b.addEventListener('click', function () {
-          if (state[g.key] === o.value) return;
-          state[g.key] = o.value;
-          wrap.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-checked', 'false'); });
-          b.setAttribute('aria-checked', 'true');
-          onChange(state);
+      function change(value) {
+        if (state[g.key] === value) return;
+        state[g.key] = value;
+        update[g.key](value);
+        onChange(state, g.key);
+      }
+      var wrap = document.createElement(g.select ? 'select' : 'div');
+      wrap.setAttribute('aria-label', g.label);
+      if (g.select) {
+        g.options.forEach(function (o) { wrap.add(new Option(o.label, o.value)); });
+        wrap.addEventListener('change', function () { change(wrap.value); });
+        update[g.key] = function (value) { wrap.value = value; };
+      } else {
+        wrap.className = 'seg';
+        wrap.setAttribute('role', 'radiogroup');
+        g.options.forEach(function (o) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.value = o.value;
+          b.textContent = o.label;
+          b.setAttribute('role', 'radio');
+          wrap.appendChild(b);
         });
-        wrap.appendChild(b);
-      });
+        update[g.key] = radioGroup(wrap, change);
+      }
+      update[g.key](g.value);
       var group = document.createElement('div');
       group.className = 'seg-group';
       group.appendChild(lab);
@@ -89,7 +141,16 @@
       bar.appendChild(group);
     });
     host.parentNode.insertBefore(bar, host);
-    return state;
+    return {
+      state: state,
+      set: function (values) {
+        Object.keys(values).forEach(function (key) {
+          if (!update[key]) return;
+          state[key] = values[key];
+          update[key](values[key]);
+        });
+      }
+    };
   }
 
   /* ---------- Portfolio median skill vs lead horizon ---------- */
@@ -127,15 +188,33 @@
         ]
       }));
     }
-    render(controls(el, [{ key: 'metric', label: 'Metric', value: 'nse', options: [{ label: 'NSE', value: 'nse' }, { label: 'KGE', value: 'kge' }] }], render));
+    render(controls(el, [{ key: 'metric', label: 'Metric', value: 'nse', options: [{ label: 'NSE', value: 'nse' }, { label: 'KGE', value: 'kge' }] }], render).state);
   }
 
   /* ---------- Hydrograph: observed vs M1 vs M2 ---------- */
-  function hydro(el, args) {
+  function hydro(el, args, shared) {
     var F = window.FIGDATA.hydro;
     var fixed = args.length === 2;
+    var currentStation, currentLead;
+    var status = document.createElement('p');
+    status.className = 'chart-selection';
+    status.setAttribute('role', 'status');
     function render(s) {
-      var d = F[s.station][s.lead];
+      currentStation = s.station;
+      currentLead = s.lead;
+      var d = F[s.station] && F[s.station][s.lead];
+      var station = s.station[0].toUpperCase() + s.station.slice(1);
+      var lead = LEADS.find(function (item) { return item.value === s.lead; }).label;
+      status.classList.toggle('chart-empty', !d);
+      status.textContent = d ? station + ' · ' + lead + ' ahead' :
+        'No hydrograph for ' + station + ' at ' + lead + '. This chart covers Karad and Kantamal at 1 and 4 weeks.';
+      el.hidden = !d;
+      if (!d) {
+        if (el.__drawn) Plotly.purge(el);
+        el.__drawn = false;
+        return;
+      }
+      el.setAttribute('aria-label', 'Observed and forecast discharge for ' + station + ' at ' + lead);
       var traces = [
         { x: d.x, y: d.obs, name: 'Observed Q', mode: 'lines', line: { color: C.obs, width: 2 }, hovertemplate: 'Observed %{y:,.1f} m³/s<extra></extra>' },
         { x: d.x, y: d.m1, name: 'M1 Flow-only · NSE ' + d.nse_m1.toFixed(3), mode: 'lines', line: { color: C.m1, width: 1.6, dash: 'dash' }, hovertemplate: 'M1 %{y:,.1f} m³/s<extra></extra>' },
@@ -151,14 +230,29 @@
       }));
     }
     var groups = [];
-    if (!fixed) {
+    if (shared) {
+      groups.push({ key: 'station', label: 'Hydrograph station', value: shared.get().station, select: true,
+        options: window.STATIONS.map(function (s) {
+          return { label: s.name[0] + s.name.slice(1).toLowerCase(), value: s.id };
+        }) });
+      groups.push({ key: 'lead', label: 'Hydrograph lead', value: shared.get().lead, options: LEADS });
+    } else if (!fixed) {
       groups.push({ key: 'station', label: 'Station', value: 'karad', options: [{ label: 'Karad · Krishna', value: 'karad' }, { label: 'Kantamal · Mahanadi', value: 'kantamal' }] });
       groups.push({ key: 'lead', label: 'Lead', value: '1w', options: [{ label: '1 week', value: '1w' }, { label: '4 weeks', value: '4w' }] });
     }
     groups.push({ key: 'view', label: 'Window', value: 'focus', options: [{ label: '2018–19', value: 'focus' }, { label: '2016–2025', value: 'all' }] });
-    var st = controls(el, groups, render);
-    if (fixed) { st.station = args[0]; st.lead = args[1]; }
-    render(st);
+    var ctrl = controls(el, groups, function (state, key) {
+      if (shared && key !== 'view') shared.set(state.station, state.lead);
+      else render(state);
+    });
+    el.parentNode.insertBefore(status, el);
+    if (fixed) { ctrl.state.station = args[0]; ctrl.state.lead = args[1]; }
+    if (shared) shared.subscribe(function (selection) {
+      if (currentStation === selection.station && currentLead === selection.lead) return;
+      ctrl.set(selection);
+      render(ctrl.state);
+    });
+    else render(ctrl.state);
   }
 
   /* ---------- Precision–recall for severe drought ---------- */
@@ -181,7 +275,7 @@
         yaxis: axis({ title: { text: 'Precision · 1 − FAR' }, range: [0, 1.02] })
       }));
     }
-    render(controls(el, [{ key: 'lead', label: 'Lead', value: '2w', options: [{ label: '2 weeks', value: '2w' }, { label: '4 weeks', value: '4w' }] }], render));
+    render(controls(el, [{ key: 'lead', label: 'Pooled PR lead', value: '2w', options: [{ label: '2 weeks', value: '2w' }, { label: '4 weeks', value: '4w' }] }], render).state);
   }
 
   /* ---------- KGE components as three small multiples ---------- */
@@ -231,8 +325,13 @@
   }
 
   /* ---------- Zero-shot transfer: dot plot per held-out basin ---------- */
-  function transfer(el) {
+  function transfer(el, args, shared) {
     var F = window.FIGDATA.transfer;
+    var currentLead;
+    var range = scoreRange(Object.keys(F).reduce(function (values, lead) {
+      var d = F[lead];
+      return values.concat(d.m0, d.m1, d.m2);
+    }, []));
     var labelM = { m0: 'M0 Baseline (own history)', m1: 'M1 Flow-only GBT (pooled)', m2: 'M2 HydroLSTM (pooled)' };
     function render(s) {
       var d = F[s.lead];
@@ -253,11 +352,21 @@
       });
       draw(el, tr, baseLayout({
         margin: { l: 10, r: 18, t: 12, b: 44 },
-        xaxis: axis({ title: { text: 'Zero-shot NSE' }, range: [-1.4, 0.65], zeroline: true, zerolinecolor: C.ink, zerolinewidth: 1 }),
+        xaxis: axis({ title: { text: 'Zero-shot NSE' }, range: range, zeroline: true, zerolinecolor: C.ink, zerolinewidth: 1 }),
         yaxis: axis({ showgrid: false, showline: false, autorange: 'reversed', tickfont: { family: FONT, size: 12.5, color: C.ink } })
       }));
     }
-    render(controls(el, [{ key: 'lead', label: 'Lead', value: '4w', options: [{ label: '1 week', value: '1w' }, { label: '2 weeks', value: '2w' }, { label: '4 weeks', value: '4w' }, { label: '8 weeks', value: '8w' }] }], render));
+    var ctrl = controls(el, [{ key: 'lead', label: 'Transfer lead', value: shared ? shared.get().lead : '4w', options: LEADS }], function (state) {
+      if (shared) shared.set(shared.get().station, state.lead);
+      else render(state);
+    });
+    if (shared) shared.subscribe(function (selection) {
+      if (currentLead === selection.lead) return;
+      currentLead = selection.lead;
+      ctrl.set(selection);
+      render(ctrl.state);
+    });
+    else render(ctrl.state);
   }
 
   /* ---------- Catchment portfolio: aridity vs area ---------- */
@@ -287,45 +396,61 @@
     }));
   }
 
-  /* ---------- Per-station NSE across horizons (station explorer) ---------- */
-  function stationMini(el, station) {
+  /* ---------- Per-station scores across horizons (station explorer) ---------- */
+  function stationMini(el, horizons, selection, selectLead) {
     var hs = ['1w', '2w', '4w', '8w'];
-    var tr = ['m0', 'm1', 'm2'].map(function (m) {
+    var drought = selection.objective === 'drought';
+    var metric = drought ? selection.severity + ' CSI' : 'NSE';
+    var tr = Object.keys(COMPARISON_MODEL).map(function (m) {
+      var model = COMPARISON_MODEL[m];
       return {
-        x: hs.map(function (h) { return H_LABEL[h]; }), y: hs.map(function (h) { return num(station.metrics[h][m + '_nse']); }),
-        name: MODEL[m].name, mode: 'lines+markers',
-        line: { color: MODEL[m].color, width: m === 'm2' ? 2.6 : 1.8, dash: m === 'm0' ? 'dot' : 'solid' },
-        marker: { size: 8, color: MODEL[m].color, line: { color: '#fbfaf7', width: 1.5 } },
-        hovertemplate: '<b>' + MODEL[m].name + '</b> · %{x}: NSE %{y:+.3f}<extra></extra>'
+        x: hs.map(function (h) { return H_LABEL[h]; }),
+        y: hs.map(function (h) { return drought ? horizons[h].drought[selection.severity].models[m].csi : horizons[h].flow[m].nse; }),
+        name: model.name, mode: 'lines+markers',
+        line: { color: model.color, width: m === 'M2' ? 2.6 : 1.8, dash: model.dash || 'solid' },
+        marker: { size: hs.map(function (h) { return h === selection.lead ? 14 : 8; }), color: model.color, line: { color: '#fbfaf7', width: 1.5 } },
+        hovertemplate: '<b>' + model.name + '</b> · %{x}: ' + metric + ' %{y:.3f}<extra></extra>'
       };
     });
-    draw(el, tr, baseLayout({
+    var plot = draw(el, tr, baseLayout({
       margin: { l: 46, r: 10, t: 8, b: 36 },
       xaxis: axis({ type: 'category' }),
-      yaxis: axis({ title: { text: 'NSE' }, range: [-0.75, 0.75], zeroline: true, zerolinecolor: C.zero }),
+      yaxis: axis({ title: { text: metric }, range: drought ? [-0.05, 1.05] : scoreRange(tr.reduce(function (values, trace) {
+        return values.concat(trace.y);
+      }, [])), zeroline: true, zerolinecolor: C.zero }),
       legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 11.5, color: C.ink } }
     }));
+    if (!el.__selectLead) {
+      el.__selectLead = true;
+      plot.then(function () {
+        el.on('plotly_click', function (event) {
+          var point = event.points[0], lead = point && hs[point.pointNumber];
+          if (lead) selectLead(lead);
+        });
+      });
+    }
   }
 
   var REGISTRY = { skill: skill, hydro: hydro, pr: pr, kge: kge, fi: fi, transfer: transfer, portfolio: portfolio };
 
-  function mount(el) {
+  function mount(el, shared) {
     if (el.__mounted) return;
     el.__mounted = true;
     var parts = el.getAttribute('data-chart').split(':');
     var fn = REGISTRY[parts[0]];
-    if (fn && window.Plotly) fn(el, parts.slice(1));
+    if (fn && window.Plotly) fn(el, parts.slice(1), shared);
   }
 
   /* Charts mount lazily as they approach the viewport (eager on standalone pages). */
   function mountAll(root, opts) {
     var els = Array.prototype.slice.call((root || document).querySelectorAll('[data-chart]'));
-    if ((opts && opts.eager) || !('IntersectionObserver' in window)) { els.forEach(mount); return; }
+    var shared = opts && opts.selection;
+    if ((opts && opts.eager) || !('IntersectionObserver' in window)) { els.forEach(function (el) { mount(el, shared); }); return; }
     var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { if (e.isIntersecting) { mount(e.target); io.unobserve(e.target); } });
+      entries.forEach(function (e) { if (e.isIntersecting) { mount(e.target, shared); io.unobserve(e.target); } });
     }, { rootMargin: '300px 0px' });
     els.forEach(function (el) { io.observe(el); });
   }
 
-  window.Charts = { mountAll: mountAll, stationMini: stationMini, colors: C, models: MODEL };
+  window.Charts = { mountAll: mountAll, radioGroup: radioGroup, stationMini: stationMini, colors: C, models: MODEL, comparisonModels: COMPARISON_MODEL };
 })();
