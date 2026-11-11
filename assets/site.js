@@ -191,7 +191,6 @@
   }
   var heat = $('#heat');
   var selected, selectionListeners = [];
-  var evidenceLabels = { 'M2 better': 'M2 higher', 'M1 better': 'M1 higher', 'not distinguishable': 'Inconclusive' };
   function signed4(value) {
     return (value >= 0 ? '+' : '−') + Math.abs(value).toFixed(4);
   }
@@ -199,32 +198,13 @@
     var entry = comparisonData.stations[example.gauge_id][example.lead];
     var text;
     if (example.kind === 'weather') text = 'Kantamal, 1 week. M2 NSE ' + signed4(entry.flow.M2.nse) + ' versus M1 ' +
-      signed4(entry.flow.M1.nse) + '. The 95% interval for their difference stays above zero.';
+      signed4(entry.flow.M1.nse) + '.';
     if (example.kind === 'baseline') text = 'Kantamal, 8 weeks. Weekly climatology NSE ' + signed4(entry.flow.M0.nse) +
       ' exceeds M1 ' + signed4(entry.flow.M1.nse) + ' and M2 ' + signed4(entry.flow.M2.nse) + '. Compare each model against the baseline.';
     if (example.kind === 'gaps') text = 'Karad, 1 week. ' + entry.n_masked_zero_weeks + ' recorded-zero weeks are excluded and ' +
       entry.n_eval + ' weeks are scored. Excluded weeks appear as gaps in the replay.';
     $('#example-' + example.kind).textContent = text;
   });
-
-  function renderHeatView(view) {
-    $$('.cell', heat).forEach(function (cell) {
-      var station = S.find(function (s) { return s.id === cell.dataset.id; });
-      var lead = cell.dataset.h;
-      var interval = comparisonData.stations[station.camels_id][lead].uncertainty;
-      var delta = parseFloat(station.metrics[lead].delta_nse_m2_m1);
-      var evidence = view === 'evidence';
-      var color = heatColor(evidence ? interval.low > 0 ? 0.4 : interval.high < 0 ? -0.4 : 0 : delta);
-      cell.style.background = color.bg;
-      cell.style.color = color.fg;
-      cell.textContent = evidence ? interval.low > 0 ? 'M2' : interval.high < 0 ? 'M1' : '?' : fmt(delta);
-      cell.setAttribute('aria-label', cap(station.name) + ', ' + lead + ' lead: ' + (evidence ?
-        evidenceLabels[interval.verdict] + ', 95% interval ' + signed4(interval.low) + ' to ' + signed4(interval.high) :
-        'M2 minus M1 NSE ' + fmt(delta)));
-    });
-    $('#delta-legend').hidden = view === 'evidence';
-    $('#evidence-legend').hidden = view !== 'evidence';
-  }
 
   function selectionFromURL() {
     var params = new URLSearchParams(window.location.search);
@@ -267,11 +247,6 @@
       setSelection(b.getAttribute('data-id'), b.getAttribute('data-h'));
       if (window.innerWidth < 900 && e.detail > 0) $('#station-inspector').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
     });
-    var updateHeatView = Charts.radioGroup($('#heat-view'), function (view) {
-      updateHeatView(view);
-      renderHeatView(view);
-    });
-    updateHeatView('delta');
   }
 
   /* ---------- station explorer ---------- */
@@ -366,25 +341,6 @@
     download.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.join('\r\n') + '\r\n');
     download.download = [selected.station, selected.lead, drought ? severity : mode].join('-') + '.csv';
   }
-  function renderUncertainty(entry) {
-    var interval = entry.uncertainty;
-    var portfolio = comparisonData.portfolio_uncertainty[selected.lead];
-    $('#station-uncertainty').textContent = evidenceLabels[interval.verdict] + ' · ΔNSE ' + signed4(interval.delta) +
-      ' · 95% interval [' + signed4(interval.low) + ', ' + signed4(interval.high) + '] · ' + interval.n_scored + ' scored weeks.';
-    $('#portfolio-uncertainty').textContent = 'Portfolio at this lead · median paired ΔNSE ' + signed4(portfolio.delta) +
-      ' · 95% interval [' + signed4(portfolio.low) + ', ' + signed4(portfolio.high) + '] · ' + portfolio.n_stations + ' stations.';
-    var header = ['scope', 'station', 'lead', 'delta_nse', 'ci_low', 'ci_high', 'n', 'resampling_unit', 'resamples', 'gaps_closed', 'source', 'source_sha256'];
-    var stationSource = comparisonData.sources.station_uncertainty;
-    var portfolioSource = comparisonData.sources.portfolio_uncertainty;
-    var rows = [header,
-      ['station', selected.station, selected.lead, interval.delta, interval.low, interval.high, interval.n_scored,
-        '52-week blocks', 1000, true, stationSource.path, stationSource.sha256],
-      ['portfolio', '', selected.lead, portfolio.delta, portfolio.low, portfolio.high, portfolio.n_stations,
-        'stations', 1000, false, portfolioSource.path, portfolioSource.sha256]];
-    var download = $('#uncertainty-download');
-    download.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.map(function (row) { return row.join(','); }).join('\r\n') + '\r\n');
-    download.download = selected.station + '-' + selected.lead + '-uncertainty.csv';
-  }
   function renderExplorer() {
     var s = S.find(function (x) { return x.id === selected.station; });
     if (!s || !$('#ex-attrs')) return;
@@ -404,7 +360,6 @@
       return;
     }
     renderComparison(scores[selected.lead]);
-    renderUncertainty(scores[selected.lead]);
     var mini = $('#station-mini');
     if (mini && window.Plotly && window.Charts) {
       var metric = selected.objective === 'drought' ? selected.severity + ' CSI' : 'NSE';

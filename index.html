@@ -504,13 +504,8 @@
         <span class="kicker">Station × horizon map</span>
         <h3>Where weather inputs help: M2 NSE − M1 NSE</h3>
         <p style="color:var(--muted);font-size:14px">Each cell is one station at one lead time, from the precomputed station metrics. Teal means M2 beats M1; ochre means M1 beats M2. Select a cell to open it in the explorer.</p>
-        <div class="seg" id="heat-view" role="radiogroup" aria-label="Heatmap view">
-          <button type="button" role="radio" value="delta" aria-checked="true">NSE difference</button>
-          <button type="button" role="radio" value="evidence" aria-checked="false">Uncertainty evidence</button>
-        </div>
         <div class="heat" id="heat" role="group" aria-label="Heatmap of M2 minus M1 NSE by station and lead time"></div>
-        <div class="heat-legend" id="delta-legend"><span>M1 better</span><span class="ramp"></span><span>M2 better</span><span>(colour saturates at ±0.40)</span></div>
-        <p class="evidence-legend" id="evidence-legend" hidden>Teal M2 and ochre M1 mean the 95% interval excludes zero in that model’s favour. Grey ? means inconclusive. An interval spanning zero does not establish equal performance.</p>
+        <div class="heat-legend"><span>M1 better</span><span class="ramp"></span><span>M2 better</span><span>(colour saturates at ±0.40)</span></div>
       </div>
 
       <div class="card explorer" id="station-inspector" data-reveal style="--d:.1s">
@@ -557,16 +552,6 @@
             <p id="comparison-note"></p>
             <a class="selection-link" id="comparison-download" download>Download this comparison (CSV)</a>
           </div>
-          <section class="uncertainty" aria-labelledby="uncertainty-title">
-            <h4 id="uncertainty-title">Uncertainty · raw-target M2 vs M1 NSE</h4>
-            <p id="station-uncertainty" role="status"></p>
-            <p id="portfolio-uncertainty"></p>
-            <details><summary>How to read these intervals</summary>
-              <p>The station interval uses 1,000 resamples in 52-week blocks. Scored weeks are treated as one sequence, closing gaps left by excluded weeks. An interval spanning zero is inconclusive and does not establish equal performance.</p>
-              <p>The portfolio interval resamples the 12 stations 1,000 times and describes their median paired NSE difference. It measures variation between stations. Both are 95% intervals from the saved analysis, independent of the objective and severity controls.</p>
-            </details>
-            <a class="selection-link" id="uncertainty-download" download>Download these intervals (CSV)</a>
-          </section>
         </div>
         <div class="explorer-right" style="border-top:1px solid var(--line)">
           <h4>This station across all lead times</h4>
@@ -773,9 +758,8 @@
         <p>Developed by <strong>Abhitej Singh Bhullar</strong> (Roll No. 23110009, B.Tech 4th Year, Civil Engineering) &amp; <strong>Dhruv Jalan</strong> (Roll No. 23110099, B.Tech 4th Year, Chemical Engineering)</p>
         <p>Indian Institute of Technology Gandhinagar (IITGN), Palaj, Gandhinagar, Gujarat 382355</p>
       </div>
-      <div class="badges"><span class="chip"><i data-lucide="badge-check"></i>Audited Benchmark v2.2</span><span class="chip"><i data-lucide="shield-check"></i>Leakage-Free Passed</span></div>
     </div>
-    <div class="footer-bottom"><span>© 2026 Abhitej Singh Bhullar &amp; Dhruv Jalan • ES 335 ML Course Project • Academic Open Access</span><span>Fraunces · IBM Plex Sans · IBM Plex Mono</span></div>
+    <div class="footer-bottom"><span>© 2026 Abhitej Singh Bhullar &amp; Dhruv Jalan • ES 335 ML Course Project • Academic Open Access</span></div>
   </div>
 </footer>
 
