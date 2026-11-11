@@ -65,4 +65,7 @@ graphify-out/
 # Local screenshots and UI captures
 screenshots/
 
+# Local-only browser tests and their generated captures
+browser-tests/
+
 
