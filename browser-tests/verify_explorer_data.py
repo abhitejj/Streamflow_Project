@@ -35,6 +35,7 @@ def verify_explorer_data():
             flow_entries.add((gauge, lead))
             actual = payload["stations"][gauge][lead]
             assert actual["n_eval"] == int(row["n_eval"])
+            assert actual["n_masked_zero_weeks"] == int(row["n_masked_zero_weeks"])
             assert actual["flow"]["M0"] == {"nse": number(row["m0_nse_fixed"]),
                                              "log_nse": number(row["m0_log_nse"]),
                                              "kge": number(row["m0_kge_fixed"])}

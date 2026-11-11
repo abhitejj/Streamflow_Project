@@ -29,3 +29,9 @@ python3 scripts/export_replay_data.py
 python3 site/tools/build_site_data.py
 python3 browser-tests/verify_replay_data.py
 ```
+
+The comparison exporter also verifies and packages the saved uncertainty intervals and guided examples. It rejects station intervals whose rounded NSE difference or scored-week count differs from the current audit.
+
+```sh
+python3 browser-tests/verify_uncertainty.py
+```
