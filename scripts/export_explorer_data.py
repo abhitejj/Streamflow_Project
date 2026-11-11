@@ -122,8 +122,8 @@ def guided_examples(stations):
     weather = stations["8013"]["1w"]
     baseline = stations["8013"]["8w"]
     gaps = stations["4021"]["1w"]
-    if weather["uncertainty"]["low"] <= 0:
-        raise ValueError("The weather-gain example no longer matches its saved interval")
+    if weather["flow"]["M2"]["nse"] <= weather["flow"]["M1"]["nse"]:
+        raise ValueError("The weather-gain example no longer has higher M2 NSE")
     if baseline["flow"]["M0"]["nse"] <= max(baseline["flow"][m]["nse"] for m in FLOW_COLUMNS if m != "M0"):
         raise ValueError("The baseline example no longer has the highest NSE")
     if gaps["n_masked_zero_weeks"] <= 0:

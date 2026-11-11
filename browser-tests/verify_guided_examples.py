@@ -11,7 +11,7 @@ def check_guided_examples(page, output, url, check_hydro):
     weather = data["stations"]["8013"]["1w"]
     baseline = data["stations"]["8013"]["8w"]
     gaps = data["stations"]["4021"]["1w"]
-    assert weather["uncertainty"]["low"] > 0
+    assert weather["flow"]["M2"]["nse"] > weather["flow"]["M1"]["nse"]
     assert baseline["flow"]["M0"]["nse"] > max(value["nse"] for model, value in baseline["flow"].items() if model != "M0")
     assert gaps["n_masked_zero_weeks"] == 379 and gaps["n_eval"] == 142
     expect(page.locator("#example-weather")).to_contain_text("+0.6037 versus M1 +0.4438")
@@ -31,7 +31,7 @@ def check_guided_examples(page, output, url, check_hydro):
         expect(page.locator("#station-select")).to_have_value(station)
         expect(page.locator(f'#horizon-seg [value="{lead}"]')).to_have_attribute("aria-checked", "true")
         if kind == "weather":
-            expect(page.locator("#station-uncertainty")).to_contain_text("M2 higher")
+            expect(page.locator("#comparison-table tbody tr").nth(2).get_by_role("cell").first).to_have_text("+0.604")
         elif kind == "baseline":
             expect(page.locator(".comparison-baseline")).to_have_text("Weekly climatology")
         else:

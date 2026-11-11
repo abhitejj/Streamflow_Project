@@ -11,7 +11,6 @@ from verify_explorer_data import verify_explorer_data
 from verify_replay_browser import check_all_replays, check_prefix, check_replay, check_replay_error, check_replay_race
 from verify_replay_data import verify_replay_data
 from verify_uncertainty import verify_uncertainty
-from verify_uncertainty_browser import check_uncertainty
 from verify_guided_examples import check_guided_examples
 
 
@@ -50,6 +49,7 @@ def check_chart(page, selector):
 
 
 def check_heatmap(page):
+    expect(page.locator('#heat-view, #evidence-legend, .uncertainty, #uncertainty-download')).to_have_count(0)
     cells = page.locator("#heat .cell")
     expect(cells).to_have_count(48)
     mismatches = cells.evaluate_all("""cells => {
@@ -365,8 +365,7 @@ def run(output):
             report["project_prefix"] = check_prefix(other, URL, check_hydro)
             report["replay_retry"] = check_replay_error(browser, URL, check_hydro)
             report["uncertainty_data"] = verify_uncertainty()
-            other.goto(URL + "/?station=warunji&lead=1w#explorer", wait_until="load")
-            report["uncertainty_controls"] = check_uncertainty(other, output)
+            report["public_heatmap"] = "48 numeric differences; uncertainty controls and interval panel absent"
             report["guided_examples"] = check_guided_examples(other, output, URL, check_hydro)
             mobile = browser.new_page(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, reduced_motion="reduce")
             listen_for_errors(mobile, report)
@@ -383,9 +382,8 @@ def run(output):
             mobile.get_by_role("button", name="Next scored week").tap()
             expect(mobile.locator(".replay-week-status")).to_contain_text("Scored in the full test block")
             mobile.locator("#forecast-replay").screenshot(path=output / "mobile-replay.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
-            mobile.get_by_role("radiogroup", name="Heatmap view").get_by_role("radio", name="Uncertainty evidence").tap()
-            expect(mobile.locator("#evidence-legend")).to_be_visible()
-            mobile.locator(".uncertainty").screenshot(path=output / "uncertainty-mobile.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
+            check_heatmap(mobile)
+            screenshot_explorer(mobile, output / "numeric-explorer-mobile.png")
             assert mobile.evaluate("document.documentElement.scrollWidth === 390 && document.body.scrollWidth === 390")
             mobile.goto(URL, wait_until="load")
             mobile.locator("#guided-examples").screenshot(path=output / "guided-examples-mobile.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
