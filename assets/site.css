@@ -552,6 +552,15 @@ tr.group-start td { border-top: 1px solid var(--line-2); }
 .cell.sel { box-shadow: 0 0 0 2px var(--ink); }
 .heat-legend { display: flex; align-items: center; gap: 10px; margin-top: 16px; font: 500 11.5px/1 var(--mono); color: var(--faint); flex-wrap: wrap; }
 .heat-legend .ramp { width: 180px; max-width: 40vw; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #c2621b, #eab77a, #ece9e2, #7cc6b2, #0b7a63); }
+.heat-legend[hidden] { display: none; }
+#heat-view { margin: 4px 0 14px; }
+.evidence-legend, .uncertainty p { font-size: 13px; color: var(--muted); }
+.uncertainty { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.uncertainty h4 { margin: 0; font-size: 15px; }
+.uncertainty summary { cursor: pointer; font-size: 13px; }
+.uncertainty details { margin-bottom: 10px; }
+#guided-examples h4 { margin: 0; font-size: 17px; }
+#guided-examples p { font-size: 14px; color: var(--muted); }
 
 /* explorer */
 .explorer { padding: 0; overflow: hidden; scroll-margin-top: calc(var(--nav-h) + 16px); }
