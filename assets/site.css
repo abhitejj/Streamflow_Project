@@ -182,8 +182,6 @@ section[id], header[id], .section[id] {
 }
 
 .lede { font-size: clamp(16.5px, 1.4vw, 18.5px); line-height: 1.62; color: var(--ink-2); max-width: 58ch; margin: 0 0 28px; }
-.hero-scope { margin: 0 0 24px; color: var(--muted); font-size: 14px; max-width: 64ch; }
-.hero-takeaway { font-size: clamp(19px, 1.8vw, 24px); line-height: 1.35; font-weight: 600; max-width: 42ch; margin: 0 0 24px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font: 500 15px/1 var(--sans);
