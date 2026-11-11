@@ -12,6 +12,7 @@ from verify_replay_browser import check_all_replays, check_prefix, check_replay,
 from verify_replay_data import verify_replay_data
 from verify_uncertainty import verify_uncertainty
 from verify_guided_examples import check_guided_examples
+from verify_reader_guide import check_reader_guide, check_static_fallback
 
 
 HERE = Path(__file__).resolve().parent
@@ -322,6 +323,8 @@ def run(output):
                 asset = page.request.get(f"{URL}/assets/{name}")
                 assert asset.ok and asset.body() == (SITE / "assets" / name).read_bytes(), f"Served {name} differs from site/"
             report["served_worktree"] = str(SITE)
+            report["reader_guide"] = check_reader_guide(page, output)
+            report["static_fallback"] = check_static_fallback(browser, URL, output)
 
             for name in CHARTS:
                 report["charts"][name] = check_chart(page, f'[data-chart="{name}"]')
@@ -389,6 +392,11 @@ def run(output):
             mobile.locator("#guided-examples").screenshot(path=output / "guided-examples-mobile.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
             mobile.locator("#example-gaps-link").tap()
             check_hydro(mobile, "karad", "1w")
+            assert mobile.evaluate("document.documentElement.scrollWidth === 390 && document.body.scrollWidth === 390")
+            guide = mobile.locator("#metric-guide")
+            guide.get_by_text("Metric guide · definitions and score direction", exact=True).tap()
+            expect(guide.locator("details")).to_have_attribute("open", "")
+            guide.screenshot(path=output / "metric-guide-mobile.png", animations="disabled", style=".nav, .to-top { visibility: hidden; }")
             assert mobile.evaluate("document.documentElement.scrollWidth === 390 && document.body.scrollWidth === 390")
             assert not report["page_errors"], report["page_errors"]
             assert not report["console_errors"], report["console_errors"]

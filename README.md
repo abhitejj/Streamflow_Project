@@ -1,6 +1,6 @@
 # Streamflow & Drought Forecasting ML Project (1980–2025)
 
-An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning at 12 gauges in India on 10 river systems (9 independent gauges and one three-gauge nested cascade).
+An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning at 12 gauges across peninsular Indian subcatchments, including shared Godavari and Krishna drainages and the nested Warunji–Karad–Huvinhedigi cascade.
 
 ---
 
@@ -11,9 +11,9 @@ An empirical machine learning framework evaluating the predictive value of India
 
 ### Specific Research Sub-Questions
 1. **Forecast Horizon Decay**: At what forecast horizon (1-, 2-, 4-, or 8-week ahead) does antecedent river discharge memory ($Q_t, \dots, Q_{t-k}$) lose predictive power, and at what horizon does IMD meteorological memory (precipitation accumulations, temperature/PET, soil moisture) become the dominant driver of predictive skill?
-2. **Drought Warning Reliability**: Does the inclusion of meteorological forcings reduce False Alarm Rates (FAR) and increase Probability of Detection (POD) for hydrological drought events?
-3. **Drought Severity Sensitivity**: How does the value of meteorological inputs differ between mild low-flow anomalies ($Q_{80}$ / SSI < -0.8) and extreme multi-week hydrological droughts ($Q_{95}$ / SSI < -1.6)?
-4. **Spatial Basin Generalizability**: Can a hydro-meteorological model trained on 3 independent catchments in a state transfer its drought warning skill zero-shot to an unseen 4th catchment in a different river basin?
+2. **Drought Warning Reliability**: Does the inclusion of meteorological forcings reduce False Alarm Ratio (FAR) and increase Probability of Detection (POD) for hydrological drought events?
+3. **Drought Severity Sensitivity**: How does the value of meteorological inputs differ between mild low-flow anomalies ($Q_{80}$, training-period 20th percentile) and extreme multi-week hydrological droughts ($Q_{95}$, training-period 5th percentile)?
+4. **Spatial Basin Generalizability**: Can a hydro-meteorological model trained on three other catchments in a state transfer its drought warning skill zero-shot to an unseen 4th catchment at a held-out gauge?
 
 ---
 
@@ -24,7 +24,7 @@ An empirical machine learning framework evaluating the predictive value of India
 | **Temporal Span** | **46 Years (1980–2025)** | 2,394 weekly timesteps combining CAMELS-IND (1980–2020) and CWC/IMD/ERA5-Land (2021–2025) |
 | **Forecast Horizons ($H$)** | **1-week, 2-week, 4-week, 8-week** | Direct multi-step weekly mean discharge forecasts ($y_{t+H}$) |
 | **Model Tiers** | **M0: Persistence Baseline**<br>**M1: Autoregressive (Flow Only)**<br>**M2: Hydro-Meteorological (Flow + Multi-Source Weather)** | $Q_{t+H} = Q_t$ for $H \le 2\text{w}$; seasonal weekly climatology for $H \ge 4\text{w}$<br>Input: Past discharge lags ($Q_t, \dots, Q_{t-7}$) + recession slope + within-week flow std + calendar Fourier seasonality<br>Input: Flow lags + IMD Rainfall ($P_{1w}, P_{2w}, P_{1m}, P_{2m}, P_{3m}, API_{30d}, \text{dry days}$) + ERA5-Land/GLEAM Temp & PET ($T_{mean}, T_{max}, PET_{1w}, PET_{1m}, \text{Water Deficit}_{1w}, \text{Water Deficit}_{1m}$) |
-| **Drought Severity Levels** | **Mild Drought** ($Q \le Q_{80}$ or $SSI \le -0.8$)<br>**Moderate Drought** ($Q \le Q_{90}$ or $SSI \le -1.2$)<br>**Severe Drought** ($Q \le Q_{95}$ or $SSI \le -1.6$) | Empirically derived from historical baseline distribution |
+| **Drought Severity Levels** | **Mild Drought** ($Q \le Q_{80}$)<br>**Moderate Drought** ($Q \le Q_{90}$)<br>**Severe Drought** ($Q \le Q_{95}$) | Empirically derived from historical baseline distribution |
 | **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), PR-AUC**, scored across Severe ($Q_{95}$), Moderate ($Q_{90}$), and Mild ($Q_{80}$) drought tiers (audited in `scripts/audit_drought_sensitivity.py`, artifact: `data/processed/model_results/drought_severity_sensitivity.csv`; full comparison in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10.3.1). Log-NSE is computed and reported; Brier score and reliability curves are not computed. |
 
 ---
@@ -58,13 +58,13 @@ Meteorological inputs are harmonized across two continuous observation epochs to
 
 ---
 
-## 12-Station Catchment Portfolio: 10 River Systems (9 Independent Gauges + 1 Three-Gauge Cascade)
+## 12-Station Catchment Portfolio
 
-The experimental portfolio encompasses **12 CWC/CAMELS-IND river gauging catchments** spanning three distinct macro-climatic and physiographic zones of peninsular and eastern India (Maharashtra, Odisha, Karnataka) across a 46-year continuous timeline (1980–2025: 2,394 weekly timesteps).
+The experimental portfolio encompasses **12 CWC/CAMELS-IND river gauging catchments** spanning three distinct macro-climatic and physiographic zones of peninsular and eastern India (Maharashtra, Odisha, Karnataka) across a 46-year span (1980–2025: 2,394 weekly timesteps).
 
-### Catchment Independence & Nested Hierarchy
-Rigorous hydrological and spatial audit establishes the exact topological structure of the portfolio:
-1. **9 Independent Gauges**: Nine catchments are hydrologically decoupled, non-overlapping drainage networks across the Godavari (Wainganga, Wardha), Mahanadi (Tel), Baitarani, Vamsadhara, Brahmani, Cauvery, and Tungabhadra river basins.
+### Shared drainages and nested gauges
+The portfolio includes shared major drainages and a nested gauge cascade. Distinct station names do not establish statistical independence:
+1. **Shared major drainages**: CAMELS-IND station metadata places Wainganga and Wardha within Godavari, and Koyna, Bhima, Tungabhadra, and the Krishna main-stem gauges within Krishna. The portfolio also includes Tel/Mahanadi, Baitarani, Brahmani, Vamsadhara, and Cauvery subcatchments.
 2. **1 Three-Gauge Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
    - **Warunji (Gauge 4063)**: Headwater catchment on the Koyna River ($1,890.0\,\text{km}^2$) in the Western Ghats high-rainfall crest.
    - **Karad (Gauge 4021)**: Upper Krishna mainstem gauge ($5,462.0\,\text{km}^2$), directly receiving Koyna outflow. Warunji represents **34.6% of Karad's drainage area**.
@@ -130,7 +130,7 @@ To uphold scientific integrity without fabricating streamflow observations:
 
 ### Protocol 2: Spatial Generalization to Unseen River Basins (Spatial Split)
 * In each state, train models on **Stations 1, 2, and 3** using area-normalized specific discharge ($q = Q / \text{Catchment Area}$ in mm/week) and CAMELS-IND static catchment attributes.
-* Evaluate zero-shot transfer onto **Station 4 (Holdout)** located in an independent, unseen sub-basin.
+* Evaluate zero-shot transfer onto **Station 4 (Holdout)** at a held-out gauge; some training and held-out gauges share major drainages.
 * Directly answers: *Can a drought warning system calibrated on regional basins issue reliable drought warnings for an unseen catchment?*
 
 ---
@@ -140,7 +140,7 @@ To uphold scientific integrity without fabricating streamflow observations:
 <!-- README_RESULTS:START -->
 ### Audited results (test block 2016–2025, 12 stations)
 
-Generated by `scripts/render_report_results.py`; full tables in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10. Recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi are treated as unmeasured weeks. Δ = paired median of per-station differences; *p* = Wilcoxon signed-rank.
+Generated by `scripts/render_report_results.py`; full tables in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10. Recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi are treated as unmeasured weeks. Δ = paired median of per-station differences; *p* = uncorrected exploratory Wilcoxon signed-rank. Across four NSE lead comparisons, the Bonferroni reference is 0.0125. The one-week value 0.027 does not meet it, while the two-week value 0.007 does. Shared drainages and nested gauges also limit inference.
 
 | Lead | NSE M0 / M1 / M2 | ΔNSE (M2−M1), *p* | Log-NSE M0 / M2-log | Q95 CSI M0 / M2 / M2-log | Climatology or persistence beats M2 |
 | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -150,9 +150,9 @@ Generated by `scripts/render_report_results.py`; full tables in `docs/PROJECT_RE
 | **8w** | +0.353 / +0.237 / +0.271 | -0.014, 0.569 | +0.622 / +0.609 | 0.000 / 0.000 / 0.000 | 11 of 12 |
 
 **Key findings.**
-- **Coupled meteorology adds significant skill at 1 week:** With reconstructed catchment-mean rainfall, M2 outperforms flow-only M1 by **+0.069** paired ΔNSE (*p* = 0.003) in 2021–2025 and **+0.087** (*p* = 0.0005) in the historical CAMELS-IND robustness test (1980–2000 train, 2005–2010 test; 223 pooled Q95 events).
-- **Memory decay beyond 2 weeks:** From 4 weeks, seasonal weekly climatology beats M2 at 9 and 11 of 12 stations.
-- **Persistence is the drought benchmark across 1–4 weeks:** Lagged persistence achieves Q95 CSI of 0.529 (1w), 0.379 (2w), and 0.234 at 4w (pooled 0.48, 0.37, 0.25 vs M2's 0.04). While log-target regression (M2-log) recovers severe-drought warning skill over raw regression (1w CSI reaches 0.229 vs 0.000), three trade-offs apply: persistence still dominates (CSI 0.529, pooled 0.48 vs 0.20), persistence low-flow accuracy matches it (log-NSE 0.829 vs 0.844), and log training degrades continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).
+- **Weather inputs improve short-lead NSE:** M2 exceeds M1 by +0.045 paired median NSE at 1 week and +0.034 at 2 weeks. Reported KGE tests do not show significant gains at these leads.
+- **Seasonal averages remain important:** Weekly climatology beats M2 at 9 and 11 of 12 stations at 4 and 8 weeks.
+- **Flow accuracy and warning skill differ:** Persistence has median Q95 CSI 0.529 and 0.379 at 1 and 2 weeks. The additional 4-week lagged-persistence diagnostic has pooled CSI 0.251, versus M2 0.043. Official M0 at 4 weeks is climatology. Log-target M2 improves one-week median CSI to 0.229 but lowers continuous NSE from 0.486 to 0.464.
 - **Zero-shot spatial transfer:** Pooled HydroLSTM beats the held-out station's own baseline only at 1–2 weeks.
 - **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%). Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.
 
