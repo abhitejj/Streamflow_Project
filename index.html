@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Streamflow &amp; Hydrological Drought Forecasting — ES 335 Machine Learning Course Project</title>
-<meta name="description" content="An empirical machine learning benchmark evaluating multi-source meteorological forcings for sub-seasonal streamflow prediction and drought early warning across 12 peninsular Indian river basins.">
+<meta name="description" content="An empirical machine learning benchmark evaluating multi-source meteorological forcings for sub-seasonal streamflow prediction and drought early warning at 12 peninsular Indian river gauges.">
 <meta name="theme-color" content="#f6f4ee">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2316202b'/%3E%3Cpath d='M5 20c3 0 3-6 6-6s3 8 6 8 3-12 6-12 3 6 4 6' fill='none' stroke='%23f0c37f' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,6 +45,8 @@
     <div class="hero-content">
       <span class="eyebrow" data-reveal><i data-lucide="graduation-cap"></i>ES 335 Course Project</span>
       <h1 data-reveal style="--d:.08s">Streamflow &amp; <em>Hydrological Drought</em> Forecasting</h1>
+      <p class="hero-takeaway" data-reveal>Weather inputs improve short-lead NSE over flow-only models.</p>
+      <p class="lede" data-reveal style="--d:.22s">Seasonal averages usually perform better at longer leads. Better flow forecasts do not guarantee better drought warnings.</p>
       <ul class="authors" data-reveal style="--d:.16s">
         <li class="author-item">
           <img class="author-photo photo-abhitej" src="assets/team/abhitej.jpg" alt="Photograph of Abhitej Singh Bhullar" width="68" height="68" loading="eager">
@@ -61,7 +63,7 @@
           </div>
         </li>
       </ul>
-      <p class="lede" data-reveal style="--d:.22s">An empirical machine learning benchmark evaluating the predictive value of India Meteorological Department (IMD) gridded rainfall and reanalysis meteorological forcings for sub-seasonal river flow and drought early warnings at 12 CWC gauges on 10 peninsular Indian river systems: 9 independent gauges plus one three-gauge nested cascade (Warunji ⊂ Karad ⊂ Huvinhedigi).</p>
+      <p class="hero-scope">A streamflow and drought benchmark at 12 CWC gauges across peninsular Indian subcatchments, including shared Godavari and Krishna drainages and the nested Warunji–Karad–Huvinhedigi cascade.</p>
       <div class="hero-actions" data-reveal style="--d:.28s">
         <a class="btn btn-primary" href="#results"><i data-lucide="chart-line"></i>Explore results</a>
         <a class="btn btn-ghost" href="#explorer"><i data-lucide="scan-search"></i>Station explorer</a>
@@ -74,7 +76,7 @@
       <div class="hero-panel-head">
         <span class="kicker"><i data-lucide="layers"></i>Experimental Architecture</span>
         <h2 class="hero-panel-title">Multi-Horizon Benchmark Design</h2>
-        <p class="hero-panel-subtitle">Audited evaluation across 12 CWC gauges on 10 river systems (9 independent + 1 three-gauge cascade, 1980–2025)</p>
+        <p class="hero-panel-subtitle">12 CWC gauges · four forecast leads · flow accuracy and drought warnings · 1980–2025</p>
       </div>
 
       <!-- Horizons -->
@@ -185,7 +187,7 @@
 
   <div class="stats">
     <div class="stat"><span class="k"><i data-lucide="calendar-range"></i>Temporal Record</span><span class="v"><span data-count="46">46</span> Years</span><span class="s">1980–2025 (2,394 Wk Steps)</span></div>
-    <div class="stat"><span class="k"><i data-lucide="map-pin"></i>Catchment Portfolio</span><span class="v"><span data-count="12">12</span> Gauges</span><span class="s">10 River Systems (9 + 3-Gauge Cascade)</span></div>
+    <div class="stat"><span class="k"><i data-lucide="map-pin"></i>Catchment Portfolio</span><span class="v"><span data-count="12">12</span> Gauges</span><span class="s">Includes Three Nested Gauges</span></div>
     <div class="stat"><span class="k"><i data-lucide="timer"></i>Forecast Horizons</span><span class="v">1, 2, 4, 8 Wks</span><span class="s">Direct Multi-Step Lead</span></div>
     <div class="stat"><span class="k"><i data-lucide="shield-check"></i>Anti-Leakage Protocol</span><span class="v">Strict Purge</span><span class="s">Terminal H-Wk Embargo</span></div>
     <div class="stat"><span class="k"><i data-lucide="lock"></i>Evaluation Mask</span><span class="v">Frozen Split</span><span class="s">10-Yr Test (2016–2025)</span></div>
@@ -227,18 +229,18 @@
     <div class="grid g3" data-stagger>
       <article class="card hover finding teal" data-reveal>
         <div class="card-top"><span class="icon-tile it-teal"><i data-lucide="scale"></i></span><span class="chip teal">Short-lead advantage</span></div>
-        <div class="big"><span data-count="0.027" data-prefix="p=">p=0.027</span><small>Wilcoxon 1w</small></div>
-        <p>Across the 12 stations, the hydro-met model (M2) significantly outperforms the flow-only model (M1) at 1 week (paired ΔNSE <strong>+0.045</strong>, Wilcoxon <i>p</i> = 0.027) and 2 weeks (+0.034, <i>p</i> = 0.007). Beyond 2 weeks, meteorological memory decays: M2 is not significantly better at 4 and 8 weeks (<i>p</i> = 0.677 and 0.569), and the station's weekly climatology (median <strong>NSE +0.364</strong> and <strong>+0.353</strong>) beats M2 at 9 and 11 of 12 stations.</p>
+        <div class="big">+0.045<small>paired ΔNSE at 1 week</small></div>
+        <p>Adding weather inputs improves median NSE over flow-only forecasts at 1 and 2 weeks. KGE gains are not significant at either lead. At 4 and 8 weeks, weekly climatology beats M2 at 9 and 11 of 12 stations. <a href="#comparison-notes">Read the test caveats</a> alongside the reported <i>p</i> values.</p>
       </article>
       <article class="card hover finding blue" data-reveal>
         <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span><span class="chip blue">Drought alerts</span></div>
         <div class="big"><span data-count="0.000">0.000</span><small>M2 drought CSI, every lead</small></div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong> (pooled over all stations, 0.04–0.11), and its pooled PR-AUC is below M1's (0.187 vs 0.197 at 2 weeks, 0.139 vs 0.175 at 4 weeks). <strong>Persistence gives the best drought warnings across 1 to 4 weeks</strong> (median severe CSI 0.529 at 1w, 0.379 at 2w, 0.234 at 4w; pooled 0.48, 0.37, 0.25 vs M2's 0.04). While log-target regression (M2-log) recovers severe-drought warning skill over raw regression (1w CSI 0.229 vs 0.000), three trade-offs apply: persistence still dominates (CSI 0.529, pooled 0.48 vs 0.20), persistence's low-flow accuracy (log-NSE 0.829) matches M2-log's (0.844), and log training degrades continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w). Pooled test base rate: <strong>0.064–0.067</strong>, after unmeasured zero-flow weeks are excluded.</p>
+        <p>Raw-target M2 has a median severe-drought CSI of <strong>0.000 at every lead</strong>. Persistence provides stronger short-lead warnings. Log-target models recover some low-flow skill, but trade away accuracy on the full discharge range. <a href="#results">Compare the two objectives</a>.</p>
       </article>
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
         <div class="big">1–2 wk<small>LSTM beats baseline only here</small></div>
-        <p>On the three held-out basins the pooled <strong>HydroLSTM</strong> beats each station's own persistence at 1 and 2 weeks (Kantamal <strong>+0.558</strong> vs +0.388 at 1 week), but at 4 and 8 weeks <strong>climatology wins at all three</strong> (Kantamal +0.483 / +0.481 vs +0.443 / +0.426). At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead).</p>
+        <p>The pooled HydroLSTM beats each held-out station’s own persistence at 1 and 2 weeks. At 4 and 8 weeks, that station’s weekly climatology wins at all three holdouts. These baselines use observations from the held-out gauges.</p>
       </article>
     </div>
   </div>
@@ -269,11 +271,11 @@
         <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="siren"></i></span><span class="chip ochre">Track B</span></div>
           <h3>Hydrological Drought Early Warning</h3>
-          <p>Three drought severity levels are defined from the training-period flow distribution. Audited across all three levels, persistence dominates early warning at 1–2 weeks (CSI 0.62–0.38), while weather inputs (M2) fail to improve PR-AUC over flow-only models (M1) across mild, moderate, and severe regimes.</p>
+          <p>Drought warnings are evaluated separately at mild, moderate, and severe training-period thresholds. At severe drought (Q<sub>95</sub>), persistence has median CSI 0.529 at 1 week and 0.379 at 2 weeks. Compare each severity in the explorer.</p>
           <div class="ladder">
-            <div class="rung"><span class="lvl mild">Q<sub>80</sub></span><span class="txt"><b>Mild Low-Flow Anomaly (Q<sub>80</sub>):</b> Weekly discharge at or below the 20th percentile of baseline flows.</span></div>
-            <div class="rung"><span class="lvl mod">Q<sub>90</sub></span><span class="txt"><b>Moderate Drought (Q<sub>90</sub>):</b> Discharge below 10th percentile (SSI ≤ -1.28).</span></div>
-            <div class="rung"><span class="lvl sev">Q<sub>95</sub></span><span class="txt"><b>Severe Drought (Q<sub>95</sub>):</b> Rare low flows below 5th percentile (SSI ≤ -1.64).</span></div>
+            <div class="rung"><span class="lvl mild">Q<sub>80</sub></span><span class="txt"><b>Mild Low-Flow Anomaly (Q<sub>80</sub>):</b> Weekly discharge at or below the training-period 20th percentile.</span></div>
+            <div class="rung"><span class="lvl mod">Q<sub>90</sub></span><span class="txt"><b>Moderate Drought (Q<sub>90</sub>):</b> Weekly discharge at or below the training-period 10th percentile.</span></div>
+            <div class="rung"><span class="lvl sev">Q<sub>95</sub></span><span class="txt"><b>Severe Drought (Q<sub>95</sub>):</b> Weekly discharge at or below the training-period 5th percentile.</span></div>
           </div>
         </article>
       </div>
@@ -287,7 +289,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">02</span>
       <h2>Multi-Source Hydrological &amp; Meteorological Dataset</h2>
-      <p>The experimental benchmark spans <strong>46 continuous years (1980–2025: 16,802 daily timesteps harmonized into 2,394 weekly timesteps)</strong> across 12 Central Water Commission (CWC) gauging stations. The gauges sit on <strong>10 river systems: 9 independent gauges and one three-gauge nested cascade (Warunji ⊂ Karad ⊂ Huvinhedigi)</strong> spanning Maharashtra, Odisha, and Karnataka.</p>
+      <p>The benchmark covers 1980–2025 at 12 CWC gauges in Maharashtra, Odisha, and Karnataka. Several gauges share the Godavari or Krishna drainage, and Warunji ⊂ Karad ⊂ Huvinhedigi is a nested cascade. The station records combine into 2,394 weekly time steps, with missing and unmeasured weeks excluded from scoring.</p>
     </div>
 
     <div class="card" data-reveal>
@@ -322,7 +324,7 @@
 
     <div class="card table-card" data-reveal>
       <div class="table-head">
-        <div><h3>12-Station Catchment Portfolio Matrix</h3><p>10 River Systems (9 Independent Gauges + 1 Three-Gauge Cascade) across MH, OD and KA</p></div>
+        <div><h3>12-Station Catchment Portfolio Matrix</h3><p>Gauges and subcatchments across Maharashtra, Odisha, and Karnataka</p></div>
         <span class="chip">Protocol 1 &amp; Protocol 2 Portfolios</span>
       </div>
       <div class="table-scroll">
@@ -344,7 +346,7 @@
           </tbody>
         </table>
       </div>
-      <div class="table-foot"><span>9 independent gauges + 1 three-gauge cascade (Warunji ⊂ Karad ⊂ Huvinhedigi) = 10 river systems · † recorded zeros treated as unobserved</span><span class="swipe-hint">Swipe table horizontally for all columns →</span><span>Quality Controlled</span></div>
+      <div class="table-foot"><span>Shared drainages include Godavari and Krishna · Warunji ⊂ Karad ⊂ Huvinhedigi is nested · † recorded zeros treated as unobserved</span><span class="swipe-hint">Swipe table horizontally for all columns →</span><span>Quality Controlled</span></div>
     </div>
 
     <div class="callout note" data-reveal>
@@ -353,7 +355,7 @@
         <h4>Quality Control, Physical Sanity Ceiling &amp; Anthropogenic Regime Shifts</h4>
         <p>Catchments satisfy a strict missingness threshold (&lt;10% total missing records). Any weekly timestep with fewer than 4 valid daily observations is masked to <code>NaN</code>.</p>
         <p>Clerical telemetry errors were audited and rectified by enforcing a physical maximum discharge ceiling of <strong>≤ 50,000 m³/s</strong>. At Ashti, a corrupted entry of 1,829,351 m³/s (on 05-10-2025) was masked and patched via temporal linear interpolation (max limit of 2 days) prior to weekly aggregation, preventing non-monsoon distortion during LSTM sequence imputation.</p>
-        <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. Models are retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, and log-target variants (M1-log, M2-log) preserve low-flow sensitivity.</p>
+        <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the one-week pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. Models are retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, and log-target variants (M1-log, M2-log) preserve low-flow sensitivity.</p>
         <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). This confirms that post-2010 dry-season zero inflation was inherited directly from published CAMELS-IND records, ruling out a local pipeline merge error, while the underlying institutional CWC operational cause remains a documented inference.</p>
       </div>
     </div>
@@ -454,8 +456,28 @@
     <div class="section-head" data-reveal>
       <span class="section-no">04</span>
       <h2>Interactive Results &amp; Precomputed Dashboards</h2>
-      <p>Explore empirical hydrographs, drought precision-recall curves, and regional zero-shot transfer performance. All interactive visualizations are rendered from audited, precomputed artifacts frozen across the 10-year out-of-sample test block (2016–2025).</p>
+      <p>Explore saved forecasts, drought warning scores, and transfer performance for the 2016–2025 test block. Start with the metric guide or an example below.</p>
     </div>
+
+    <aside class="reader-guide card" aria-labelledby="metric-guide-title" id="metric-guide">
+      <h3 id="metric-guide-title">How to read the scores</h3>
+      <p>Flow scores measure discharge accuracy. Warning scores measure which low-flow weeks were detected. Check the baseline, severity, and number of scored weeks alongside each result.</p>
+      <details>
+        <summary>Metric guide · definitions and score direction</summary>
+        <dl class="metric-definitions">
+          <div><dt>NSE · Nash–Sutcliffe efficiency</dt><dd>Higher is better, with 1 ideal. Zero matches predicting the mean observed discharge in the evaluation period. Negative values are worse than that reference.</dd></div>
+          <div><dt>KGE · Kling–Gupta efficiency</dt><dd>Combines correlation, flow variability, and mean-flow bias. Higher is better and 1 is ideal. Zero is not a universal benchmark. Compare against persistence and seasonal averages.</dd></div>
+          <div><dt>Log-NSE</dt><dd>NSE evaluated on log(1 + discharge), which gives lower flows more influence. Higher is better. This scoring transformation is distinct from training M1-log or M2-log on a log target.</dd></div>
+          <div><dt>CSI · critical success index</dt><dd>Hits / (hits + misses + false alarms). Higher is better, with 1 ideal. A hit is a correctly warned drought week. Correct negatives do not enter this score.</dd></div>
+          <div><dt>POD · probability of detection</dt><dd>Recall, or hits / (hits + misses). Higher is better. It is the fraction of observed drought weeks caught by warnings.</dd></div>
+          <div><dt>FAR · false alarm ratio</dt><dd>False alarms / (hits + false alarms). Lower is better. It is the fraction of issued warnings that were false, with issued warnings as the denominator. This differs from the false positive rate.</dd></div>
+          <div><dt>PR-AUC · precision–recall summary</dt><dd>The PR chart reports average precision. Higher is better. Its no-skill reference is the observed drought-week base rate for the same pooled sample.</dd></div>
+          <div><dt>Q80, Q90, and Q95</dt><dd>Mild, moderate, and severe low flow at or below the training-period 20th, 10th, and 5th percentiles. These thresholds are frozen before test evaluation. Counts refer to weeks, rather than whole drought episodes.</dd></div>
+          <div><dt>Station median and pooled score</dt><dd>A station median gives each contributing station equal weight. A pooled warning score adds the counts across scored station-weeks first. They answer different questions. Undefined ratios have a zero denominator and are not zero scores.</dd></div>
+        </dl>
+      </details>
+    </aside>
+    <noscript><p class="card">Interactive charts require JavaScript. You can read the <a href="#benchmark-matrix">static benchmark table</a> and the <a href="docs/PROJECT_REPORT_DOCUMENTATION.md">saved project report</a>.</p></noscript>
 
     <section aria-labelledby="guided-title" id="guided-examples">
       <h3 id="guided-title">Start with an example</h3>
@@ -467,7 +489,7 @@
     </section>
 
     <div class="chart-card" data-reveal>
-      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-basin portfolio median</h3><p>The same medians as the benchmark matrix in Section 06, drawn as curves. While M1 (+0.282) and M2 (+0.331) beat 2-week persistence (-0.185), both already fall below the station's weekly climatology (~+0.35–0.36) from Week 2 onward. Shaded area marks where the official M0 baseline switches from persistence to weekly climatology.</p></div></header>
+      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-station portfolio median</h3><p>The same medians as the benchmark matrix in Section 06, drawn as curves. While M1 (+0.282) and M2 (+0.331) beat 2-week persistence (-0.185), both already fall below the station's weekly climatology (~+0.35–0.36) from Week 2 onward. Shaded area marks where the official M0 baseline switches from persistence to weekly climatology.</p></div></header>
       <div class="chart-body"><div class="chart" data-chart="skill" role="img" aria-label="Portfolio median NSE or KGE by lead time for M0, M1, M2, and Weekly Climatology"></div></div>
     </div>
 
@@ -487,7 +509,7 @@
           <a class="fs-link" href="visualizations/interactive_pr_curves_severe_drought.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="pr" role="img" aria-label="Precision-Recall Curves for Severe Drought early warning"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>Key Takeaway:</b> Weather inputs do not reduce false alarms: M2's PR-AUC is <b>below</b> M1's at both leads (0.187 vs 0.197 at 2 weeks, 0.139 vs 0.175 at 4 weeks). Both sit only modestly above the no-skill line (pooled base rate 0.064–0.066, after unmeasured zero-flow weeks are excluded).<span class="artifact">Artifact: interactive_pr_curves_severe_drought.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div>M2 has lower pooled average precision than M1 at both displayed leads (0.187 vs 0.197 at 2 weeks, 0.139 vs 0.175 at 4 weeks). The no-skill base rates are 0.0639 and 0.0662, respectively, after excluded weeks are removed. Use the explorer for false alarm ratios at the frozen threshold.<span class="artifact">Artifact · interactive_pr_curves_severe_drought.html</span></div></footer>
       </div>
       <div class="chart-card" data-reveal style="--d:.1s">
         <header>
@@ -597,14 +619,14 @@
           <h3>The Persistence Horizon Decay Cliff (H=1w → H=2w)</h3>
           <div class="big-stat"><span><span class="from">+0.284</span><span class="lab">NSE · 1 wk</span></span><i data-lucide="arrow-right" class="arrow"></i><span><span class="to">-0.185</span><span class="lab">NSE · 2 wk</span></span></div>
           <p>At <i>H</i> = 1 week, persistence (Q<sub>t</sub>) has a portfolio median <strong>NSE of +0.284</strong>. At 2 weeks it falls to <strong>−0.185</strong>, worse than forecasting the test-period mean, and to <strong>−1.017</strong> at Warunji (1,890 km²).</p>
-          <p>Weekly flows in these monsoon rivers change too fast for this week's value to stand in for the week after next. M1 and M2 maintain positive skill at 2 weeks (+0.282 and +0.331), with M2 significantly outperforming M1 (paired ΔNSE +0.034, <i>p</i> = 0.007) by learning seasonal recession and antecedent catchment moisture.</p>
+          <p>M1 and M2 retain positive NSE at 2 weeks (+0.282 and +0.331), although weekly climatology is higher (+0.348). Their paired NSE difference is +0.034 with an uncorrected <i>p</i> = 0.007. Calendar and recent-flow features help the models track seasonal change.</p>
         </article>
         <article class="card insight" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="eye-off"></i></span><span class="chip ochre">H ≥ 4w</span></div>
           <h3>The Drought Early Warning Climatology Blindspot</h3>
           <div class="big-stat"><span><span class="from">+0.364</span><span class="lab">NSE · 4 wk</span></span><i data-lucide="arrow-right" class="arrow"></i><span><span class="to">0.000</span><span class="lab">CSI · drought</span></span></div>
           <p>At 4 and 8 weeks the station's weekly climatology has the best continuous scores (median <strong>NSE +0.364 and +0.353</strong>, better than M2 at 9 and 11 of 12 stations), because the seasonal cycle explains most of the variance. But its severe-drought CSI is <strong>0.000</strong> at both leads.</p>
-          <p>A climatology is the average flow for that calendar week over 31 years, and an average almost never drops below the 5th-percentile (severe) or 10th-percentile (moderate) flow (CSI 0.000). However, while 4-week lagged persistence collapses on continuous flow (median NSE −0.236), <strong>persistence achieves the highest drought warning skill at 4 weeks across all three severity levels</strong>: mild Q<sub>80</sub> pooled CSI 0.414 (vs M2 0.047), moderate Q<sub>90</sub> pooled CSI 0.332 (vs M2 0.037), and severe Q<sub>95</sub> pooled CSI 0.251 (vs M2 0.043; M2-log 0.051). For severe drought, standard ML models provide minimal skill (M2 median CSI 0.000, M1 0.014).</p>
+          <p>Official M0 uses weekly climatology at 4 and 8 weeks. A separate diagnostic keeps lagged persistence at 4 weeks and gives pooled severe-drought CSI <strong>0.251</strong>, versus M2 0.043 and M2-log 0.051. This additional diagnostic is not the four-week M0 shown in the benchmark table.</p>
         </article>
       </div>
     </div>
@@ -624,29 +646,29 @@
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-teal"><i data-lucide="scale"></i></span>
         <span class="q">Finding 1: Horizon-Dependent Value</span>
-        <h3>Weather Forcings Add Skill at 1–2 Weeks; Memory Decays at 4–8 Weeks</h3>
-        <div class="num-big">p &lt; 0.05</div>
-        <p>Across the 12 stations, coupled meteorology significantly outperforms flow-only autoregression at 1 week (paired ΔNSE <strong>+0.045</strong>, Wilcoxon <i>p</i> = 0.027) and 2 weeks (+0.034, <i>p</i> = 0.007). In the historical CAMELS-IND robustness test (1980–2000 train, 2005–2010 test; 223 pooled Q<sub>95</sub> events), the 1-week gain reaches +0.087 (<i>p</i> = 0.0005). Beyond 2 weeks, meteorological memory decays: M2 provides no significant advantage over M1 at 4 weeks (<i>p</i> = 0.677) or 8 weeks (<i>p</i> = 0.569). At 8 weeks, seasonal weekly climatology (+0.353) beats both M2 (+0.271) and M1 (+0.237); by then M2 draws 88% of its importance from the calendar and only ~1.5% from flow memory.</p>
+        <h3>Weather inputs improve short-lead NSE</h3>
+        <div class="num-big">1–2 wk</div>
+        <p>M2’s paired NSE gains over M1 are +0.045 at 1 week and +0.034 at 2 weeks. No significant KGE gain is detected at these leads. At longer leads, seasonal averages provide a stronger reference. The table retains the exploratory, uncorrected tests, with their interpretation limits stated below.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span>
         <span class="q">Finding 2: Drought Early Warning</span>
-        <h3>No Standard Model Gives Reliable Severe-Drought Warnings</h3>
+        <h3>Flow accuracy and drought warnings need different checks</h3>
         <div class="num-big" style="color:#244e9e">CSI 0.000</div>
-        <p>M2's median severe-drought (Q<sub>95</sub>) CSI is <strong>0.000 at every lead</strong>, and its pooled PR-AUC is below M1's (0.187 vs 0.197 at 2 weeks, 0.139 vs 0.175 at 4 weeks). Persistence gives the best drought warnings across 1 to 4 weeks (pooled severe Q<sub>95</sub> CSI: 1w 0.48, 2w 0.37, 4w 0.25 vs M2's 0.04). While log-target regression (M2-log) recovers severe-drought warning skill over raw regression (1w CSI reaches 0.229 vs 0.000; Log-NSE 0.844), three trade-offs apply: persistence still dominates (CSI 0.529, pooled 0.48 vs 0.20), persistence low-flow accuracy matches it (log-NSE 0.829 vs 0.844), and log training degrades continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).</p>
+        <p>Raw-target M2’s median severe-drought CSI is zero at every lead. M2-log improves the one-week median to 0.229, while persistence reaches 0.529. The log-target model also reduces one-week continuous NSE from 0.486 to 0.464. Better warning performance comes with a flow-accuracy trade-off.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span>
         <span class="q">Finding 3: Zero-Shot Transfer</span>
         <h3>Zero-Shot Transfer Beats the Baseline Only at 1–2 Weeks</h3>
         <div class="num-big" style="color:var(--ochre-ink)">1–2 wk</div>
-        <p>Pooling stations in specific runoff (<i>q</i>, mm/week) lets one model forecast a basin it was not trained on. The HydroLSTM beats each held-out station's own persistence at 1 and 2 weeks, but at 4 and 8 weeks climatology from the station's own record is better at all three basins. At Kantamal a three-feature flow-only GBT matches the LSTM (NSE within 0.03 at every lead), so the weather inputs and the LSTM add no clear gain there. At 8 weeks the LSTM fails at Bamni (NSE −0.275 vs +0.233 for climatology) and Haralahalli (−1.942 vs +0.206). The held-out basins are gauged, so this baseline uses their own history; a truly ungauged basin would not have one.</p>
+        <p>Across the three held-out gauges, the pooled HydroLSTM beats the local baseline at 1–2 weeks. Weekly climatology is better at 4–8 weeks. At Kantamal, a three-feature flow-only GBT stays within 0.03 NSE of the LSTM at every lead. Transfer results therefore depend on the chosen reference, and the local baseline requires gauge history.</p>
       </article>
     </div>
 
-    <div class="card table-card" data-reveal>
+    <div class="card table-card" id="benchmark-matrix" data-reveal>
       <div class="table-head">
-        <div><h3>12-Station Comparative Benchmark Matrix</h3><p>Medians over 12 stations, test block 2016–2025. Δ columns are paired: the median over stations of each station's own difference. <i>p</i> = Wilcoxon signed-rank (<i>n</i> = 12).</p></div>
+        <div><h3>12-Station Comparative Benchmark Matrix</h3><p>Medians over 12 stations, test block 2016–2025. Δ columns are paired: the median over stations of each station's own difference. <i>p</i> = uncorrected Wilcoxon signed-rank (<i>n</i> = 12 stations).</p></div>
         <span class="chip teal"><i data-lucide="lock"></i>Frozen Test Fold</span>
       </div>
       <div class="table-scroll">
@@ -676,12 +698,23 @@
       </div>
       <div class="table-foot"><span>Up to 521 scored weeks per station (75–180 at Karad, Warunji and Yadgir after unmeasured weeks are excluded) · <strong>Log-target variant (M2-log)</strong> 1w / 2w / 4w / 8w: Log-NSE +0.844 / +0.746 / +0.647 / +0.609 (vs M0 +0.829 / +0.649 / +0.623 / +0.622); Q<sub>95</sub> CSI 0.229 / 0.060 / 0.000 / 0.000.</span><span class="swipe-hint">Swipe table horizontally for all columns →</span><span>Audited Evaluation Block</span></div>
     </div>
+    <aside class="reader-guide card" id="comparison-notes" aria-labelledby="comparison-notes-title">
+      <h3 id="comparison-notes-title">Read the comparisons in context</h3>
+      <p>The reported Wilcoxon values are exploratory and uncorrected. Read them with the shared-drainage and sample-size caveats below.</p>
+      <details><summary>Test interpretation, baselines, and sample sizes</summary>
+        <table class="test-reference" aria-label="Uncorrected M2 versus M1 Wilcoxon values"><thead><tr><th scope="col">Lead</th><th scope="col">NSE p</th><th scope="col">KGE p</th></tr></thead><tbody><tr><th scope="row">1 week</th><td>0.027</td><td>0.519</td></tr><tr><th scope="row">2 weeks</th><td>0.007</td><td>0.129</td></tr><tr><th scope="row">4 weeks</th><td>0.677</td><td>0.622</td></tr><tr><th scope="row">8 weeks</th><td>0.569</td><td>0.791</td></tr></tbody></table>
+        <p>A four-test Bonferroni reference gives a threshold of 0.0125. The one-week NSE value 0.027 does not meet that reference. The two-week value 0.007 does. The table keeps the original reported values. Shared drainages and nested gauges also limit treating stations as independent observations.</p>
+        <p>Official M0 is persistence at 1–2 weeks and weekly climatology at 4–8 weeks. Four-week lagged persistence is an additional diagnostic. The pooled severe-drought base rates are 0.0654, 0.0639, 0.0662, and 0.0670 across the four leads.</p>
+        <p>Continuous-score medians use 12 stations. The n beside a warning metric counts stations with a defined ratio. Separate model medians can use different station subsets, so subtracting them is not a paired comparison. Columns marked paired use only stations with both values defined.</p>
+      </details>
+    </aside>
+
 
     <div class="dark-panel" data-reveal>
       <h3><i data-lucide="landmark"></i>Operational Recommendations for Central Water Commission (CWC)</h3>
       <div class="recs">
-        <div class="rec"><span class="n">1</span><div><h4>Use Persistence for Short-Lead Drought Alerts; Expect Little Skill Beyond 2 Weeks</h4><p>Persistence gives the best drought warnings at 1 and 2 weeks across all severity tiers (station medians: mild Q<sub>80</sub> CSI 0.621 &amp; 0.499; moderate Q<sub>90</sub> CSI 0.580 &amp; 0.423; severe Q<sub>95</sub> CSI 0.529 &amp; 0.379; pooled: Q<sub>80</sub> 0.628 &amp; 0.514; Q<sub>90</sub> 0.574 &amp; 0.459; Q<sub>95</sub> 0.483 &amp; 0.365). At 4 and 8 weeks skill is weak: climatology issues no moderate/severe alerts, M2's median severe CSI is 0.000, and the best model, M1, catches only 28% of severe-drought weeks at 8 weeks (pooled CSI 0.19). Longer-lead warning needs information this study does not use, such as reservoir releases, groundwater levels or seasonal rainfall forecasts.</p></div></div>
-        <div class="rec"><span class="n">2</span><div><h4>Benchmark Against Persistence and Climatology</h4><p>While coupled meteorology provides significant gains at 1 week (+0.045 to +0.087 ΔNSE, <i>p</i> &lt; 0.05) and 2 weeks (+0.034, <i>p</i> = 0.007), its advantage vanishes by 4 weeks. Beyond 2 weeks, weekly climatology outperforms M2 at 9 of 12 stations at 4 weeks and 11 of 12 stations at 8 weeks. Furthermore, lagged persistence provides the highest severe-drought CSI across 1 to 4 weeks. Any proposed sub-seasonal ML architecture must be benchmarked against both persistence and climatology on identical evaluation masks, and hydrometric monitoring networks must preserve low-flow observations rather than logging unmeasured dry spells as zeros.</p></div></div>
+        <div class="rec"><span class="n">1</span><div><h4>Check warning skill separately from flow accuracy</h4><p>Persistence’s station-median CSI at 1 and 2 weeks is 0.615 / 0.494 for mild Q<sub>80</sub>, 0.585 / 0.422 for moderate Q<sub>90</sub>, and 0.529 / 0.379 for severe Q<sub>95</sub>. These are severity-specific summaries over stations where CSI is defined. Inspect the event counts and undefined ratios before using a forecast as a warning.</p></div></div>
+        <div class="rec"><span class="n">2</span><div><h4>Keep both persistence and seasonal averages as references</h4><p>Official M0 uses persistence at 1–2 weeks and weekly climatology at 4–8 weeks. The additional four-week lagged-persistence diagnostic has pooled Q<sub>95</sub> CSI 0.251. Compare the models on the same scored weeks, and keep unmeasured recorded zeros out of drought event counts.</p></div></div>
       </div>
     </div>
   </div>
@@ -693,7 +726,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">07</span>
       <h2>Reproducibility &amp; Open Science</h2>
-      <p>This benchmark is strictly reproducible. All data harmonization routines, model training folds, evaluation masks, and interactive figure generators are managed via CLI scripts with pinned dependencies.</p>
+      <p>You can rebuild the published tables and website from the saved forecasts, audited metrics, and chart sources. Re-evaluating committed models requires a compatible Python environment. Retraining, especially the HydroLSTM, can produce different results.</p>
     </div>
     <div class="grid g2">
       <div data-reveal style="min-width:0">
@@ -716,7 +749,11 @@
 │   ├── <span class="f">train_m2_models.py</span>          <span class="c"># Tier M2 hydro-met GBT &amp; PyTorch HydroLSTM</span>
 │   ├── <span class="f">audit_metrics.py</span>            <span class="c"># Scores every model on the shared evaluation mask</span>
 │   ├── <span class="f">robustness_camels_era.py</span>    <span class="c"># 31-year historical CAMELS-IND robustness benchmark</span>
+│   ├── <span class="f">export_benchmark_data.py</span> <span class="c"># Portfolio metrics and station metadata</span>
+│   ├── <span class="f">export_explorer_data.py</span>  <span class="c"># Five-model comparisons</span>
+│   ├── <span class="f">export_replay_data.py</span>    <span class="c"># Saved weekly forecast chunks</span>
 │   └── <span class="f">generate_interactive_plots.py</span> <span class="c"># Plotly standalone visualization compiler</span>
+├── <span class="d">models/</span>                         <span class="c"># Committed fitted estimators and LSTM weights</span>
 ├── <span class="d">visualizations/</span>                 <span class="c"># Audited HTML widgets embedded in this website</span>
 └── <span class="d">docs/</span>
     └── <span class="f">PROJECT_REPORT_DOCUMENTATION.md</span> <span class="c"># Full 20-page comprehensive technical audit report</span></pre>
@@ -728,7 +765,7 @@
           <i data-lucide="alert-triangle"></i>
           <div>
             <h4>Model Overwrite Warning</h4>
-            <p>Stages 1–3 retrain models and overwrite <code>models/</code> (retrained models, especially the HydroLSTM, may slightly alter published numbers due to hardware non-determinism). To reproduce the exact published numbers from committed models, start directly at <strong>Stage 4</strong> (<code>python3 scripts/audit_metrics.py</code>).</p>
+            <p>Stage 1 rebuilds processed tensors. Stages 2–3 retrain models and overwrite <code>models/</code>. Retraining, especially the HydroLSTM, can alter the results. To re-evaluate committed models, start at <strong>Stage 4</strong> (<code>python3 scripts/audit_metrics.py</code>). Use the saved tables and replay above to inspect the published results.</p>
           </div>
         </div>
         <div class="steps">

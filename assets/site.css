@@ -182,6 +182,8 @@ section[id], header[id], .section[id] {
 }
 
 .lede { font-size: clamp(16.5px, 1.4vw, 18.5px); line-height: 1.62; color: var(--ink-2); max-width: 58ch; margin: 0 0 28px; }
+.hero-scope { margin: 0 0 24px; color: var(--muted); font-size: 14px; max-width: 64ch; }
+.hero-takeaway { font-size: clamp(19px, 1.8vw, 24px); line-height: 1.35; font-weight: 600; max-width: 42ch; margin: 0 0 24px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font: 500 15px/1 var(--sans);
@@ -554,6 +556,14 @@ tr.group-start td { border-top: 1px solid var(--line-2); }
 .heat-legend .ramp { width: 180px; max-width: 40vw; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #c2621b, #eab77a, #ece9e2, #7cc6b2, #0b7a63); }
 #guided-examples h4 { margin: 0; font-size: 17px; }
 #guided-examples p { font-size: 14px; color: var(--muted); }
+.reader-guide h3 { margin: 0; font-size: 20px; }
+.reader-guide p, .reader-guide dd { font-size: 14px; color: var(--muted); }
+.reader-guide summary { font-weight: 600; cursor: pointer; }
+.test-reference { margin-top: 14px; }
+.metric-definitions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 18px 0 0; }
+.metric-definitions dt { font-size: 14px; font-weight: 600; }
+.metric-definitions dd { margin: 4px 0 0; }
+@media (max-width: 640px) { .metric-definitions { grid-template-columns: 1fr; } }
 
 /* explorer */
 .explorer { padding: 0; overflow: hidden; scroll-margin-top: calc(var(--nav-h) + 16px); }
