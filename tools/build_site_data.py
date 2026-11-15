@@ -165,6 +165,8 @@ def bench_table_rows() -> str:
     label = {"1w": "1-Week Ahead", "2w": "2-Weeks Ahead", "4w": "4-Weeks Ahead", "8w": "8-Weeks Ahead"}
     out = []
     for h in ("1w", "2w", "4w", "8w"):
+        if out:
+            out.append("          </tbody>\n          <tbody>")
         m = M[h]
         P = lambda k: f" (p{m[k].replace('<', '&lt;')})" if m[k].startswith("<") else f" (p={m[k]})"
         rows = [
@@ -178,10 +180,10 @@ def bench_table_rows() -> str:
              (m["csi_delta"].replace("(n=", "(paired n="), ""), (m["csi_delta_m2_m0"].replace("(n=", "(paired n="), "")),
         ]
         for i, (name, a, b, c, d1, d0) in enumerate(rows):
-            head = f'<tr class="group-start"><td class="hz" rowspan="4">{label[h]}</td>' if i == 0 else "<tr>"
+            head = f'<tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">{label[h]}</th>' if i == 0 else "<tr>"
             # Lower FAR is better, so colour FAR deltas inversely.
             c1 = _cls(d1[0]) if "FAR" not in name else {"num pos": "num neg", "num neg": "num pos"}.get(_cls(d1[0]), "num")
-            out.append(f'            {head}<td>{name}</td><td class="num">{a}</td><td class="num">{b}</td>'
+            out.append(f'            {head}<th scope="row">{name}</th><td class="num">{a}</td><td class="num">{b}</td>'
                        f'<td class="num m2c">{c}</td><td class="{c1}">{d1[0]}{d1[1]}</td><td class="{_cls(d0[0])}">{d0[0]}{d0[1]}</td></tr>')
     return "\n".join(out)
 
