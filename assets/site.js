@@ -221,7 +221,7 @@
     var params = new URLSearchParams(window.location.search);
     var station = params.get('station'), lead = params.get('lead'), severity = (params.get('severity') || '').toUpperCase();
     return {
-      station: S.some(function (s) { return s.id === station; }) ? station : S[0].id,
+      station: S.some(function (s) { return s.id === station; }) ? station : 'anandpur',
       lead: HS.indexOf(lead) >= 0 ? lead : HS[0],
       objective: params.get('objective') === 'drought' ? 'drought' : 'flow',
       severity: SEVERITIES[severity] ? severity : 'Q95'

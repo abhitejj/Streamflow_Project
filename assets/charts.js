@@ -221,7 +221,7 @@
     var fixed = args.length === 2;
     var params = new URLSearchParams(window.location.search);
     var initial = shared ? shared.get() : {
-      station: fixed ? args[0] : stations.some(function (s) { return s.id === params.get('station'); }) ? params.get('station') : stations[0].id,
+      station: fixed ? args[0] : stations.some(function (s) { return s.id === params.get('station'); }) ? params.get('station') : 'anandpur',
       lead: fixed ? args[1] : Object.keys(H_LABEL).includes(params.get('lead')) ? params.get('lead') : '1w',
       objective: params.get('objective') === 'drought' ? 'drought' : 'flow',
       severity: ['Q95', 'Q90', 'Q80'].includes(params.get('severity')) ? params.get('severity') : 'Q95'
