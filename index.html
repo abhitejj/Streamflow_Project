@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/site.css?v=e0e1602f812d33ec">
 <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
@@ -70,8 +70,8 @@
           </div>
         </li>
       </ul>
-      <p class="hero-summary" data-reveal style="--d:.20s">An empirical machine learning benchmark evaluating the predictive value of India Meteorological Department (IMD) gridded rainfall and reanalysis meteorological forcings for sub-seasonal river flow and drought early warnings at 12 CWC gauges across peninsular Indian subcatchments.</p>
-      <p class="hero-summary hero-spoiler" data-reveal style="--d:.24s">Spoiler: weather improves short-lead NSE; the calendar usually wins the long game.</p>
+      <p class="hero-summary" data-reveal style="--d:.20s">An empirical machine learning benchmark evaluating the predictive value of India Meteorological Department (IMD) gridded rainfall and historical meteorological inputs for sub-seasonal river flow and drought early warnings at 12 CWC gauges across peninsular Indian subcatchments.</p>
+      <p class="hero-summary hero-spoiler" data-reveal style="--d:.24s">Spoiler: weather lifts short-lead NSE; drought warnings remain the harder test.</p>
       <div class="hero-actions" data-reveal style="--d:.28s">
         <a class="btn btn-primary" href="#results"><i data-lucide="chart-line"></i>Explore results</a>
         <a class="btn btn-ghost" href="#explorer"><i data-lucide="scan-search"></i>Station explorer</a>
@@ -125,7 +125,7 @@
           <div class="model-row">
             <span class="model-tag m0">M0</span>
             <div class="model-meta">
-              <strong>Persistence Baseline</strong>
+              <strong>Persistence &amp; Climatology</strong>
               <span>Lagged streamflow memory &amp; weekly climatology normal</span>
             </div>
           </div>
@@ -140,7 +140,7 @@
             <span class="model-tag m2">M2</span>
             <div class="model-meta">
               <strong>Hydro-Meteorological Coupling</strong>
-              <span>IMD rainfall sums, ERA5 PET, temperature &amp; drying deficits (P−PET)</span>
+              <span>Rainfall sums, historical PET / later Best Match ET0, temperature &amp; deficits (P−PET)</span>
             </div>
           </div>
         </div>
@@ -165,7 +165,7 @@
             <div class="task-icon ochre"><i data-lucide="siren"></i></div>
             <div>
               <strong>Hydrological Drought</strong>
-              <span>Standardized low-flow early warnings (Q<sub>80</sub>, Q<sub>90</sub>, Q<sub>95</sub>)</span>
+              <span>Training-percentile low-flow warnings (Q<sub>80</sub>, Q<sub>90</sub>, Q<sub>95</sub>)</span>
             </div>
           </div>
         </div>
@@ -217,7 +217,7 @@
         <div class="strip-num"><span data-count="3">3</span></div>
         <div class="strip-body">
           <h3 class="strip-title">Model Configurations</h3>
-          <p class="strip-desc">Persistence, streamflow-only and hydro-meteorological formulations</p>
+          <p class="strip-desc">Lead-dependent baseline, flow-only and weather-input formulations</p>
         </div>
       </div>
       <div class="strip-item" data-reveal style="--d:.16s">
@@ -237,18 +237,18 @@
     <div class="grid g3" data-stagger>
       <article class="card hover finding teal" data-reveal>
         <div class="card-top"><span class="icon-tile it-teal"><i data-lucide="scale"></i></span><span class="chip teal">Short-lead advantage</span></div>
-        <div class="big">+0.045<small>paired ΔNSE at 1 week</small></div>
-        <p>Adding weather inputs improves median NSE over flow-only forecasts at 1 and 2 weeks. KGE gains are not significant at either lead. At 4 and 8 weeks, weekly climatology beats M2 at 9 and 11 of 12 stations. <a href="#comparison-notes">Read the test caveats</a> alongside the reported <i>p</i> values.</p>
+        <div class="big">+0.050<small>paired ΔNSE at 1 week</small></div>
+        <p>Adding weather inputs raises paired median NSE over flow-only forecasts by +0.050 at 1 week and +0.022 at 2 weeks. These are observed median gains; the station-level tests do not establish a consistent improvement. Longer-lead gains vary by station. <a href="#comparison-notes">Read the exploratory test caveats</a>; NSE improvement does not guarantee better drought warnings.</p>
       </article>
       <article class="card hover finding blue" data-reveal>
         <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span><span class="chip blue">Drought alerts</span></div>
         <div class="big"><span data-count="0.000">0.000</span><small>M2 drought CSI, every lead</small></div>
-        <p>Raw-target M2 has a median severe-drought CSI of <strong>0.000 at every lead</strong>. Persistence provides stronger short-lead warnings. Log-target models recover some low-flow skill, but trade away accuracy on the full discharge range. <a href="#results">Compare the two objectives</a>.</p>
+        <p>Raw-target M2 has a median severe-drought CSI of <strong>0.000 at every lead</strong>. Persistence provides stronger short-lead warnings. Log-target models recover some low-flow skill, with effects on discharge accuracy that vary by lead. <a href="#results">Compare the two objectives</a>.</p>
       </article>
       <article class="card hover finding ochre" data-reveal>
         <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span><span class="chip ochre">Zero-shot transfer</span></div>
-        <div class="big">1–2 wk<small>LSTM beats baseline only here</small></div>
-        <p>The pooled HydroLSTM beats each held-out station’s own persistence at 1 and 2 weeks. At 4 and 8 weeks, that station’s weekly climatology wins at all three holdouts. These baselines use observations from the held-out gauges.</p>
+        <div class="big">2 of 3<small>holdouts beat baseline at short leads</small></div>
+        <p>The pooled HydroLSTM beats the local baseline at Bamni and Kantamal at 1 and 2 weeks, but not at Haralahalli. At 4 and 8 weeks it beats the baseline only at Haralahalli; the 8-week scores there are both negative. A positive or comparatively higher NSE alone does not establish operational skill.</p>
       </article>
     </div>
   </div>
@@ -263,8 +263,8 @@
     </div>
     <div class="grid g-split">
       <div class="prose" data-reveal>
-        <p>Peninsular India encompasses climatically turbulent river systems characterized by extreme monsoon flashiness, complex Deccan basalt hydrogeology, and vulnerability to severe agricultural droughts. Across vital agricultural belts—including the Marathwada and Vidarbha rainshadows of Maharashtra, the semi-arid Krishna-Tungabhadra plains of Karnataka, and the flood-to-drought deltaic corridors of Odisha—water resource managers face an operational dilemma. Conceptual hydrological models require dense physical parameterizations that are rarely accessible across Indian basins, while simple statistical persistence collapses as lead times extend past several days.</p>
-        <p>Sub-seasonal river discharge forecasting (1 ≤ H ≤ 8 weeks ahead) supports reservoir operation, irrigation scheduling and drought early warning. However, existing statistical benchmarks frequently suffer from temporal target leakage, lack standardization in low-flow drought definitions, or fail to isolate the independent marginal value of multi-source meteorological observations.</p>
+        <p>Weekly river-flow forecasts can help readers examine water availability across the Maharashtra, Odisha and Karnataka catchments in this benchmark. The practical question is whether recent flow alone is enough, or whether antecedent rainfall, temperature and evaporative demand add useful predictive information.</p>
+        <p>We compare simple baselines, flow-only models and models with weather inputs at 1, 2, 4 and 8 weeks. Drought warnings are checked separately because a reduction in discharge error need not improve detection of rare low-flow weeks. Chronological validation, explicit source timing and shared scoring rules make these comparisons easier to inspect.</p>
       </div>
       <div class="grid" data-stagger>
         <article class="card hover" data-reveal>
@@ -279,7 +279,7 @@
         <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="siren"></i></span><span class="chip ochre">Track B</span></div>
           <h3>Hydrological Drought Early Warning</h3>
-          <p>Drought warnings are evaluated separately at mild, moderate, and severe training-period thresholds. At severe drought (Q<sub>95</sub>), persistence has median CSI 0.529 at 1 week and 0.379 at 2 weeks. Compare each severity in the explorer.</p>
+          <p>Drought warnings are evaluated separately at mild, moderate, and severe training-period thresholds. At severe drought (Q<sub>95</sub>), persistence has median CSI 0.500 at 1 week and 0.286 at 2 weeks. Compare each severity and its event counts in the explorer.</p>
           <div class="ladder">
             <div class="rung"><span class="lvl mild">Q<sub>80</sub></span><span class="txt"><b>Mild Low-Flow Anomaly (Q<sub>80</sub>):</b> Weekly discharge at or below the training-period 20th percentile.</span></div>
             <div class="rung"><span class="lvl mod">Q<sub>90</sub></span><span class="txt"><b>Moderate Drought (Q<sub>90</sub>):</b> Weekly discharge at or below the training-period 10th percentile.</span></div>
@@ -297,15 +297,15 @@
     <div class="section-head" data-reveal>
       <span class="section-no">02</span>
       <h2>Multi-Source Hydrological &amp; Meteorological Dataset</h2>
-      <p>The benchmark covers 1980–2025 at 12 CWC gauges in Maharashtra, Odisha, and Karnataka. Several gauges share the Godavari or Krishna drainage, and Warunji ⊂ Karad ⊂ Huvinhedigi is a nested cascade. The station records combine into 2,394 weekly time steps, with missing and unmeasured weeks excluded from scoring.</p>
+      <p>The benchmark covers 1980–2025 at 12 CWC gauges in Maharashtra, Odisha, and Karnataka. Several gauges share the Godavari or Krishna drainage, and Warunji ⊂ Karad ⊂ Huvinhedigi is a nested cascade. Each station has 2,394 weekly rows, labelled 25 February 1980–5 January 2026; the last bin includes late-2025 dates. Test issue dates and scored targets remain within 2016–2025, with missing and unmeasured weeks excluded from scoring.</p>
     </div>
 
     <div class="card" data-reveal>
       <div class="flow" data-stagger>
-        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="waves"></i></span><h4>Streamflow Q</h4><p>CAMELS-IND 1980–2020 + CWC 2021–2025</p></div>
+        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="waves"></i></span><h4>Streamflow Q</h4><p>CAMELS-IND fallback + CWC precedence where available, 2001–2025</p></div>
         <div class="flow-step" data-reveal><span class="dot"><i data-lucide="cloud-rain"></i></span><h4>Rainfall P</h4><p>CAMELS-IND + IMD 0.25° gridded</p></div>
-        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="thermometer-sun"></i></span><h4>Temperature &amp; PET</h4><p>GLEAM v3.6a baseline + ERA5-Land</p></div>
-        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="layers"></i></span><h4>Weekly tensors</h4><p>2015–2020 overlap calibration → 2,394 weekly steps</p></div>
+        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="thermometer-sun"></i></span><h4>Temperature &amp; PET</h4><p>GLEAM baseline + Open-Meteo Best Match</p></div>
+        <div class="flow-step" data-reveal><span class="dot"><i data-lucide="layers"></i></span><h4>Weekly tensors</h4><p>2001–2010 training calibration → 2,394 weekly steps</p></div>
       </div>
     </div>
 
@@ -317,15 +317,15 @@
       <div class="grid" data-stagger>
         <article class="card source" data-reveal>
           <span class="icon-tile it-blue"><i data-lucide="waves"></i></span>
-          <div><h3>1. Streamflow Discharge (Q)</h3><p>CWC daily observed discharge stitched seamlessly with CAMELS-IND (1980–2020) and continuous CWC telemetry records (2021–2025). Normalized by catchment drainage area into specific runoff (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/wk).</p></div>
+          <div><h3>1. Streamflow Discharge (Q)</h3><p>CAMELS-IND and CWC daily discharge records are combined, with missing measurements retained. Karnataka CWC records are recovered from the derived daily archive with documented provenance. Discharge is converted to specific runoff (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/week).</p></div>
         </article>
         <article class="card source" data-reveal>
           <span class="icon-tile it-teal"><i data-lucide="cloud-rain"></i></span>
-          <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) harmonized with IMD Pune 0.25° × 0.25° gridded daily rainfall (2021–2025: NetCDF4), reconstructed as catchment area-weighted means. Calibration against CAMELS-IND historical series yields a portfolio mean scale ratio <span class="metric-pill">ᾱ<sub>P</sub> = 1.0009</span> and median weekly rainfall correlation across stations of <span class="metric-pill">r = 0.9998</span> (daily r = 0.9994).</p></div>
+          <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) is joined to IMD 0.25° gridded rainfall for 2021–2025, extracted as catchment-area-weighted means. Scale factors use paired finite days in 2001–2010 only. Missing grid days remain missing; daily coverage is checked before calculating rainfall windows. See the source and calibration notes for station-level coefficients.</p></div>
         </article>
         <article class="card source" data-reveal>
           <span class="icon-tile it-ochre"><i data-lucide="thermometer-sun"></i></span>
-          <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>GLEAM v3.6a Priestley-Taylor baseline harmonized with ERA5-Land reanalysis (2021–2025). Catchment temperature exhibits a Mean Absolute Bias of <span class="metric-pill">0.92°C</span> (signed mean of -0.035°C, r = 0.947), and ERA5-Land PET is rescaled via linear regression slope <span class="metric-pill">α<sub>PET</sub> ≈ 0.734</span>. Temperature and PET remain gauge-point extractions because shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%).</p></div>
+          <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>Historical temperature and GLEAM PET are joined to Open-Meteo default Best Match temperature and FAO-56 reference ET0 for 2021–2025. Offsets and scale factors are fitted on 2001–2010 only. Best Match can combine model products and is not verified pure ERA5-Land. Scaling adjusts magnitude, not physical formulation or temporal agreement; Kudige PET has near-zero weekly agreement in the calibration overlap.</p></div>
         </article>
       </div>
     </div>
@@ -365,10 +365,10 @@
       <i data-lucide="filter"></i>
       <div>
         <h4>Quality Control, Physical Sanity Ceiling &amp; Anthropogenic Regime Shifts</h4>
-        <p>Catchments satisfy a strict missingness threshold (&lt;10% total missing records). Any weekly timestep with fewer than 4 valid daily observations is masked to <code>NaN</code>.</p>
-        <p>Clerical telemetry errors were audited and rectified by enforcing a physical maximum discharge ceiling of <strong>≤ 50,000 m³/s</strong>. At Ashti, a corrupted entry of 1,829,351 m³/s (on 05-10-2025) was masked and patched via temporal linear interpolation (max limit of 2 days) prior to weekly aggregation, preventing non-monsoon distortion during LSTM sequence imputation.</p>
-        <p><strong>Unmeasured low flows recorded as zero (4 stations):</strong> after about 2010 CWC ran Karad, Warunji and Yadgir as monsoon-season stations, and unmeasured weeks are logged as exactly 0.0000 m³/s. Recorded-zero weeks make up 69% (Karad), 70% (Warunji), 62% (Yadgir) and 14% (Huvinhedigi) of the 2016–2025 test block, against 2.1%, 4.0%, 19.9% and 0.0% in training, and about a fifth of them fall in June–October, when these rivers are not dry. They are missing measurements, not droughts. At these four stations (marked †) any week whose issue-time or target flow is a recorded zero is therefore excluded from scoring for every model. This removes 100–440 weeks per station and lowers the one-week pooled severe-drought base rate from 0.238 to 0.065, close to the nominal 0.05. Haralahalli's zeros occur only in the dry season and also appear in training, so they are kept. Models are retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, and log-target variants (M1-log, M2-log) preserve low-flow sensitivity.</p>
-        <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). This confirms that post-2010 dry-season zero inflation was inherited directly from published CAMELS-IND records, ruling out a local pipeline merge error, while the underlying institutional CWC operational cause remains a documented inference.</p>
+        <p>The approved portfolio gate allows less than 15% missing daily discharge. Weekly targets require at least four original valid daily measurements; missing days and targets are not interpolated. A qualifying weekly mean can still represent fewer than seven measurements.</p>
+        <p>Discharge above 50,000 m³/s is masked as invalid. All resulting gaps remain missing. Weekly observation counts come from original valid measurements, and weather windows require their stated coverage. These rules avoid creating target observations from later measurements.</p>
+        <p><strong>Recorded-zero policy:</strong> Karad, Warunji, Yadgir and Huvinhedigi retain the documented zero-as-unmeasured policy. Training and validation mask affected rows, and every compared model uses the same eligible evaluation weeks. The explorer reports scored and excluded weeks for each station and lead. Haralahalli zeros remain part of the observations. Changes to weekly timing and missingness also change the set of eligible weeks, so old and new scores are not a controlled model-only comparison.</p>
+        <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). These matches show that most of the compared zero records were already present in CAMELS-IND. This overlap check does not rule out every stitching error or establish why the source records contain zeros; a change in monitoring practice remains an inference.</p>
       </div>
     </div>
   </div>
@@ -380,7 +380,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">03</span>
       <h2>Methodology &amp; Anti-Leakage Protocol</h2>
-      <p>We formulate operational weekly forecasting as direct multi-step regressions issued at week <i>t</i> (Monday 00:00 UTC) predicting future average discharge <i>y</i><sub>t+H</sub> at horizons <i>H</i> ∈ {1, 2, 4, 8} weeks ahead. All predictors strictly terminate at issue time <i>t</i>, ensuring <strong>zero future meteorological leakage</strong>.</p>
+      <p>This is a retrospective weekly forecasting experiment for future discharge at horizons H ∈ {1, 2, 4, 8} weeks. A row labelled Monday uses daily records from the preceding Monday through Sunday and excludes that Monday’s daily record. Learned corrections, replacement medians and scaling are fitted on training data and reused unchanged. These historical products do not establish real-time release availability at Monday 00:00 UTC.</p>
     </div>
 
     <div class="tiers" data-stagger>
@@ -392,7 +392,7 @@
           <span class="feat">H=1w, 2w: Lagged Persistence Q<sub>t+H</sub> = Q<sub>t</sub></span>
           <span class="feat">H=4w, 8w: Historical Weekly Climatology Q̄<sub>week</sub></span>
         </div>
-        <div class="tier-foot"><i data-lucide="circle-off"></i>Zero trainable parameters</div>
+        <div class="tier-foot"><i data-lucide="circle-off"></i>No ML optimisation; training-derived reference</div>
       </article>
       <article class="card hover tier m1" data-reveal>
         <div class="tier-top"><span class="tag">M1</span><span class="chip blue">Tier M1: Autoregressive</span></div>
@@ -409,13 +409,13 @@
       <article class="card hover tier m2" data-reveal>
         <div class="tier-top"><span class="tag">M2</span><span class="chip teal">Tier M2: Hydro-Meteorological</span></div>
         <h3>Multi-Source Weather Memory</h3>
-        <p>Full coupling of antecedent moisture, atmospheric demand, and thermal stress.</p>
+        <p>Flow history plus trailing rainfall, temperature and evaporative-demand features.</p>
         <div class="feats">
           <span class="feat inherit">Tier M1 inputs +</span>
           <span class="feat met">IMD Rainfall sums: P<sub>1w</sub>, P<sub>2w</sub>, P<sub>1m</sub>, P<sub>2m</sub>, P<sub>3m</sub></span>
-          <span class="feat met">Antecedent Precip Index: API<sub>30d</sub></span>
+          <span class="feat met">Normalized rainfall index: API<sub>30d</sub></span>
           <span class="feat met">Weekly dry days count (&lt;1mm)</span>
-          <span class="feat met">ERA5-Land T<sub>avg</sub>, T<sub>max</sub>, PET<sub>1w</sub>, PET<sub>1m</sub></span>
+          <span class="feat met">Temperature T<sub>avg</sub>, T<sub>max</sub>, T<sub>min</sub>; PET<sub>1w</sub>, PET<sub>1m</sub></span>
           <span class="feat met">Water Deficit: (P - PET)<sub>1w</sub>, (P - PET)<sub>1m</sub></span>
         </div>
         <div class="tier-foot"><i data-lucide="brain-circuit"></i>M2 GBT &amp; PyTorch HydroLSTM</div>
@@ -447,7 +447,7 @@
           <ul class="ticks">
             <li><span><b>Train Set:</b> 1980-02-25 to 2010-12-31 (Drop last H weeks)</span></li>
             <li><span><b>Val Set:</b> 2011-01-01 to 2015-12-31 (Drop last H weeks)</span></li>
-            <li><span><b>Final Test Block:</b> 2016-01-01 to 2025-12-31 (522 un-purged weeks)</span></li>
+            <li><span><b>Final Test Block:</b> 2016-01-01 to 2025-12-31. Scored targets must also fall within this period; coverage and recorded-zero rules reduce usable rows.</span></li>
           </ul>
         </div>
         <div class="inner">
@@ -455,7 +455,7 @@
           <p>All model tiers (M0, M1, M2) are scored on exactly the same weeks: those where the target and every forecast exist and, at the four stations 𝒵 = {Karad, Warunji, Yadgir, Huvinhedigi}, neither the issue-time nor the target flow is a recorded (unmeasured) zero:</p>
           <div class="formula">ℳ<sub>eval</sub> = { t | y<sub>t</sub>, Q<sub>t</sub>, ŷ<sub>M0,t</sub>, ŷ<sub>M1,t</sub>, ŷ<sub>M2,t</sub> ≠ NaN ∧ ¬(station ∈ 𝒵 ∧ (y<sub>t</sub> = 0 ∨ Q<sub>t</sub> = 0)) }</div>
           <p>Absolute non-negativity is enforced via physical clamping: <strong>ŷ = max(ŷ, 0.0)</strong>.</p>
-          <p style="margin-top:8px;font-size:13px;color:var(--muted)"><em>Forcing lineage note:</em> 2021–2025 precipitation is catchment area-weighted, while temperature and PET remain gauge-point extractions; shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%).</p>
+          <p style="margin-top:8px;font-size:13px;color:var(--muted)"><em>Forcing lineage note:</em> rainfall is catchment-area weighted, while later temperature and reference ET0 use Open-Meteo Best Match point records. Training-period scaling does not prove equivalent physical formulation or temporal agreement; see the weather provenance notes.</p>
         </div>
       </div>
     </div>
@@ -471,9 +471,15 @@
       <p>Explore saved forecasts, drought warning scores, and transfer performance for the 2016–2025 test block. Start with the metric guide or an example below.</p>
     </div>
 
+    <aside class="reader-guide card" aria-labelledby="run-notes-title" id="run-notes">
+      <h3 id="run-notes-title">Methods and provenance</h3>
+      <p>These results use the corrected weekly windows and training-only preprocessing. All charts and replay data come from the same rebuilt experiment. Sample eligibility changed as well as model fitting; score changes do not isolate the effect of any single correction.</p>
+      <p><a href="docs/METHODOLOGY_REPAIR_PLAN.md">Correction plan and progress</a> · <a href="docs/PROJECT_REPORT_DOCUMENTATION.md">Full report</a> · <a href="docs/DATA_ACCESS.md">Data access</a> · <a href="docs/WEATHER_SOURCE_PROVENANCE.md">Weather source notes</a> · <a href="docs/UNCERTAINTY_METHOD.md">Uncertainty method and limits</a></p>
+    </aside>
+
     <aside class="reader-guide card" aria-labelledby="metric-guide-title" id="metric-guide">
       <h3 id="metric-guide-title">How to read the scores</h3>
-      <p>Flow scores measure discharge accuracy. Warning scores measure which low-flow weeks were detected. Check the baseline, severity, and number of scored weeks alongside each result.</p>
+      <p>Flow scores measure discharge accuracy. Warning scores measure which low-flow weeks were detected. Check the baseline, severity, and number of scored weeks alongside each result. When no drought events occur in the scored weeks, detection cannot be assessed; the explorer explains this and keeps the raw false-alarm counts visible.</p>
       <details>
         <summary>Metric guide · definitions and score direction</summary>
         <dl class="metric-definitions">
@@ -501,7 +507,7 @@
     </section>
 
     <div class="chart-card" data-reveal>
-      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-station portfolio median</h3><p>The same medians as the benchmark matrix in Section 06, drawn as curves. While M1 (+0.282) and M2 (+0.331) beat 2-week persistence (-0.185), both already fall below the station's weekly climatology (~+0.35–0.36) from Week 2 onward. Shaded area marks where the official M0 baseline switches from persistence to weekly climatology.</p></div></header>
+      <header><div><span class="kicker">Overview</span><h3>Skill versus lead time, 12-station portfolio median</h3><p>These curves show the station medians in the benchmark matrix. M1/M2 NSE is +0.358/+0.459 at 1 week and +0.218/+0.242 at 2 weeks. At 4 and 8 weeks the median M1 and M2 scores exceed the climatology median, although climatology still beats M2 at 7 and 8 individual stations. Differences between medians are not paired median gains.</p></div></header>
       <div class="chart-body"><div class="chart" data-chart="skill" role="img" aria-label="Portfolio median NSE or KGE by lead time for M0, M1, M2, and Weekly Climatology"></div></div>
     </div>
 
@@ -521,7 +527,7 @@
           <a class="fs-link" href="visualizations/interactive_pr_curves_severe_drought.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="pr" role="img" aria-label="Precision-Recall Curves for Severe Drought early warning"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div>M2 has lower pooled average precision than M1 at both displayed leads (0.187 vs 0.197 at 2 weeks, 0.139 vs 0.175 at 4 weeks). The no-skill base rates are 0.0639 and 0.0662, respectively, after excluded weeks are removed. Use the explorer for false alarm ratios at the frozen threshold.<span class="artifact">Artifact · interactive_pr_curves_severe_drought.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div>Precision–recall is pooled over eligible station-weeks. Compare the curves with their lead-specific no-skill event rate; the station explorer supplies fixed-threshold false alarms and event counts. The plotted cutoff sweep is not an independently calibrated probability forecast.<span class="artifact">Source: corrected test predictions and severe-drought precision–recall export.</span></div></footer>
       </div>
       <div class="chart-card" data-reveal style="--d:.1s">
         <header>
@@ -529,7 +535,7 @@
           <a class="fs-link" href="visualizations/interactive_spatial_transfer_grouped_bars.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="transfer" role="img" aria-label="Cross-basin zero-shot spatial transfer results"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>Zero-Shot Insight:</b> A positive NSE is not the same as skill: the test is whether the transferred model beats the station's own baseline. The HydroLSTM does so at 1 and 2 weeks at all three basins. At 4 and 8 weeks climatology is better everywhere (Kantamal +0.483 / +0.481 vs +0.443 / +0.426; Bamni +0.234 vs +0.054 at 4 weeks; Haralahalli +0.210 vs −0.302). At Kantamal the pooled flow-only GBT matches the LSTM: NSE differs by only 0.01–0.03, within sampling noise at 1–4 weeks (52-week block bootstrap), with the GBT slightly better at 8 weeks. At Haralahalli the 2-week "win" is between two negative scores (−0.191 vs −0.469), and at 8 weeks the LSTM fails at both Bamni (NSE −0.275 vs +0.233 for climatology) and Haralahalli (−1.942 vs +0.206).<span class="artifact">Artifact: interactive_spatial_transfer_grouped_bars.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>Zero-shot transfer:</b> the LSTM beats the local baseline at 2 of 3 holdouts at 1–2 weeks and 1 of 3 at 4–8 weeks. At Haralahalli the 8-week LSTM NSE is −0.014 against baseline −0.062: both are worse than the evaluation-period mean. Bamni’s 8-week LSTM NSE is −0.734. These baselines use held-out-gauge history, so this is not a demonstration at wholly ungauged basins.<span class="artifact">Source: corrected cross-basin transfer export.</span></div></footer>
       </div>
     </div>
 
@@ -604,7 +610,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">05</span>
       <h2>Error Analysis &amp; Hydrological Interpretations</h2>
-      <p>Where does skill come from at each lead, and why does climatology beat both trained models at 4 and 8 weeks? We split the errors into the Kling-Gupta components and measure which inputs the M2 model actually uses.</p>
+      <p>How do timing, flow memory and weather inputs affect performance at each lead? We examine correlation, variability and bias separately, then inspect which input groups the M2 model uses. Aggregate and station-level rankings need not agree.</p>
     </div>
 
     <div class="chart-card" data-reveal>
@@ -613,33 +619,25 @@
         <a class="fs-link" href="visualizations/interactive_kge_component_decomposition.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
       </header>
       <div class="chart-body"><div class="chart" data-chart="kge" role="img" aria-label="Kling-Gupta Efficiency component decomposition chart"></div></div>
-      <footer><i data-lucide="lightbulb"></i><div><b>Decomposition Insight:</b> At 4 and 8 weeks M2's median correlation (r = 0.565, 0.543) is <b>below</b> climatology's (0.616, 0.602), so the weather inputs do not track the seasonal hydrograph better than the calendar does. All models underestimate variability (median α ≈ 0.54–0.59 at 4–8 weeks) and total volume (β ≈ 0.88). Medians over 12 stations.<span class="artifact">Artifact: interactive_kge_component_decomposition.html</span></div></footer>
+      <footer><i data-lucide="lightbulb"></i><div><b>Decomposition insight:</b> KGE combines correlation, variability and mean-volume agreement. Inspect all three components: higher NSE does not establish an improvement in each one. Curves are medians across stations, not a decomposition of one pooled hydrograph.<span class="artifact">Source: corrected KGE component export.</span></div></footer>
     </div>
 
     <div class="grid g-split">
       <div class="chart-card" data-reveal>
         <header>
-          <div><span class="kicker">Widget 5</span><h3>Feature Importance: 1-Week vs 8-Week Lead</h3><p>Permutation importance of the M2 model (increase in error when a feature is shuffled), as a share of the total, averaged over the 8 stations with complete low-flow records.</p></div>
+          <div><span class="kicker">Widget 5</span><h3>Feature Importance: 1-Week vs 8-Week Lead</h3><p>Permutation importance of the M2 model (increase in error when a feature is shuffled), as a share of the total, averaged over the eight stations outside the recorded-zero exclusion policy.</p></div>
           <a class="fs-link" href="visualizations/interactive_feature_importance_shift.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart chart-tall" data-chart="fi" role="img" aria-label="Feature importance transition between 1 week and 8 weeks"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>What M2 uses:</b> at 1 week it relies mostly on recent rainfall. API<sub>30d</sub> alone takes 59% of the importance, and current flow Q(t) only 3.8%. Shuffling all precipitation features together raises the error by 114% (station median), against 28% for all ten flow features, so this is not an artefact of correlated lags sharing credit. At 8 weeks the calendar harmonics take 88% (shuffling them raises the error by 88%; flow by 1.5%), so M2 has in effect become a seasonal climatology, which is why it cannot beat the real one.<span class="artifact">Artifact: interactive_feature_importance_shift.html</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>What M2 uses:</b> the chart compares each feature’s share of permutation importance at 1 and 8 weeks. Importance describes sensitivity of the fitted model on these test rows, not causation or proof that a data-quality issue is harmless. Correlated features can share importance.<span class="artifact">Source: corrected feature importance export.</span></div></footer>
       </div>
       <div class="grid" data-stagger>
         <article class="card insight" data-reveal>
           <div class="card-top"><span class="icon-tile it-rose"><i data-lucide="trending-down"></i></span><span class="chip">H = 1w → 2w</span></div>
-          <h3>The Persistence Horizon Decay Cliff (H=1w → H=2w)</h3>
-          <div class="big-stat"><span><span class="from">+0.284</span><span class="lab">NSE · 1 wk</span></span><i data-lucide="arrow-right" class="arrow"></i><span><span class="to">-0.185</span><span class="lab">NSE · 2 wk</span></span></div>
-          <p>At <i>H</i> = 1 week, persistence (Q<sub>t</sub>) has a portfolio median <strong>NSE of +0.284</strong>. At 2 weeks it falls to <strong>−0.185</strong>, worse than forecasting the test-period mean, and to <strong>−1.017</strong> at Warunji (1,890 km²).</p>
-          <p>M1 and M2 retain positive NSE at 2 weeks (+0.282 and +0.331), although weekly climatology is higher (+0.348). Their paired NSE difference is +0.034 with an uncorrected <i>p</i> = 0.007. Calendar and recent-flow features help the models track seasonal change.</p>
-        </article>
+          <h3>The Persistence Horizon Decay Cliff (H=1w → H=2w)</h3><p>Persistence median NSE falls from +0.213 at 1 week to -0.191 at 2 weeks. M1 and M2 remain positive at 2 weeks (+0.218 and +0.242). Compare each with weekly climatology as well as the official lead-dependent baseline.</p></article>
         <article class="card insight" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="eye-off"></i></span><span class="chip ochre">H ≥ 4w</span></div>
-          <h3>The Drought Early Warning Climatology Blindspot</h3>
-          <div class="big-stat"><span><span class="from">+0.364</span><span class="lab">NSE · 4 wk</span></span><i data-lucide="arrow-right" class="arrow"></i><span><span class="to">0.000</span><span class="lab">CSI · drought</span></span></div>
-          <p>At 4 and 8 weeks the station's weekly climatology has the best continuous scores (median <strong>NSE +0.364 and +0.353</strong>, better than M2 at 9 and 11 of 12 stations), because the seasonal cycle explains most of the variance. But its severe-drought CSI is <strong>0.000</strong> at both leads.</p>
-          <p>Official M0 uses weekly climatology at 4 and 8 weeks. A separate diagnostic keeps lagged persistence at 4 weeks and gives pooled severe-drought CSI <strong>0.251</strong>, versus M2 0.043 and M2-log 0.051. This additional diagnostic is not the four-week M0 shown in the benchmark table.</p>
-        </article>
+          <h3>The Drought Early Warning Climatology Blindspot</h3><p>Weekly climatology has median NSE +0.172 and +0.143 at 4 and 8 weeks, but median severe-drought CSI is zero. Smooth seasonal averages can capture part of the flow cycle while missing low-flow events. Model rankings vary by station and metric.</p></article>
       </div>
     </div>
   </div>
@@ -660,21 +658,21 @@
         <span class="q">Finding 1: Horizon-Dependent Value</span>
         <h3>Weather inputs improve short-lead NSE</h3>
         <div class="num-big">1–2 wk</div>
-        <p>M2’s paired NSE gains over M1 are +0.045 at 1 week and +0.034 at 2 weeks. No significant KGE gain is detected at these leads. At longer leads, seasonal averages provide a stronger reference. The table retains the exploratory, uncorrected tests, with their interpretation limits stated below.</p>
+        <p>M2’s paired median NSE gains over M1 are +0.050 and +0.022 at 1 and 2 weeks. The 4- and 8-week differences are -0.014 and +0.004. Read the exploratory tests alongside station dependence and changing sample eligibility.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-blue"><i data-lucide="bell-off"></i></span>
         <span class="q">Finding 2: Drought Early Warning</span>
         <h3>Flow accuracy and drought warnings need different checks</h3>
         <div class="num-big" style="color:#244e9e">CSI 0.000</div>
-        <p>Raw-target M2’s median severe-drought CSI is zero at every lead. M2-log improves the one-week median to 0.229, while persistence reaches 0.529. The log-target model also reduces one-week continuous NSE from 0.486 to 0.464. Better warning performance comes with a flow-accuracy trade-off.</p>
+        <p>Raw-target M2 has median severe-drought CSI zero at every lead. At 1 week, M2-log reaches 0.154, while persistence reaches 0.500. The one-week continuous NSE changes from +0.459 for M2 to +0.427 for M2-log. Evaluate warning skill separately from discharge accuracy.</p>
       </article>
       <article class="card hover answer" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="git-fork"></i></span>
         <span class="q">Finding 3: Zero-Shot Transfer</span>
-        <h3>Zero-Shot Transfer Beats the Baseline Only at 1–2 Weeks</h3>
-        <div class="num-big" style="color:var(--ochre-ink)">1–2 wk</div>
-        <p>Across the three held-out gauges, the pooled HydroLSTM beats the local baseline at 1–2 weeks. Weekly climatology is better at 4–8 weeks. At Kantamal, a three-feature flow-only GBT stays within 0.03 NSE of the LSTM at every lead. Transfer results therefore depend on the chosen reference, and the local baseline requires gauge history.</p>
+        <h3>Transfer skill depends on the station and lead</h3>
+        <div class="num-big" style="color:var(--ochre-ink)">2 of 3</div>
+        <p>At 1 and 2 weeks the LSTM beats the local baseline at Bamni and Kantamal, but not Haralahalli. At 4 and 8 weeks only Haralahalli exceeds its baseline, and both of its 8-week scores are negative. The held-out station’s own historical baseline remains essential.</p>
       </article>
     </div>
 
@@ -688,41 +686,41 @@
           <thead><tr><th scope="col">Horizon (H)</th><th scope="col">Metric</th><th scope="col" class="num">M0: Baseline</th><th scope="col" class="num">M1: Flow-Only GBT</th><th scope="col" class="num">M2: Hydro-Met GBT</th><th scope="col" class="num">Δ(M2 − M1), paired median</th><th scope="col" class="num">Δ(M2 − M0), paired median</th></tr></thead>
           <tbody>
             <!-- BENCH_TABLE:START -->
-            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">1-Week Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.284</td><td class="num">+0.458</td><td class="num m2c">+0.486</td><td class="num pos">+0.045 (p=0.027)</td><td class="num pos">+0.235 (p&lt;0.001)</td></tr>
-            <tr><th scope="row">Continuous KGE</th><td class="num">+0.643</td><td class="num">+0.537</td><td class="num m2c">+0.543</td><td class="num pos">+0.018 (p=0.519)</td><td class="num neg">-0.095</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">0.308 (n=9)</td><td class="num">1.000 (n=4)</td><td class="num m2c">0.789 (n=5)</td><td class="num pos">-46.6 pp (paired n=2)</td><td class="num">—</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.529 (n=9)</td><td class="num">0.000 (n=10)</td><td class="num m2c">0.000 (n=10)</td><td class="num">+0.000 (paired n=9)</td><td class="num neg">-0.500 (paired n=9)</td></tr>
+            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">1-Week Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.213</td><td class="num">+0.358</td><td class="num m2c">+0.459</td><td class="num pos">+0.050 (p=0.151)</td><td class="num pos">+0.257 (p=0.021)</td></tr>
+            <tr><th scope="row">Continuous KGE</th><td class="num">+0.608</td><td class="num">+0.467</td><td class="num m2c">+0.518</td><td class="num pos">+0.041 (p=0.092)</td><td class="num neg">-0.013</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">0.307 (n=8)</td><td class="num">1.000 (n=5)</td><td class="num m2c">0.708 (n=4)</td><td class="num pos">-12.5 pp (paired n=2)</td><td class="num">—</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.500 (n=9)</td><td class="num">0.000 (n=11)</td><td class="num m2c">0.000 (n=9)</td><td class="num">+0.000 (paired n=9)</td><td class="num neg">-0.500 (paired n=9)</td></tr>
           </tbody>
           <tbody>
-            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">2-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">-0.185</td><td class="num">+0.282</td><td class="num m2c">+0.331</td><td class="num pos">+0.034 (p=0.007)</td><td class="num pos">+0.543 (p&lt;0.001)</td></tr>
-            <tr><th scope="row">Continuous KGE</th><td class="num">+0.408</td><td class="num">+0.355</td><td class="num m2c">+0.375</td><td class="num pos">+0.020 (p=0.129)</td><td class="num neg">-0.012</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">0.450 (n=8)</td><td class="num">0.696 (n=8)</td><td class="num m2c">0.650 (n=5)</td><td class="num pos">-1.1 pp (paired n=3)</td><td class="num">—</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.379 (n=8)</td><td class="num">0.029 (n=9)</td><td class="num m2c">0.000 (n=9)</td><td class="num neg">-0.014 (paired n=8)</td><td class="num neg">-0.318 (paired n=8)</td></tr>
+            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">2-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">-0.191</td><td class="num">+0.218</td><td class="num m2c">+0.242</td><td class="num pos">+0.022 (p=0.266)</td><td class="num pos">+0.478 (p=0.005)</td></tr>
+            <tr><th scope="row">Continuous KGE</th><td class="num">+0.407</td><td class="num">+0.363</td><td class="num m2c">+0.399</td><td class="num pos">+0.013 (p=0.339)</td><td class="num pos">+0.030</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">0.505 (n=8)</td><td class="num">0.786 (n=7)</td><td class="num m2c">1.000 (n=3)</td><td class="num pos">-6.9 pp (paired n=2)</td><td class="num">—</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.286 (n=9)</td><td class="num">0.019 (n=10)</td><td class="num m2c">0.000 (n=10)</td><td class="num">+0.000 (paired n=10)</td><td class="num neg">-0.286 (paired n=9)</td></tr>
           </tbody>
           <tbody>
-            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">4-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.364</td><td class="num">+0.273</td><td class="num m2c">+0.292</td><td class="num neg">-0.007 (p=0.677)</td><td class="num neg">-0.033 (p=0.052)</td></tr>
-            <tr><th scope="row">Continuous KGE</th><td class="num">+0.366</td><td class="num">+0.328</td><td class="num m2c">+0.344</td><td class="num neg">-0.006 (p=0.622)</td><td class="num neg">-0.014</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">undefined (n=0)</td><td class="num">0.750 (n=11)</td><td class="num m2c">1.000 (n=9)</td><td class="num">+0.0 pp (paired n=9)</td><td class="num">—</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.000 (n=9)</td><td class="num">0.014 (n=12)</td><td class="num m2c">0.000 (n=11)</td><td class="num">+0.000 (paired n=11)</td><td class="num">+0.000 (paired n=9)</td></tr>
+            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">4-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.172</td><td class="num">+0.255</td><td class="num m2c">+0.223</td><td class="num neg">-0.014 (p=0.151)</td><td class="num neg">-0.025 (p=0.910)</td></tr>
+            <tr><th scope="row">Continuous KGE</th><td class="num">+0.307</td><td class="num">+0.396</td><td class="num m2c">+0.390</td><td class="num neg">-0.005 (p=0.791)</td><td class="num pos">+0.003</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">undefined (n=0)</td><td class="num">0.722 (n=10)</td><td class="num m2c">1.000 (n=9)</td><td class="num">+0.0 pp (paired n=9)</td><td class="num">—</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.000 (n=9)</td><td class="num">0.036 (n=11)</td><td class="num m2c">0.000 (n=11)</td><td class="num">+0.000 (paired n=11)</td><td class="num">+0.000 (paired n=9)</td></tr>
           </tbody>
           <tbody>
-            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">8-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.353</td><td class="num">+0.237</td><td class="num m2c">+0.271</td><td class="num neg">-0.014 (p=0.569)</td><td class="num neg">-0.058 (p=0.003)</td></tr>
-            <tr><th scope="row">Continuous KGE</th><td class="num">+0.367</td><td class="num">+0.326</td><td class="num m2c">+0.358</td><td class="num neg">-0.004 (p=0.791)</td><td class="num neg">-0.009</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">undefined (n=0)</td><td class="num">0.696 (n=12)</td><td class="num m2c">0.718 (n=6)</td><td class="num">+0.0 pp (paired n=6)</td><td class="num">—</td></tr>
-            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.000 (n=9)</td><td class="num">0.111 (n=12)</td><td class="num m2c">0.000 (n=9)</td><td class="num neg">-0.073 (paired n=9)</td><td class="num">+0.000 (paired n=9)</td></tr>
+            <tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">8-Weeks Ahead</th><th scope="row">Continuous NSE</th><td class="num">+0.143</td><td class="num">+0.194</td><td class="num m2c">+0.181</td><td class="num pos">+0.004 (p=0.519)</td><td class="num neg">-0.041 (p=0.519)</td></tr>
+            <tr><th scope="row">Continuous KGE</th><td class="num">+0.300</td><td class="num">+0.242</td><td class="num m2c">+0.358</td><td class="num neg">-0.008 (p=0.970)</td><td class="num neg">-0.014</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) FAR</th><td class="num">undefined (n=0)</td><td class="num">0.786 (n=11)</td><td class="num m2c">0.750 (n=7)</td><td class="num">+0.0 pp (paired n=6)</td><td class="num">—</td></tr>
+            <tr><th scope="row">Severe Drought (Q<sub>95</sub>) CSI</th><td class="num">0.000 (n=9)</td><td class="num">0.088 (n=11)</td><td class="num m2c">0.000 (n=10)</td><td class="num neg">-0.041 (paired n=9)</td><td class="num">+0.000 (paired n=9)</td></tr>
             <!-- BENCH_TABLE:END -->
           </tbody>
         </table>
       </div>
-      <div class="table-foot"><span>Up to 521 scored weeks per station (75–180 at Karad, Warunji and Yadgir after unmeasured weeks are excluded) · <strong>Log-target variant (M2-log)</strong> 1w / 2w / 4w / 8w: Log-NSE +0.844 / +0.746 / +0.647 / +0.609 (vs M0 +0.829 / +0.649 / +0.623 / +0.622); Q<sub>95</sub> CSI 0.229 / 0.060 / 0.000 / 0.000.</span><span class="swipe-hint">Swipe table horizontally for all columns →</span><span>Audited Evaluation Block</span></div>
+      <div class="table-foot"><span>Eligible weeks vary by station and horizon after observation-coverage and recorded-zero exclusions. The explorer reports the exact sample sizes and five-model comparisons.</span><span class="swipe-hint">Swipe table horizontally for all columns →</span></div>
     </div>
     <aside class="reader-guide card" id="comparison-notes" aria-labelledby="comparison-notes-title">
       <h3 id="comparison-notes-title">Read the comparisons in context</h3>
       <p>The reported Wilcoxon values are exploratory and uncorrected. Read them with the shared-drainage and sample-size caveats below.</p>
       <details><summary>Test interpretation, baselines, and sample sizes</summary>
-        <table class="test-reference" aria-label="Uncorrected M2 versus M1 Wilcoxon values"><thead><tr><th scope="col">Lead</th><th scope="col">NSE p</th><th scope="col">KGE p</th></tr></thead><tbody><tr><th scope="row">1 week</th><td>0.027</td><td>0.519</td></tr><tr><th scope="row">2 weeks</th><td>0.007</td><td>0.129</td></tr><tr><th scope="row">4 weeks</th><td>0.677</td><td>0.622</td></tr><tr><th scope="row">8 weeks</th><td>0.569</td><td>0.791</td></tr></tbody></table>
-        <p>A four-test Bonferroni reference gives a threshold of 0.0125. The one-week NSE value 0.027 does not meet that reference. The two-week value 0.007 does. The table keeps the original reported values. Shared drainages and nested gauges also limit treating stations as independent observations.</p>
-        <p>Official M0 is persistence at 1–2 weeks and weekly climatology at 4–8 weeks. Four-week lagged persistence is an additional diagnostic. The pooled severe-drought base rates are 0.0654, 0.0639, 0.0662, and 0.0670 across the four leads.</p>
+        <table class="test-reference" aria-label="Uncorrected M2 versus M1 Wilcoxon values"><thead><tr><th scope="col">Lead</th><th scope="col">NSE p</th><th scope="col">KGE p</th></tr></thead><tbody><tr><th scope="row">1w</th><td>0.151</td><td>0.092</td></tr><tr><th scope="row">2w</th><td>0.266</td><td>0.339</td></tr><tr><th scope="row">4w</th><td>0.151</td><td>0.791</td></tr><tr><th scope="row">8w</th><td>0.519</td><td>0.970</td></tr></tbody></table>
+        <p>A four-test Bonferroni reference is 0.0125. The table reports uncorrected exploratory values, not guaranteed independent confirmations: several gauges share drainages or form a nested cascade. Statistical significance alone does not establish practical warning skill.</p>
+        <p>Official M0 is persistence at 1–2 weeks and weekly climatology at 4–8 weeks. Station medians can use different station sets where ratios are undefined. Compare paired differences and sample counts instead of subtracting independently reported medians.</p>
         <p>Continuous-score medians use 12 stations. The n beside a warning metric counts stations with a defined ratio. Separate model medians can use different station subsets, so subtracting them is not a paired comparison. Columns marked paired use only stations with both values defined.</p>
       </details>
     </aside>
@@ -731,8 +729,8 @@
     <div class="dark-panel" data-reveal>
       <h3>Operational Recommendations for Central Water Commission (CWC)</h3>
       <div class="recs">
-        <div class="rec"><span class="n">1</span><div><h4>Check warning skill separately from flow accuracy</h4><p>Persistence’s station-median CSI at 1 and 2 weeks is 0.615 / 0.494 for mild Q<sub>80</sub>, 0.585 / 0.422 for moderate Q<sub>90</sub>, and 0.529 / 0.379 for severe Q<sub>95</sub>. These are severity-specific summaries over stations where CSI is defined. Inspect the event counts and undefined ratios before using a forecast as a warning.</p></div></div>
-        <div class="rec"><span class="n">2</span><div><h4>Keep both persistence and seasonal averages as references</h4><p>Official M0 uses persistence at 1–2 weeks and weekly climatology at 4–8 weeks. The additional four-week lagged-persistence diagnostic has pooled Q<sub>95</sub> CSI 0.251. Compare the models on the same scored weeks, and keep unmeasured recorded zeros out of drought event counts.</p></div></div>
+        <div class="rec"><span class="n">1</span><div><h4>Check warning skill separately from flow accuracy</h4><p>Inspect hits, misses and false alarms at each severity before using a forecast as a warning. Few-event stations can have unstable or undefined ratios. The explorer reports the frozen training-period thresholds and the event counts for each model.</p></div></div>
+        <div class="rec"><span class="n">2</span><div><h4>Keep both persistence and seasonal averages as references</h4><p>Official M0 uses persistence at 1–2 weeks and weekly climatology at 4–8 weeks. Compare each trained model against these references on the same eligible weeks. Neither weather inputs nor a more complex model guarantee better drought warnings.</p></div></div>
       </div>
     </div>
   </div>
@@ -744,7 +742,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">07</span>
       <h2>Reproducibility</h2>
-      <p>You can rebuild the published tables and website from the saved forecasts, audited metrics, and chart sources. Re-evaluating committed models requires a compatible Python environment. Retraining, especially the HydroLSTM, can produce different results.</p>
+      <p>The charts, tables and replay now use the corrected 12-station experiment with training-only preprocessing, explicit weekly windows and original-observation coverage. Saved models include their fitted preprocessing and dataset fingerprints. The source notes document Open-Meteo Best Match weather and derived Karnataka discharge provenance. See the correction plan for changes and the before/after report; changed scores also reflect changed eligible observations.</p>
     </div>
     <div class="grid g2">
       <div data-reveal style="min-width:0">
@@ -754,13 +752,14 @@
 ├── <span class="d">data/</span>
 │   ├── <span class="d">raw/</span>
 │   │   ├── <span class="d">camels_ind/</span>             <span class="c"># 1980–2020 daily hydrology &amp; meteorology (12 catchments)</span>
-│   │   ├── <span class="d">cwc/</span>                    <span class="c"># 2021–2025 CWC daily river water discharge</span>
-│   │   └── <span class="d">imd/</span>                    <span class="c"># IMD Pune 0.25° gridded daily rainfall NetCDF4 (1.27 GB)</span>
+│   │   ├── <span class="d">cwc/</span>                    <span class="c"># 2001–2025 CWC discharge; derived Karnataka archive</span>
+│   │   ├── <span class="d">era5_land/</span>              <span class="c"># Compatibility folder: supplied Open-Meteo Best Match CSVs</span>
+│   │   └── <span class="d">imd/</span>                    <span class="c"># IMD 0.25° gridded daily rainfall NetCDF4</span>
 │   └── <span class="d">processed/</span>
-│       ├── <span class="d">weekly_tensors/</span>         <span class="c"># 2,394 weekly timesteps across 39 audited features</span>
+│       ├── <span class="d">weekly_tensors/</span>         <span class="c"># 2,394 rows per station, observation counts and provenance</span>
 │       └── <span class="d">model_results/</span>          <span class="c"># Protocol 1 &amp; 2 predictions and metrics CSVs</span>
 ├── <span class="d">scripts/</span>
-│   ├── <span class="f">catchment_mean.py</span>           <span class="c"># Exact polygon-intersection area-weighted mean extraction</span>
+│   ├── <span class="f">catchment_mean.py</span>           <span class="c"># Polygon-intersection area-weighted rainfall extraction</span>
 │   ├── <span class="f">rebuild_rainfall_catchment_mean.py</span> <span class="c"># 2021–2025 IMD NetCDF catchment-mean rebuild</span>
 │   ├── <span class="f">prepare_weekly_dataset.py</span>   <span class="c"># Boundary calibration and feature engineering pipeline</span>
 │   ├── <span class="f">train_forecast_models.py</span>    <span class="c"># Tier M0 and M1 training across all 12 basins</span>
@@ -774,22 +773,22 @@
 ├── <span class="d">models/</span>                         <span class="c"># Committed fitted estimators and LSTM weights</span>
 ├── <span class="d">visualizations/</span>                 <span class="c"># Audited HTML widgets embedded in this website</span>
 └── <span class="d">docs/</span>
-    └── <span class="f">PROJECT_REPORT_DOCUMENTATION.md</span> <span class="c"># Full 20-page comprehensive technical audit report</span></pre>
+    └── <span class="f">PROJECT_REPORT_DOCUMENTATION.md</span> <span class="c"># Full project methods, results and limitations report</span></pre>
       </div>
       <div data-reveal style="--d:.1s;min-width:0">
-        <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:17px"><i data-lucide="terminal"></i>End-to-End Command Line Pipeline</h3>
-        <p style="margin:0 0 14px;color:var(--muted);font-size:14px">To reproduce the benchmark, run these stages in order. Stage 1 needs the raw CWC, IMD, and CAMELS-IND files in <code>data/raw/</code> (note that <code>rebuild_rainfall_catchment_mean.py</code> patches 2021–2025 catchment-mean rainfall directly from raw IMD NetCDF and CAMELS-IND shapefiles without requiring raw ERA5-Land files on disk); stages 2–6 run from the committed weekly tensors and models.</p>
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:17px"><i data-lucide="terminal"></i>Core Model Commands (Abbreviated)</h3>
+        <p>These are abbreviated model-building examples, not the complete reproduction sequence. The <a href="https://github.com/abhitejj/Streamflow_Project#reproduction-and-validation">README reproduction section</a> lists all raw/log training variants, the CPU transfer run, severity and uncertainty analysis, exports, report generation and validation. Raw sources and provenance are required; see <a href="docs/DATA_ACCESS.md">data-access notes</a>.</p>
         <div class="callout warn" style="margin-bottom:14px">
           <i data-lucide="alert-triangle"></i>
           <div>
             <h4>Model Overwrite Warning</h4>
-            <p>Stage 1 rebuilds processed tensors. Stages 2–3 retrain models and overwrite <code>models/</code>. Retraining, especially the HydroLSTM, can alter the results. To re-evaluate committed models, start at <strong>Stage 4</strong> (<code>python3 scripts/audit_metrics.py</code>). Use the saved tables and replay above to inspect the published results.</p>
+            <p>Stage 1 rebuilds processed tensors. Stages 2–3 retrain models and overwrite <code>models/</code>. Retraining, especially the HydroLSTM, can alter the results. <strong>Stage 4</strong> audits models produced by a complete corrected rebuild; it will reject legacy checkpoints. Use the tables and replay above to inspect the corrected results.</p>
           </div>
         </div>
         <div class="steps">
-          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/prepare_weekly_dataset.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 1: Calibration &amp; Features</small></div></div>
-          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/train_forecast_models.py --model all</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 2: M0 &amp; M1 Benchmarks (pass <code>--target log</code> for M1-log)</small></div></div>
-          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/train_m2_models.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 3: M2 Hydro-Met &amp; LSTM (pass <code>--target log</code> for M2-log)</small></div></div>
+          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/prepare_weekly_dataset.py --derived-cwc data/processed/merged/cwc_imd_merged_2001_2025.csv</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 1: Calibration &amp; Features</small></div></div>
+          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/train_forecast_models.py --protocol all --model all --target raw</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 2: M0 &amp; M1 Benchmarks (pass <code>--target log</code> for M1-log)</small></div></div>
+          <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/train_m2_models.py --protocol 1 --target raw</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 3 example: M2 GBT; separate log and pooled LSTM commands are in the README</small></div></div>
           <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/audit_metrics.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 4: Score every model on the shared evaluation mask</small></div></div>
           <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/export_benchmark_data.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 5: Site data file (medians, paired deltas, Wilcoxon tests)</small></div></div>
           <div class="step"><div class="step-body"><div class="cmd"><code>python3 scripts/generate_interactive_plots.py</code><button class="copy" type="button" aria-label="Copy command"><i data-lucide="copy"></i><span>Copy</span></button></div><small>Stage 6: Interactive charts from the scored predictions</small></div></div>
@@ -812,6 +811,7 @@
         <h3>ES 335: Machine Learning Course Project</h3>
         <p>Developed by <strong>Abhitej Singh Bhullar</strong> (Roll No. 23110009, B.Tech 4th Year, Civil Engineering) &amp; <strong>Dhruv Jalan</strong> (Roll No. 23110099, B.Tech 4th Year, Chemical Engineering)</p>
         <p>Indian Institute of Technology Gandhinagar (IITGN), Palaj, Gandhinagar, Gujarat 382355</p>
+        <p><strong>AI assistance disclosure:</strong> Antigravity and Codex assisted with coding, debugging, documentation, and visualisation. The authors remain responsible for the submitted code, interpretations, and results.</p>
       </div>
     </div>
     <div class="footer-bottom"><span>© 2026 Abhitej Singh Bhullar &amp; Dhruv Jalan • ES 335 ML Course Project • Academic Open Access</span></div>
@@ -822,11 +822,11 @@
 
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" integrity="sha384-ieG+IKD0d/ZPXyCBTMVAbqsQdns8QGJR/e26WMw7M4fkaI/rHcS/YIoi+ah9WGge" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdn.plot.ly/plotly-basic-2.35.2.min.js" integrity="sha384-wQ3lfCxuvLfhHGiSdHF5+e3NZ1zNwEMd8/nII+K7VKChF9llO/OwOcn/aVRkB7az" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="assets/benchmark-data.js"></script>
-<script src="assets/explorer-data.js"></script>
-<script src="assets/replay-manifest.js"></script>
-<script src="assets/figdata.js"></script>
-<script src="assets/charts.js"></script>
-<script src="assets/site.js"></script>
+<script src="assets/benchmark-data.js?v=23cc5e03bac761e5"></script>
+<script src="assets/explorer-data.js?v=83ba5edfa3049925"></script>
+<script src="assets/replay-manifest.js?v=d48b304bab804006"></script>
+<script src="assets/figdata.js?v=59c98f1fcb0b4363"></script>
+<script src="assets/charts.js?v=4b53801785aac414"></script>
+<script src="assets/site.js?v=bcf40859ef136890"></script>
 </body>
 </html>

@@ -179,7 +179,7 @@
       });
       draw(el, traces, baseLayout({
         margin: { l: 56, r: 18, t: 28, b: 44 },
-        yaxis: axis({ title: { text: 'Portfolio median ' + key.toUpperCase() }, range: [-0.45, 0.75], zeroline: true, zerolinecolor: C.zero, zerolinewidth: 1 }),
+        yaxis: axis({ title: { text: 'Portfolio median ' + key.toUpperCase() }, range: scoreRange(traces.reduce(function (all, trace) { return all.concat(trace.y); }, [])), zeroline: true, zerolinecolor: C.zero, zerolinewidth: 1 }),
         xaxis: axis({ title: { text: 'Forecast lead time' }, type: 'category' }),
         shapes: [{ type: 'rect', xref: 'x', yref: 'paper', x0: 1.5, x1: 3.5, y0: 0, y1: 1, fillcolor: 'rgba(212,136,28,0.07)', line: { width: 0 }, layer: 'below' }],
         annotations: [
@@ -598,11 +598,12 @@
     var hs = ['1w', '2w', '4w', '8w'];
     var drought = selection.objective === 'drought';
     var metric = drought ? selection.severity + ' CSI' : 'NSE';
+    var noEvents = drought && hs.every(function (h) { return horizons[h].drought[selection.severity].events === 0; });
     var tr = Object.keys(COMPARISON_MODEL).map(function (m) {
       var model = COMPARISON_MODEL[m];
       return {
         x: hs.map(function (h) { return H_LABEL[h]; }),
-        y: hs.map(function (h) { return drought ? horizons[h].drought[selection.severity].models[m].csi : horizons[h].flow[m].nse; }),
+        y: hs.map(function (h) { return drought ? (horizons[h].drought[selection.severity].events > 0 ? horizons[h].drought[selection.severity].models[m].csi : null) : horizons[h].flow[m].nse; }),
         name: model.name, mode: 'lines+markers',
         line: { color: model.color, width: m === 'M2' ? 2.6 : 1.8, dash: model.dash || 'solid' },
         marker: { size: hs.map(function (h) { return h === selection.lead ? 14 : 8; }), color: model.color, line: { color: '#fbfaf7', width: 1.5 } },
@@ -611,10 +612,14 @@
     });
     var plot = draw(el, tr, baseLayout({
       margin: { l: 46, r: 10, t: 8, b: 36 },
-      xaxis: axis({ type: 'category' }),
-      yaxis: axis({ title: { text: metric }, range: drought ? [-0.05, 1.05] : scoreRange(tr.reduce(function (values, trace) {
+      xaxis: axis({ type: 'category', visible: !noEvents }),
+      yaxis: axis({ visible: !noEvents, title: { text: metric }, range: drought ? [-0.05, 1.05] : scoreRange(tr.reduce(function (values, trace) {
         return values.concat(trace.y);
       }, [])), zeroline: true, zerolinecolor: C.zero }),
+      showlegend: !noEvents,
+      annotations: noEvents ? [{ xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
+        text: 'Detection cannot be assessed:<br>no observed events at this severity.',
+        showarrow: false, align: 'center', font: { family: FONT, size: 14, color: C.muted } }] : [],
       legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 11.5, color: C.ink } }
     }));
     if (!el.__selectLead) {

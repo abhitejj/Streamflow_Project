@@ -164,13 +164,24 @@
     var svg = $('#river-svg');
     if (!svg || !window.FIGDATA) return;
     var d = FIGDATA.hydro.kantamal['1w'];
-    var ys = d.obs.map(function (v) { return v === null ? 0 : Math.sqrt(Math.max(0, v)); });
-    var max = Math.max.apply(null, ys), W = 1000, H = 200, top = 34;
-    var pts = ys.map(function (v, i) { return [(i / (ys.length - 1)) * W, H - 3 - (v / max) * (H - top - 3)]; });
-    var line = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L');
+    var ys = d.obs.map(function (v) { return v === null ? null : Math.sqrt(Math.max(0, v)); });
+    var max = Math.max.apply(null, ys.filter(Number.isFinite)), W = 1000, H = 200, top = 34;
+    var segments = [], segment = [];
+    ys.forEach(function (v, i) {
+      if (v === null) {
+        if (segment.length) segments.push(segment);
+        segment = [];
+      } else {
+        segment.push([(i / (ys.length - 1)) * W, H - 3 - (v / max) * (H - top - 3)]);
+      }
+    });
+    if (segment.length) segments.push(segment);
+    function points(points) { return points.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join('L'); }
+    var line = segments.map(function (pts) { return 'M' + points(pts); }).join('');
+    var fill = segments.map(function (pts) { return 'M' + points(pts) + 'L' + pts[pts.length - 1][0] + ',' + H + 'L' + pts[0][0] + ',' + H + 'Z'; }).join('');
     var path = $('#river-line');
     path.setAttribute('d', line);
-    $('#river-fill').setAttribute('d', line + 'L' + W + ',' + H + 'L0,' + H + 'Z');
+    $('#river-fill').setAttribute('d', fill);
     path.style.setProperty('--len', path.getTotalLength());
     setTimeout(function () { $('.river').classList.add('drawn'); }, reduce ? 0 : 200);
   })();
@@ -317,13 +328,13 @@
     var baseline = selected.lead === '1w' || selected.lead === '2w' ? 'Persistence' : 'Weekly climatology';
     var source = comparisonData.sources[mode];
     var download = $('#comparison-download');
-    var common = ['station', 'lead', 'objective', 'severity', 'n_eval', 'observed_events', 'threshold_m3_s', 'model', 'source', 'source_sha256', 'schema'];
+    var common = ['station', 'lead', 'objective', 'severity', 'n_eval', 'observed_events', 'threshold_m3_s', 'assessment', 'model', 'source', 'source_sha256', 'schema'];
     var rows = [common.concat(columns.map(function (column) { return column[1]; })).join(',')];
     $('#comparison-context').textContent = drought ? severity + ' (' + SEVERITIES[severity] + ') · ' + group.events + ' observed drought weeks in ' + entry.n_eval +
       ' scored weeks · frozen threshold ≤ ' + group.threshold.toLocaleString('en-IN', { maximumFractionDigits: 4 }) + ' m³/s' :
       'Flow accuracy across ' + entry.n_eval + ' scored weeks.';
     $('#comparison-note').textContent = drought ?
-      'CSI is the share of events or alerts that were hits. POD is the share of observed events caught. FAR is the share of alerts that were false. POD is undefined with no observed events, FAR with no alerts, and CSI with neither. Scroll the table to see all columns.' :
+      group.assessment_note + ' Raw counts and ratios below are retained for traceability. CSI is the share of events or alerts that were hits. POD is the share of observed events caught. FAR is the share of alerts that were false. POD is undefined with no observed events, FAR with no alerts, and CSI with neither. Scroll the table to see all columns.' :
       'M1 uses flow history. M2 also uses weather. Log-NSE scores all models on log(1 + discharge). M1-log and M2-log were trained on log(1 + specific runoff).';
     $('#comparison-table thead').innerHTML = '<tr><th scope="col">Model</th>' + columns.map(function (column) {
       return '<th scope="col" class="num">' + column[0] + '</th>';
@@ -331,7 +342,7 @@
     $('#comparison-table tbody').innerHTML = Object.keys(Charts.comparisonModels).map(function (model) {
       var numbers = columns.map(function (column) { return values[model][column[1]]; });
       rows.push([selected.station, selected.lead, mode, drought ? severity : '', entry.n_eval, drought ? group.events : '',
-        drought ? group.threshold : '', model, source.path, source.sha256, comparisonData.schema].concat(numbers).join(','));
+        drought ? group.threshold : '', drought ? group.assessment : '', model, source.path, source.sha256, comparisonData.schema].concat(numbers).join(','));
       return '<tr><th scope="row">' + model + (model === 'M0' ? '<span class="comparison-baseline">' + baseline + '</span>' : '') + '</th>' +
         numbers.map(function (value, index) {
           var label = value === null ? 'undefined' : drought ? (index < 3 ? String(value) : value.toFixed(3)) : fmt(value);

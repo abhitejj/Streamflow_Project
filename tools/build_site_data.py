@@ -19,6 +19,7 @@ When the pipeline regenerates its widgets, drop the new files into
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -165,6 +166,8 @@ def bench_table_rows() -> str:
     label = {"1w": "1-Week Ahead", "2w": "2-Weeks Ahead", "4w": "4-Weeks Ahead", "8w": "8-Weeks Ahead"}
     out = []
     for h in ("1w", "2w", "4w", "8w"):
+        if out:
+            out.append("          </tbody>\n          <tbody>")
         m = M[h]
         P = lambda k: f" (p{m[k].replace('<', '&lt;')})" if m[k].startswith("<") else f" (p={m[k]})"
         rows = [
@@ -178,10 +181,10 @@ def bench_table_rows() -> str:
              (m["csi_delta"].replace("(n=", "(paired n="), ""), (m["csi_delta_m2_m0"].replace("(n=", "(paired n="), "")),
         ]
         for i, (name, a, b, c, d1, d0) in enumerate(rows):
-            head = f'<tr class="group-start"><td class="hz" rowspan="4">{label[h]}</td>' if i == 0 else "<tr>"
+            head = f'<tr class="group-start"><th scope="rowgroup" class="hz" rowspan="4">{label[h]}</th>' if i == 0 else "<tr>"
             # Lower FAR is better, so colour FAR deltas inversely.
             c1 = _cls(d1[0]) if "FAR" not in name else {"num pos": "num neg", "num neg": "num pos"}.get(_cls(d1[0]), "num")
-            out.append(f'            {head}<td>{name}</td><td class="num">{a}</td><td class="num">{b}</td>'
+            out.append(f'            {head}<th scope="row">{name}</th><td class="num">{a}</td><td class="num">{b}</td>'
                        f'<td class="num m2c">{c}</td><td class="{c1}">{d1[0]}{d1[1]}</td><td class="{_cls(d0[0])}">{d0[0]}{d0[1]}</td></tr>')
     return "\n".join(out)
 
@@ -201,7 +204,7 @@ PAGES = {
     "interactive_hydrograph_kantamal_h4w": ("Forecast replay · Kantamal · 4-week lead", "hydro:kantamal:4w", "Out-of-sample test block 2016–2025."),
     "interactive_pr_curves_severe_drought": ("Severe drought (Q95) precision–recall", "pr", "Hover a curve to read the discharge cutoff and false alarm ratio."),
     "interactive_kge_component_decomposition": ("KGE component decomposition", "kge", "Correlation r, variability ratio α and bias ratio β; 1.0 is ideal."),
-    "interactive_feature_importance_shift": ("Feature importance · 1-week vs 8-week lead", "fi", "Share of M2 permutation importance (%), mean over the 8 stations with complete low-flow records."),
+    "interactive_feature_importance_shift": ("Feature importance · 1-week vs 8-week lead", "fi", "Share of M2 permutation importance (%), mean over the eight stations outside the recorded-zero exclusion policy."),
     "interactive_spatial_transfer_grouped_bars": ("Zero-shot transfer to held-out basins", "transfer", "NSE on basins excluded from training, at every lead time."),
 }
 
@@ -235,6 +238,21 @@ TEMPLATE = """<!DOCTYPE html>
 """
 
 
+def version_local_assets(html: str, page_dir: Path) -> str:
+    """Content-address local JS/CSS URLs so cached runs cannot mix data versions."""
+    def replace(match):
+        prefix, url, suffix = match.groups()
+        path = url.split('?', 1)[0]
+        if path.startswith(('https:', 'http:', '//')):
+            return match.group(0)
+        asset = (page_dir / path).resolve()
+        if not asset.is_file():
+            raise FileNotFoundError(f'Cannot version missing asset: {asset}')
+        digest = hashlib.sha256(asset.read_bytes()).hexdigest()[:16]
+        return f'{prefix}{path}?v={digest}{suffix}'
+    return re.sub(r'((?:src|href)=")([^"\s]+\.(?:js|css)(?:\?[^"\s]*)?)(")', replace, html)
+
+
 def main() -> None:
     fig = {
         "hydro": hydrographs(),
@@ -251,9 +269,11 @@ def main() -> None:
     print(f"wrote {OUT_JS.relative_to(ROOT)} ({OUT_JS.stat().st_size / 1024:.0f} KB)")
     for name, (title, chart, sub) in PAGES.items():
         replay_script = '<script src="../assets/replay-manifest.js"></script>\n' if chart.split(":")[0] == "hydro" else ""
-        (VIZ / f"{name}.html").write_text(TEMPLATE.format(title=title, chart=chart, sub=sub, replay_script=replay_script))
+        html = TEMPLATE.format(title=title, chart=chart, sub=sub, replay_script=replay_script)
+        (VIZ / f"{name}.html").write_text(version_local_assets(html, VIZ))
     print(f"wrote {len(PAGES)} standalone chart pages to visualizations/")
     write_bench_table()
+    INDEX.write_text(version_local_assets(INDEX.read_text(), INDEX.parent))
 
 
 if __name__ == "__main__":
