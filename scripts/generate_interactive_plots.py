@@ -201,6 +201,7 @@ def generate_interactive_hydrographs(out_dir):
     stations = [
         ('Karad', 'Maharashtra (Upper Krishna Basin)'),
         ('Kantamal', 'Odisha (Tel / Mahanadi Basin)'),
+        ('Anandpur', 'Odisha (Baitarani Basin)'),
     ]
     saved_files = []
     panels = {}
