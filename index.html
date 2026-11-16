@@ -298,6 +298,35 @@
       <p>The benchmark covers 1980–2025 at 12 CWC gauges in Maharashtra, Odisha, and Karnataka. Several gauges share the Godavari or Krishna drainage, and Warunji ⊂ Karad ⊂ Huvinhedigi is a nested cascade. Each station has 2,394 weekly rows, labelled 25 February 1980–5 January 2026; the last bin includes late-2025 dates. Test issue dates and scored targets remain within 2016–2025, with missing and unmeasured weeks excluded from scoring.</p>
     </div>
 
+    <div class="callout note" data-reveal>
+      <i data-lucide="layers"></i>
+      <div>
+        <h4><strong>Unit of Analysis: What One Row of Data Represents</strong></h4>
+        <p>Each row in our dataset represents <strong>one river gauging station at a single Monday forecast issue time (00:00 UTC)</strong>. Across all 12 gauges over 1980–2025, each station has 2,394 weekly issue rows (28,728 total station-weeks).</p>
+        <p><strong>Predictor features (preceding 7 days):</strong> Inputs aggregate observations from the Monday-to-Sunday window immediately preceding the issue date (strictly excluding issue-day Monday flow to eliminate look-ahead leakage). Predictors include recent weekly mean discharge, within-week extremes, and recession rates; catchment-averaged rainfall, temperature extrema, reference ET₀, water deficit (P − ET₀), and 30-day antecedent precipitation index (API<sub>30d</sub>, decay 0.85); plus annual calendar harmonics (sin, cos).</p>
+        <p><strong>Target labels (future horizons):</strong> For each lead horizon H ∈ {1, 2, 4, 8} weeks ahead, the target is the future weekly mean streamflow over the 7-day period ending H weeks later. Targets are evaluated as both volumetric discharge (Q in m³/s) and catchment-normalised specific runoff (q in mm/week). A target is scored only if it contains at least 4 original daily measurements.</p>
+        <p><strong>Concrete example:</strong> For a forecast issued on Monday, 4 January 2016 at Kantamal, predictors use observed flow and weather from 28 December 2015 through 3 January 2016. Its 1-week target (H = 1) is the mean measured discharge over 4–10 January 2016 (labelled Monday, 11 January).</p>
+      </div>
+    </div>
+
+    <details class="card dataset-glance-card" data-reveal style="cursor: pointer;">
+      <summary style="cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; user-select: none;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="icon-tile it-blue" style="margin: 0;"><i data-lucide="database"></i></span>
+          <h3 style="font-family: var(--serif); font-size: 21px; font-weight: 600; margin: 0; color: var(--ink); letter-spacing: -0.01em;">Dataset at a Glance</h3>
+        </div>
+        <span class="chip blue" style="font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em;">Click to expand ▾</span>
+      </summary>
+      <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); cursor: default;">
+        <ul class="ticks" style="margin-top: 4px;">
+          <li><span><strong>Data Sources:</strong> 12 Central Water Commission (CWC) streamflow gauges integrated with CAMELS-IND (2001–2025 precedence / 1980–2020 fallback), IMD 0.25° daily gridded precipitation, and Open-Meteo Best Match daily temperature &amp; FAO-56 reference evapotranspiration (ET₀) magnitude-scaled to GLEAM baseline on 2001–2010.</span></li>
+          <li><span><strong>Size &amp; Temporal Coverage:</strong> 12 river basins across Peninsular India (Maharashtra, Odisha, Karnataka; catchment areas from 388 to 115,200 km²), spanning 46 years (1980–2025). Each gauge contains 2,394 weekly issue rows, yielding 28,728 total station-weeks partitioned into training (1980–2010), validation (2011–2015), and test (2016–2025) blocks.</span></li>
+          <li><span><strong>Key Variables:</strong> Streamflow discharge (volumetric Q in m³/s and specific runoff q in mm/week), within-week extremes and recession rates; catchment-mean rainfall totals and dry-day count; daily temperature extrema and mean; reference ET₀ and water deficit (P − ET₀); 30-day antecedent precipitation index (API<sub>30d</sub>, normalized decay 0.85); and annual calendar harmonics (sin, cos).</span></li>
+          <li><span><strong>Quality Control &amp; Eligibility:</strong> Portfolio inclusion requires &lt;15% missing daily records over the full record; zero-as-unmeasured masking policy is enforced for 4 stations (Karad, Warunji, Yadgir, Huvinhedigi); physical sanity cap masks discharge &gt;50,000 m³/s; weekly targets strictly require at least 4 original measured daily values (missing days and targets are never interpolated).</span></li>
+        </ul>
+      </div>
+    </details>
+
     <div class="card" data-reveal>
       <div class="flow" data-stagger>
         <div class="flow-step" data-reveal><span class="dot"><i data-lucide="waves"></i></span><h4>Streamflow Q</h4><p>CAMELS-IND fallback + CWC precedence where available, 2001–2025</p></div>
@@ -307,25 +336,23 @@
       </div>
     </div>
 
-    <div class="grid g-split">
-      <div class="chart-card" data-reveal>
-        <header><div><span class="kicker">Portfolio map</span><h3>12 catchments by size and aridity</h3><p>Each marker is one gauge; hollow ochre markers are the Protocol 2 holdouts. Hover for sub-basin and role.</p></div></header>
-        <div class="chart-body"><div class="chart" data-chart="portfolio" role="img" aria-label="Scatter of catchment area against aridity index for the 12 gauges"></div></div>
-      </div>
-      <div class="grid" data-stagger>
-        <article class="card source" data-reveal>
-          <span class="icon-tile it-blue"><i data-lucide="waves"></i></span>
-          <div><h3>1. Streamflow Discharge (Q)</h3><p>CAMELS-IND and CWC daily discharge records are combined, with missing measurements retained. Karnataka CWC records are recovered from the derived daily archive with documented provenance. Discharge is converted to specific runoff (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/week).</p></div>
-        </article>
-        <article class="card source" data-reveal>
-          <span class="icon-tile it-teal"><i data-lucide="cloud-rain"></i></span>
-          <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) is joined to IMD 0.25° gridded rainfall for 2021–2025, extracted as catchment-area-weighted means. Scale factors use paired finite days in 2001–2010 only. Missing grid days remain missing; daily coverage is checked before calculating rainfall windows. See the source and calibration notes for station-level coefficients.</p></div>
-        </article>
-        <article class="card source" data-reveal>
-          <span class="icon-tile it-ochre"><i data-lucide="thermometer-sun"></i></span>
-          <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>Historical temperature and GLEAM PET are joined to Open-Meteo default Best Match temperature and FAO-56 reference ET0 for 2021–2025. Offsets and scale factors are fitted on 2001–2010 only. Best Match can combine model products and is not verified pure ERA5-Land. Scaling adjusts magnitude, not physical formulation or temporal agreement; Kudige PET has near-zero weekly agreement in the calibration overlap.</p></div>
-        </article>
-      </div>
+    <div class="grid g2" data-stagger>
+      <article class="card source" data-reveal>
+        <span class="icon-tile it-blue"><i data-lucide="waves"></i></span>
+        <div><h3>1. Streamflow Discharge (Q)</h3><p>CAMELS-IND and CWC daily discharge records are combined, with missing measurements retained. Karnataka CWC records are recovered from the derived daily archive with documented provenance. Discharge is converted to specific runoff (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/week).</p></div>
+      </article>
+      <article class="card source" data-reveal>
+        <span class="icon-tile it-teal"><i data-lucide="cloud-rain"></i></span>
+        <div><h3>2. Gridded Rainfall (P)</h3><p>CAMELS-IND daily rainfall (1980–2020) is joined to IMD 0.25° gridded rainfall for 2021–2025, extracted as catchment-area-weighted means. Scale factors use paired finite days in 2001–2010 only. Missing grid days remain missing; daily coverage is checked before calculating rainfall windows. See the source and calibration notes for station-level coefficients.</p></div>
+      </article>
+      <article class="card source" data-reveal>
+        <span class="icon-tile it-ochre"><i data-lucide="thermometer-sun"></i></span>
+        <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>Historical temperature and GLEAM PET are joined to Open-Meteo default Best Match temperature and FAO-56 reference ET0 for 2021–2025. Offsets and scale factors are fitted on 2001–2010 only. Best Match can combine model products and is not verified pure ERA5-Land. Scaling adjusts magnitude, not physical formulation or temporal agreement; Kudige PET has near-zero weekly agreement in the calibration overlap.</p></div>
+      </article>
+      <article class="card source" data-reveal>
+        <span class="icon-tile it-blue"><i data-lucide="layers"></i></span>
+        <div><h3>4. Weekly Tensors &amp; Horizon Alignment</h3><p>Daily discharge and weather series are aggregated into Monday-labelled weekly steps. The preceding Monday–Sunday window forms the predictor set, strictly excluding issue-day flow to eliminate look-ahead leakage. Multi-horizon targets (H ∈ {1, 2, 4, 8} weeks ahead) require at least 4 valid daily measurements. Unmeasured weeks are masked from scoring without interpolation.</p></div>
+      </article>
     </div>
 
     <section class="card catchment-map" id="catchment-map" aria-labelledby="catchment-map-heading" data-reveal>
@@ -418,6 +445,49 @@
       <span class="section-no">03</span>
       <h2>Methodology &amp; Anti-Leakage Protocol</h2>
       <p>This is a retrospective weekly forecasting experiment for future discharge at horizons H ∈ {1, 2, 4, 8} weeks. A row labelled Monday uses daily records from the preceding Monday through Sunday and excludes that Monday’s daily record. Learned corrections, replacement medians and scaling are fitted on training data and reused unchanged. These historical products do not establish real-time release availability at Monday 00:00 UTC.</p>
+    </div>
+
+    <div class="card" data-reveal>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <span class="icon-tile it-ochre"><i data-lucide="filter"></i></span>
+        <div>
+          <span class="kicker" style="margin:0;">Data Pipeline Rationale</span>
+          <h3 style="margin:0; font:600 19px/1.3 var(--sans);"><strong>Preprocessing Choices &amp; Why They Were Made</strong></h3>
+        </div>
+      </div>
+      <p style="margin:0 0 16px; font-size:15px; color:var(--ink-2);">Every preprocessing transformation in the pipeline was selected to prevent look-ahead leakage, address extreme catchment scale differences, and ensure rigorous evaluation across heterogeneous data sources:</p>
+
+      <div class="grid g2" data-stagger>
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">1. Weekly Aggregation &amp; Issue-Time Embargo</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Left-closed, Monday-labelled weekly steps aggregating Monday 00:00 through Sunday 23:59 UTC, strictly excluding issue-day Monday measurements.<br><strong>Why:</strong> Replicates operational forecasting where Monday decisions are issued before Monday flow occurs, completely eliminating look-ahead leakage.</p>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">2. Specific Runoff Normalisation (q)</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Converting volumetric discharge (Q in m³/s) to depth-equivalent specific runoff (q = Q × 604.8 / Area in mm/week).<br><strong>Why:</strong> Catchment areas span 388 to 115,200 km² (a 300-fold disparity). Area-normalisation enables valid cross-basin comparison and pooled spatial transfer without large rivers dominating loss functions.</p>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">3. Training-Only Meteorological Calibration</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Scaling multipliers for IMD rainfall and Open-Meteo FAO ET₀, and temperature offsets, fitted strictly on 2001–2010 paired days.<br><strong>Why:</strong> Harmonises historical baselines (CAMELS-IND, GLEAM) with modern products while strictly walling off validation (2011–2015) and test (2016–2025) periods from feature parameter estimation.</p>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">4. Target Integrity &amp; Strict Non-Interpolation</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Weekly targets require ≥4 original valid daily measurements. Missing targets and unmeasured days are never interpolated; predictor features use frozen training medians.<br><strong>Why:</strong> Target interpolation would fabricate synthetic ground truth and inflate apparent skill. Freezing predictor imputation prevents test-distribution leakage.</p>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">5. Recorded-Zero Policy for 4 Stations</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Treating runs of recorded zero discharge during active monsoon months as unmeasured missing values at Karad, Warunji, Yadgir, and Huvinhedigi.<br><strong>Why:</strong> CWC gauge logs indicate gauge dropouts rather than genuine dry riverbeds during high-flow seasons. Masking prevents severe distortion of regression losses and false drought alerts.</p>
+        </div>
+
+        <div style="background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px;">
+          <h4 style="margin:0 0 6px; font:600 15px/1.3 var(--sans); color:var(--ink);">6. Terminal H-Week Purge Embargo</h4>
+          <p style="margin:0; font-size:14px; line-height:1.55; color:var(--ink-2);"><strong>Choice:</strong> Dropping the final H issue weeks of the training period (ending 2010) and validation period (ending 2015) for each lead horizon H ∈ {1, 2, 4, 8}.<br><strong>Why:</strong> Forecasts issued within H weeks of split boundaries have targets falling into the next split; purging eliminates target overlap leakage across partitions.</p>
+        </div>
+      </div>
     </div>
 
     <div class="tiers" data-stagger>
