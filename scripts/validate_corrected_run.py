@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate one complete corrected result set and write a traceable run receipt."""
+"""Validate one complete benchmark result set and write a traceable run receipt."""
 import hashlib
 import json
 import subprocess
@@ -60,11 +60,11 @@ def main():
     paths = models + weights + list(TENSORS.glob('*.provenance.json')) + list(RESULTS.glob('*.csv'))
     paths += list((ROOT/'scripts').glob('*.py')) + list((ROOT/'assets').glob('*.js')) + list((ROOT/'assets/replay').glob('*.json'))
     paths += list((ROOT/'visualizations/source').glob('*.html')) + [ROOT/'requirements.txt']
-    paths += [ROOT/'README.md', ROOT/'docs/PROJECT_REPORT_DOCUMENTATION.md', ROOT/'docs/METHODOLOGY_REPAIR_PLAN.md', ROOT/'docs/DATA_ACCESS.md', ROOT/'docs/WEATHER_SOURCE_PROVENANCE.md', ROOT/'docs/DECISION_LOG.md', ROOT/'docs/UNCERTAINTY_METHOD.md']
+    paths += [ROOT/'README.md', ROOT/'docs/PROJECT_REPORT_DOCUMENTATION.md', ROOT/'docs/DATA_ACCESS.md', ROOT/'docs/DECISION_LOG.md', ROOT/'docs/UNCERTAINTY_METHOD.md']
     paths += list((ROOT/'tests').glob('*.py'))
     paths += list((ROOT/'tools').glob('*.py'))
     paths += [ROOT/'data/processed/validation_reports/weather_input_manifest.json']
-    manifest = {'run_kind': 'corrected retrospective hindcast', 'validated_at_utc': datetime.now(timezone.utc).isoformat(),
+    manifest = {'run_kind': 'retrospective streamflow and drought benchmark', 'validated_at_utc': datetime.now(timezone.utc).isoformat(),
                 'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                 'working_tree_changes': True, 'tensor_sha256': fingerprints, 'raw_source_sha256': raw_hashes,
                 'artifact_sha256': {str(path.relative_to(ROOT)): sha(path) for path in sorted(set(paths))},

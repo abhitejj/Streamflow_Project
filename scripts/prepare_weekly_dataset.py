@@ -740,7 +740,7 @@ def run_pipeline(target_stations=None, metric_scaled=False, derived_cwc=None):
         f.write("# 📋 Data Pipeline Integrity & Missingness Report (1980–2025)\n\n")
         f.write(f"- **Generated:** {datetime.datetime.now().isoformat()}\n")
         f.write(f"- **Timeline Array:** {START_DATE} to {END_DATE} ({len(timeline)} days)\n")
-        f.write(f"- **Missingness Limit:** < 15.0% (Option M1 approved: zero daily interpolation; unobserved targets left as NaN requiring >=4 original measurements)\n")
+        f.write(f"- **Missingness Limit:** < 15.0% (zero daily interpolation; unobserved targets left as NaN requiring >=4 original measurements)\n")
         f.write(f"- **Interpolation policy:** no daily flow interpolation\n")
         f.write(f"- **Missing flow:** all gaps remain NaN; weekly targets require four original observations.\n\n")
         f.write("| Station | Gauge ID | Daily Missing % | Max Daily Gap | Total Weeks | Observed Weeks | Unobserved (NaN) | Status |\n")

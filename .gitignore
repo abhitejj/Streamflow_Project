@@ -68,4 +68,11 @@ screenshots/
 # Local-only browser tests and their generated captures
 browser-tests/
 
+# Local project history and working notes
+docs/archive/DECISION_LOG_HISTORICAL.md
+docs/AUDIT_LOG.md
+docs/METHODOLOGY_REPAIR_PLAN.md
+docs/REVIEW_FIX_PROGRESS.md
+docs/WEATHER_SOURCE_PROVENANCE.md
+
 

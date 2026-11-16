@@ -2,7 +2,7 @@
 
 - **Generated:** 2026-11-16T02:53:01.799902
 - **Timeline Array:** 1980-01-01 to 2025-12-31 (16802 days)
-- **Missingness Limit:** < 15.0% (Option M1 approved: zero daily interpolation; unobserved targets left as NaN requiring >=4 original measurements)
+- **Missingness Limit:** < 15.0% (zero daily interpolation; unobserved targets left as NaN requiring >=4 original measurements)
 - **Interpolation policy:** no daily flow interpolation
 - **Missing flow:** all gaps remain NaN; weekly targets require four original observations.
 

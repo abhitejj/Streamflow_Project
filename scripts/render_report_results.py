@@ -171,8 +171,8 @@ def result_tables(d):
 
 def readme_md(d, pr):
     continuous, drought = result_tables(d)
-    lines = ["### Corrected retrospective results (2016–2025 test block)", "",
-             "Generated from newly audited models and observed targets. M0 is lagged persistence at one and two weeks, weekly climatology at four and eight weeks. "
+    lines = ["### Results (2016–2025 test block)", "",
+             "Calculated from saved models and observed targets. M0 is lagged persistence at one and two weeks, weekly climatology at four and eight weeks. "
              "NSE differences below are paired station differences, not differences between portfolio medians. "
              "Weather includes catchment-mean IMD rainfall and calibrated Open-Meteo default Best Match temperature/reference ET0 after 2020; it is not verified pure ERA5-Land.", "",
              md_table(continuous), "",
@@ -181,7 +181,7 @@ def readme_md(d, pr):
              "**Warning performance:** Compare severity-specific counts and the five-model tables in the report/explorer. "
              "Good continuous flow scores do not establish good drought-warning performance. Undefined ratios are not zero skill.", "",
              "**Scope:** These are retrospective forecasts; real-time data publication delays are not simulated. "
-             "Sources, preprocessing, missingness, and models changed together in this repair, so old/new score changes cannot be attributed to one cause.", ""]
+             "Comparisons require the same targets, source inputs and eligible observations; scores from different pipeline versions cannot isolate the effect of one change.", ""]
     return "\n".join(lines)
 
 
@@ -191,9 +191,9 @@ def report_md(d, pr, fi, fg, sens, rob):
     availability["assessment"] = [drought_availability(row.station, row.q95_threshold, row.test_q95_event_count)["assessment"]
                                   for row in availability.itertuples()]
     unavailable = int(availability.test_q95_event_count.eq(0).sum())
-    lines = ["## 10. Corrected results and evaluation", "",
-             "These tables are regenerated from the complete corrected run; old model scores are not reused. "
-             "Train/validation/test dates, lead horizons and primary metrics are unchanged. "
+    lines = ["## 10. Results and evaluation", "",
+             "These tables are calculated from the saved forecasts and observed targets. "
+             "The chronological train/validation/test split is applied at every lead. "
              "Daily targets are never filled from future observations; a weekly discharge target requires four original daily measurements. "
              "Weekly bins explicitly exclude the labelled Monday's daily record. Source harmonisation fits only 2001–2010.", "",
              "Later temperature and FAO reference ET0 inputs were supplied through Open-Meteo's historical API with its default Best Match model selection. "
@@ -210,7 +210,7 @@ def report_md(d, pr, fi, fg, sens, rob):
              "### 10.3 Scoring coverage and event counts", "",
              md_table(availability), "",
              f"{unavailable} of 48 station–lead cases have no scored severe-drought events. Detection cannot be assessed in those cases; false-alarm counts are still observable. "
-             "At Yadgir the frozen Q95 threshold is zero and recorded-zero targets are excluded, so the approved evaluation rule makes the event structurally unavailable. "
+             "At Yadgir the frozen Q95 threshold is zero and recorded-zero targets are excluded, so the evaluation rule makes the event structurally unavailable. "
              "These statuses do not change thresholds, masks, raw contingency counts or the reported metric definitions. Raw CSI ratios in zero-event cases are not evidence of detection skill.", "",
              "Recorded-zero gaps at the four configured stations are excluded using the same rule for all models. "
              "That classification remains an inference from the monitoring pattern rather than a complete source flag for every measurement.", "",
@@ -267,7 +267,7 @@ def report_md(d, pr, fi, fg, sens, rob):
               "- This is a retrospective hindcast; publication latency and operational availability have not been reproduced.",
               "- The new source is Open-Meteo default Best Match, so a homogeneous reanalysis-model claim is not supported.",
               "- Reference ET0 scaled to historical PET remains a different physical formulation.",
-              "- Missing daily discharge is preserved. The approved <15% raw missingness rule retains twelve gauges; actual weekly coverage and rare drought-event counts vary.",
+              "- Missing daily discharge is preserved. The <15% raw missingness rule retains twelve gauges; actual weekly coverage and rare drought-event counts vary.",
               "- Shared drainages and the nested cascade limit station-level statistical independence.",
               "- Source replacement, timing correction, interpolation removal and retraining occurred together. The before/after comparison is not an isolated causal ablation.",
               "- Saved model bundles include fitted preprocessing and hashes of the tensors used. Full retraining can vary, especially for the LSTM; committed-output reproducibility differs from bitwise retraining reproducibility.", ""]

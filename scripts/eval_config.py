@@ -1,6 +1,6 @@
 """Shared evaluation settings, imported by every script that scores or reports results."""
 
-# These four stations use the approved recorded-zero-as-missing scoring policy.
+# These four stations use the configured recorded-zero-as-missing scoring policy.
 # Their post-2010 increase in recorded zeros suggests changed monitoring coverage;
 # monsoon-only operation is a possible explanation, not independently verified CWC
 # metadata. Overlap agreement with CAMELS-IND is evidence about matching source
