@@ -515,8 +515,8 @@
       { x: a, y: f, name: '1-week lead', mode: 'markers', marker: { size: 11, color: '#fbfaf7', line: { color: C.ink, width: 2 } }, hovertemplate: '%{y}<br>1-week lead: %{x:.1f}%<extra></extra>' },
       { x: b, y: f, name: '8-week lead', mode: 'markers', marker: { size: 11, color: C.dry, line: { color: '#fbfaf7', width: 1.5 } }, hovertemplate: '%{y}<br>8-week lead: %{x:.1f}%<extra></extra>' }
     ], baseLayout({
-      margin: { l: 10, r: 18, t: 12, b: 44 },
-      xaxis: axis({ title: { text: 'Relative importance (%)' }, range: [-2, 72] }),
+      margin: { l: 10, r: 24, t: 12, b: 44 },
+      xaxis: axis({ title: { text: 'Relative importance (%)' }, range: [-2, 85], dtick: 20 }),
       yaxis: axis({ showgrid: false, showline: false, tickfont: { family: FONT, size: 12, color: C.ink } })
     }));
   }
