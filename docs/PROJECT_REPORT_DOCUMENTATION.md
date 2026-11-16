@@ -1,12 +1,12 @@
 # Streamflow and Hydrological Drought Forecasting
-## ES 335 project report — corrected retrospective benchmark
+## ES 335 project report — streamflow and drought benchmark
 
 **Team:** Abhitej Singh Bhullar and Dhruv Jalan
 
 **Institution:** Indian Institute of Technology Gandhinagar
-**Revision:** Corrected experiment, 16 November 2026
+**Date:** 16 November 2026
 
-This report explains the corrected experiment. Numerical sections below are generated from saved evaluation artifacts; the run manifest, rather than a filename or an earlier score, identifies the inputs and models. Earlier results are preserved separately for comparison and must not be combined with the corrected tensors.
+This report explains the benchmark methods, results and limitations. Numerical sections are generated from saved evaluation artifacts. The run manifest identifies the inputs, fitted models and outputs used together in this experiment.
 
 ## 1. Question, scope and unit of analysis
 
@@ -24,7 +24,7 @@ The portfolio contains 12 gauges in Maharashtra, Odisha and Karnataka. Warunji, 
 | --- | --- | --- |
 | Discharge | CAMELS-IND historical records | CWC manual daily records; source precedence and date matching are implemented in the dataset builder |
 | Rainfall | CAMELS-IND catchment-mean forcings through 2020 | IMD 0.25° daily grids for 2021–2025, averaged using catchment/grid intersection weights |
-| Temperature | CAMELS-IND catchment forcings through 2020 | User-supplied Open-Meteo Archive daily mean/max/min temperature, requested at gauge coordinates |
+| Temperature | CAMELS-IND catchment forcings through 2020 | Supplied Open-Meteo Archive daily mean/max/min temperature, requested at gauge coordinates |
 | Evaporative demand | CAMELS-IND GLEAM series through 2020 | Open-Meteo FAO reference ET₀, magnitude-scaled using the training overlap; this is not the same physical quantity as GLEAM PET |
 | Geography | CAMELS-IND attributes and catchment polygons | Static catchment area is used for runoff conversion and rainfall extraction |
 
@@ -32,9 +32,9 @@ The weather acquisition script omits the model-selection parameter. Open-Meteo d
 
 All 12 supplied weather CSVs contain 9,131 daily rows for 2001–2025, with unique dates, finite fields, ordered temperature extrema and nonnegative ET₀. These are integrity checks, not independent verification of the provider's physical measurements or product identity.
 
-Karnataka daily discharge was recovered from the processed merged file. The recreated archive matches its Karnataka original-field records apart from row order and serial numbering. The corrected build explicitly identifies the derived input and records its hash; it does not claim recovery of the original CWC archive.
+Karnataka daily discharge was recovered from the processed merged file. The recreated archive matches its Karnataka original-field records apart from row order and serial numbering. The dataset builder explicitly identifies the derived input and records its hash; it does not claim recovery of the original CWC archive.
 
-Raw inputs remain local and excluded from Git. Access and redistribution rights must be checked with the source providers. See [data requirements](DATA_ACCESS.md), [weather provenance](WEATHER_SOURCE_PROVENANCE.md), the local source inventory and each tensor's provenance sidecar. The [Open-Meteo source documentation](https://open-meteo.com/en/docs/historical-weather-api) explains model selection and reference evapotranspiration.
+Raw inputs remain local and excluded from Git. Access and redistribution rights must be checked with the source providers. See [data requirements](DATA_ACCESS.md), the local source inventory and each tensor's provenance sidecar. The [Open-Meteo source documentation](https://open-meteo.com/en/docs/historical-weather-api) explains model selection and reference evapotranspiration.
 
 The local CAMELS-IND disclaimer requires citation of its data-description article: [Mangukiya et al. (2025), *CAMELS-IND: hydrometeorological time series and catchment attributes for 228 catchments in Peninsular India*](https://essd.copernicus.org/articles/17/461/2025/). The article links the [dataset repository](https://doi.org/10.5281/zenodo.14005378); the local-file hashes identify the bundle actually used and should not be mistaken for verification of a particular downloaded release.
 
@@ -42,7 +42,7 @@ The local CAMELS-IND disclaimer requires citation of its data-description articl
 
 Invalid discharge above the existing 50,000 m³/s ceiling is masked. This ceiling is a coarse clerical-error screen, not proof of physical plausibility for every catchment. **No daily discharge or weather series is filled by two-sided temporal interpolation.**
 
-Under the approved revised inclusion rule, a station is retained if raw daily discharge missingness over the full record is below 15%. This descriptive cohort rule is distinct from the weekly target-eligibility rule. Recorded zeros can additionally represent unmeasured flow, so the raw non-missing percentage alone does not establish usable low-flow coverage.
+Under the inclusion rule, a station is retained if raw daily discharge missingness over the full record is below 15%. This descriptive cohort rule is distinct from the weekly target-eligibility rule. Recorded zeros can additionally represent unmeasured flow, so the raw non-missing percentage alone does not establish usable low-flow coverage.
 
 A weekly discharge target requires at least **four original measured daily values**. The builder records the measured-day count before any model feature imputation. Weeks below this minimum remain missing and are not used as observed targets. A four-day mean is not a complete seven-day measurement.
 
@@ -58,7 +58,7 @@ Rainfall and evaporative-demand multipliers are ratios of paired training sums. 
 
 These corrections adjust average magnitude. They do not establish identical physical formulations, remove all structural breaks, or prove that a changing weather-product blend is homogeneous. Temperature and ET₀ remain gauge-point inputs rather than catchment averages. Low permutation importance cannot prove their spatial mismatch is negligible.
 
-The previous experiment's 2015–2020 calibration overlapped its test period. Those coefficients and diagnostic correlations are not reused for the corrected run. See the freshly generated structural-break report for current coefficients and fit diagnostics.
+The structural-break report records the training-period coefficients and fit diagnostics. Calibration uses no observations from the validation or test periods.
 
 ## 5. Weekly timing and features
 
@@ -90,7 +90,7 @@ The fitted feature ordering, training replacement values, scaling, dataset hashe
 
 The primary split remains **1980–2010 training, 2011–2015 validation, and 2016–2025 testing**. The last H issue rows of training and validation are purged for horizon H so their future targets do not cross split boundaries. Feature-only historical context is not a fitting label.
 
-The corrected model comparison uses a common evaluation mask within each station/horizon: valid observed target and issue flow, required finite predictions, and the station-specific recorded-zero rule. The full forecast export also retains unscored rows; its scored flag must be respected. Reported station medians and pooled weekly scores answer different questions and are labelled separately.
+The model comparison uses a common evaluation mask within each station/horizon: valid observed target and issue flow, required finite predictions, and the station-specific recorded-zero rule. The full forecast export also retains unscored rows; its scored flag must be respected. Reported station medians and pooled weekly scores answer different questions and are labelled separately.
 
 - **NSE:** Squared-error skill relative to the evaluated observations' mean; one is perfect and zero matches that reference. It is not a universal comparison with the project's M0.
 - **KGE:** Combines correlation, relative variability and mean bias; one is ideal. Its components help explain failures.
@@ -103,7 +103,7 @@ Thresholds, model replacement values and scalers are training-derived. Validatio
 
 ## 8. Interpretation, uncertainty and limitations
 
-The strongest claims concern **comparisons within the corrected experiment** on the same observed targets. Old-versus-new results describe two pipeline versions: target windows, weather inputs and eligible rows changed. Common issue dates alone do not make them the same evaluation task. A difference between their scores must not be presented as a causal improvement due to one repair.
+The strongest claims concern **comparisons on the same observed targets**. Old-versus-new results describe two pipeline versions: target windows, weather inputs and eligible rows changed. Common issue dates alone do not make them the same evaluation task. A difference between their scores cannot isolate the effect of one methodological change.
 
 Wilcoxon tests are exploratory. For four horizon-specific comparisons of a metric, 0.0125 is a Bonferroni reference; the generated section uses current p-values. Shared drainages and nested gauges limit treating stations as independent replicates. The earlier station bootstrap inference is withdrawn. The replacement preserves weekly calendar gaps and applies explicit coverage, finite-draw, degeneracy and block-sensitivity screens. These are heuristic diagnostics; retained intervals remain exploratory and conditional on fitted models and the observed scoring pattern. Low drought-event counts still limit station-level claims even when aggregate differences appear positive.
 
@@ -113,9 +113,9 @@ The primary limitations are incomplete low-flow observation, possible nonrandom 
 
 ## 9. Reproduction, integrity and assistance
 
-Use the [repair plan](METHODOLOGY_REPAIR_PLAN.md) for the ordered commands and verification criteria. The root requirements file records the environment used; it is not a guaranteed cross-platform lock. Raw-source access details are in [DATA_ACCESS.md](DATA_ACCESS.md).
+Use the [README reproduction section](../README.md#reproduction-and-validation) for the ordered commands and verification criteria. The root requirements file records the environment used; it is not a guaranteed cross-platform lock. Raw-source access details are in [DATA_ACCESS.md](DATA_ACCESS.md).
 
-The corrected order is: verify sources; build all tensors; train raw and log variants and pooled models; audit saved models; recompute severity, uncertainty, feature importance and historical robustness; export benchmark/explorer/replay assets; render the report; rebuild the static site locally. A complete run manifest must bind these artifacts. Audits reject legacy or mismatched model/tensor combinations rather than silently refitting preprocessing.
+The reproduction order is: verify sources; build all tensors; train raw and log variants and pooled models; audit saved models; recompute severity, uncertainty, feature importance and historical robustness; export benchmark/explorer/replay assets; render the report; rebuild the static site locally. A complete run manifest must bind these artifacts. Audits reject legacy or mismatched model/tensor combinations rather than silently refitting preprocessing.
 
 The website exposes fixed precomputed outputs. It has no live model training or Python service. Browser tests and captures remain local and excluded from Git. Publication requires a separate review of the rendered site.
 
@@ -124,9 +124,9 @@ Antigravity and Codex assisted with coding, debugging, documentation and visuali
 The numerical sections below are generated from the evaluation artifacts.
 
 <!-- REPORT_RESULTS:START -->
-## 10. Corrected results and evaluation
+## 10. Results and evaluation
 
-These tables are regenerated from the complete corrected run; old model scores are not reused. Train/validation/test dates, lead horizons and primary metrics are unchanged. Daily targets are never filled from future observations; a weekly discharge target requires four original daily measurements. Weekly bins explicitly exclude the labelled Monday's daily record. Source harmonisation fits only 2001–2010.
+These tables are calculated from the saved forecasts and observed targets. The chronological train/validation/test split is applied at every lead. Daily targets are never filled from future observations; a weekly discharge target requires four original daily measurements. Weekly bins explicitly exclude the labelled Monday's daily record. Source harmonisation fits only 2001–2010.
 
 Later temperature and FAO reference ET0 inputs were supplied through Open-Meteo's historical API with its default Best Match model selection. Their filenames retain an ERA5 label for compatibility, but do not establish a homogeneous ERA5-Land product. GMT calendar-day aggregation is documented; original CWC and CAMELS observation-day timing is not established as operationally available at midnight.
 
@@ -221,7 +221,7 @@ CSI is hits/(hits+misses+false alarms). FAR is false alarms/(hits+false alarms).
 | Haralahalli | 4w | 152 | 0 | 5.4264 | 17 | 0.1118 | observed_events |
 | Haralahalli | 8w | 122 | 0 | 5.4259 | 16 | 0.1311 | observed_events |
 
-12 of 48 station–lead cases have no scored severe-drought events. Detection cannot be assessed in those cases; false-alarm counts are still observable. At Yadgir the frozen Q95 threshold is zero and recorded-zero targets are excluded, so the approved evaluation rule makes the event structurally unavailable. These statuses do not change thresholds, masks, raw contingency counts or the reported metric definitions. Raw CSI ratios in zero-event cases are not evidence of detection skill.
+12 of 48 station–lead cases have no scored severe-drought events. Detection cannot be assessed in those cases; false-alarm counts are still observable. At Yadgir the frozen Q95 threshold is zero and recorded-zero targets are excluded, so the evaluation rule makes the event structurally unavailable. These statuses do not change thresholds, masks, raw contingency counts or the reported metric definitions. Raw CSI ratios in zero-event cases are not evidence of detection skill.
 
 Recorded-zero gaps at the four configured stations are excluded using the same rule for all models. That classification remains an inference from the monitoring pattern rather than a complete source flag for every measurement.
 
@@ -379,7 +379,7 @@ Judge each model against the appropriate baseline, lead, severity and scored row
 - This is a retrospective hindcast; publication latency and operational availability have not been reproduced.
 - The new source is Open-Meteo default Best Match, so a homogeneous reanalysis-model claim is not supported.
 - Reference ET0 scaled to historical PET remains a different physical formulation.
-- Missing daily discharge is preserved. The approved <15% raw missingness rule retains twelve gauges; actual weekly coverage and rare drought-event counts vary.
+- Missing daily discharge is preserved. The <15% raw missingness rule retains twelve gauges; actual weekly coverage and rare drought-event counts vary.
 - Shared drainages and the nested cascade limit station-level statistical independence.
 - Source replacement, timing correction, interpolation removal and retraining occurred together. The before/after comparison is not an isolated causal ablation.
 - Saved model bundles include fitted preprocessing and hashes of the tensors used. Full retraining can vary, especially for the LSTM; committed-output reproducibility differs from bitwise retraining reproducibility.
@@ -405,7 +405,7 @@ Local data flow:
 1. `scripts/audit_metrics.py` scores every saved model on the shared mask and writes `audited_metrics_recomputed.csv` and `test_predictions.csv`.
 2. `scripts/export_benchmark_data.py` writes `assets/benchmark-data.js` (station metrics, paired medians, Wilcoxon tests).
 3. `scripts/generate_interactive_plots.py` writes the Plotly chart sources to `visualizations/source/`.
-4. Explorer and replay exporters produce five-model comparisons and weekly forecast chunks from the same corrected predictions.
+4. Explorer and replay exporters produce five-model comparisons and weekly forecast chunks from the same saved predictions.
 5. In the site worktree, `tools/build_site_data.py` decodes chart sources into `assets/figdata.js`, writes standalone pages and regenerates the benchmark table. The browser uses the generated assets and replay chunks with `assets/charts.js`.
 
 The local build, scientific checks and browser review precede any publication. `deploy.sh` also performs Git commits and a push; it is not used for preview-only work. Never copy new tables beside stale chart or replay data.

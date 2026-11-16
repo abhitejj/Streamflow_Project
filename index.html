@@ -365,7 +365,7 @@
       <i data-lucide="filter"></i>
       <div>
         <h4>Quality Control, Physical Sanity Ceiling &amp; Anthropogenic Regime Shifts</h4>
-        <p>The approved portfolio gate allows less than 15% missing daily discharge. Weekly targets require at least four original valid daily measurements; missing days and targets are not interpolated. A qualifying weekly mean can still represent fewer than seven measurements.</p>
+        <p>The portfolio inclusion rule allows less than 15% missing daily discharge. Weekly targets require at least four original valid daily measurements; missing days and targets are not interpolated. A qualifying weekly mean can still represent fewer than seven measurements.</p>
         <p>Discharge above 50,000 m³/s is masked as invalid. All resulting gaps remain missing. Weekly observation counts come from original valid measurements, and weather windows require their stated coverage. These rules avoid creating target observations from later measurements.</p>
         <p><strong>Recorded-zero policy:</strong> Karad, Warunji, Yadgir and Huvinhedigi retain the documented zero-as-unmeasured policy. Training and validation mask affected rows, and every compared model uses the same eligible evaluation weeks. The explorer reports scored and excluded weeks for each station and lead. Haralahalli zeros remain part of the observations. Changes to weekly timing and missingness also change the set of eligible weeks, so old and new scores are not a controlled model-only comparison.</p>
         <p><strong>Data Lineage &amp; Pipeline Audit (2011–2020 Overlap):</strong> To verify that dataset stitching did not overwrite valid discharge, we audited all 8,740 station-days where CWC reported zero flow during the 2011–2020 overlap. On 82.8% of those days (7,236 days), published CAMELS-IND already recorded identical 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS recorded positive flow on only 5 days (0.06%). These matches show that most of the compared zero records were already present in CAMELS-IND. This overlap check does not rule out every stitching error or establish why the source records contain zeros; a change in monitoring practice remains an inference.</p>
@@ -473,8 +473,8 @@
 
     <aside class="reader-guide card" aria-labelledby="run-notes-title" id="run-notes">
       <h3 id="run-notes-title">Methods and provenance</h3>
-      <p>These results use the corrected weekly windows and training-only preprocessing. All charts and replay data come from the same rebuilt experiment. Sample eligibility changed as well as model fitting; score changes do not isolate the effect of any single correction.</p>
-      <p><a href="docs/METHODOLOGY_REPAIR_PLAN.md">Correction plan and progress</a> · <a href="docs/PROJECT_REPORT_DOCUMENTATION.md">Full report</a> · <a href="docs/DATA_ACCESS.md">Data access</a> · <a href="docs/WEATHER_SOURCE_PROVENANCE.md">Weather source notes</a> · <a href="docs/UNCERTAINTY_METHOD.md">Uncertainty method and limits</a></p>
+      <p>These results use explicit weekly windows and training-only preprocessing. All charts and replay data come from the same saved experiment. Interpret each comparison alongside its baseline, scored-week coverage and drought-event counts.</p>
+      <p><a href="docs/PROJECT_REPORT_DOCUMENTATION.md">Full report</a> · <a href="docs/DATA_ACCESS.md">Data access</a> · <a href="docs/UNCERTAINTY_METHOD.md">Uncertainty method and limits</a></p>
     </aside>
 
     <aside class="reader-guide card" aria-labelledby="metric-guide-title" id="metric-guide">
@@ -527,7 +527,7 @@
           <a class="fs-link" href="visualizations/interactive_pr_curves_severe_drought.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="pr" role="img" aria-label="Precision-Recall Curves for Severe Drought early warning"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div>Precision–recall is pooled over eligible station-weeks. Compare the curves with their lead-specific no-skill event rate; the station explorer supplies fixed-threshold false alarms and event counts. The plotted cutoff sweep is not an independently calibrated probability forecast.<span class="artifact">Source: corrected test predictions and severe-drought precision–recall export.</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div>Precision–recall is pooled over eligible station-weeks. Compare the curves with their lead-specific no-skill event rate; the station explorer supplies fixed-threshold false alarms and event counts. The plotted cutoff sweep is not an independently calibrated probability forecast.<span class="artifact">Source: test predictions and severe-drought precision–recall export.</span></div></footer>
       </div>
       <div class="chart-card" data-reveal style="--d:.1s">
         <header>
@@ -535,7 +535,7 @@
           <a class="fs-link" href="visualizations/interactive_spatial_transfer_grouped_bars.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart" data-chart="transfer" role="img" aria-label="Cross-basin zero-shot spatial transfer results"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>Zero-shot transfer:</b> the LSTM beats the local baseline at 2 of 3 holdouts at 1–2 weeks and 1 of 3 at 4–8 weeks. At Haralahalli the 8-week LSTM NSE is −0.014 against baseline −0.062: both are worse than the evaluation-period mean. Bamni’s 8-week LSTM NSE is −0.734. These baselines use held-out-gauge history, so this is not a demonstration at wholly ungauged basins.<span class="artifact">Source: corrected cross-basin transfer export.</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>Zero-shot transfer:</b> the LSTM beats the local baseline at 2 of 3 holdouts at 1–2 weeks and 1 of 3 at 4–8 weeks. At Haralahalli the 8-week LSTM NSE is −0.014 against baseline −0.062: both are worse than the evaluation-period mean. Bamni’s 8-week LSTM NSE is −0.734. These baselines use held-out-gauge history, so this is not a demonstration at wholly ungauged basins.<span class="artifact">Source: cross-basin transfer export.</span></div></footer>
       </div>
     </div>
 
@@ -619,7 +619,7 @@
         <a class="fs-link" href="visualizations/interactive_kge_component_decomposition.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
       </header>
       <div class="chart-body"><div class="chart" data-chart="kge" role="img" aria-label="Kling-Gupta Efficiency component decomposition chart"></div></div>
-      <footer><i data-lucide="lightbulb"></i><div><b>Decomposition insight:</b> KGE combines correlation, variability and mean-volume agreement. Inspect all three components: higher NSE does not establish an improvement in each one. Curves are medians across stations, not a decomposition of one pooled hydrograph.<span class="artifact">Source: corrected KGE component export.</span></div></footer>
+      <footer><i data-lucide="lightbulb"></i><div><b>Decomposition insight:</b> KGE combines correlation, variability and mean-volume agreement. Inspect all three components: higher NSE does not establish an improvement in each one. Curves are medians across stations, not a decomposition of one pooled hydrograph.<span class="artifact">Source: KGE component export.</span></div></footer>
     </div>
 
     <div class="grid g-split">
@@ -629,7 +629,7 @@
           <a class="fs-link" href="visualizations/interactive_feature_importance_shift.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
         </header>
         <div class="chart-body"><div class="chart chart-tall" data-chart="fi" role="img" aria-label="Feature importance transition between 1 week and 8 weeks"></div></div>
-        <footer><i data-lucide="lightbulb"></i><div><b>What M2 uses:</b> the chart compares each feature’s share of permutation importance at 1 and 8 weeks. Importance describes sensitivity of the fitted model on these test rows, not causation or proof that a data-quality issue is harmless. Correlated features can share importance.<span class="artifact">Source: corrected feature importance export.</span></div></footer>
+        <footer><i data-lucide="lightbulb"></i><div><b>What M2 uses:</b> the chart compares each feature’s share of permutation importance at 1 and 8 weeks. Importance describes sensitivity of the fitted model on these test rows, not causation or proof that a data-quality issue is harmless. Correlated features can share importance.<span class="artifact">Source: feature importance export.</span></div></footer>
       </div>
       <div class="grid" data-stagger>
         <article class="card insight" data-reveal>
@@ -742,7 +742,7 @@
     <div class="section-head" data-reveal>
       <span class="section-no">07</span>
       <h2>Reproducibility</h2>
-      <p>The charts, tables and replay now use the corrected 12-station experiment with training-only preprocessing, explicit weekly windows and original-observation coverage. Saved models include their fitted preprocessing and dataset fingerprints. The source notes document Open-Meteo Best Match weather and derived Karnataka discharge provenance. See the correction plan for changes and the before/after report; changed scores also reflect changed eligible observations.</p>
+      <p>The charts, tables and replay use the same 12-station experiment with training-only preprocessing, explicit weekly windows and original-observation coverage. Saved models include their fitted preprocessing and dataset fingerprints. The data-access notes document Open-Meteo Best Match weather and derived Karnataka discharge provenance. The README gives the reproduction commands; the report explains methods, results and limitations.</p>
     </div>
     <div class="grid g2">
       <div data-reveal style="min-width:0">
@@ -782,7 +782,7 @@
           <i data-lucide="alert-triangle"></i>
           <div>
             <h4>Model Overwrite Warning</h4>
-            <p>Stage 1 rebuilds processed tensors. Stages 2–3 retrain models and overwrite <code>models/</code>. Retraining, especially the HydroLSTM, can alter the results. <strong>Stage 4</strong> audits models produced by a complete corrected rebuild; it will reject legacy checkpoints. Use the tables and replay above to inspect the corrected results.</p>
+            <p>Stage 1 rebuilds processed tensors. Stages 2–3 retrain models and overwrite <code>models/</code>. Retraining, especially the HydroLSTM, can alter the results. <strong>Stage 4</strong> audits models produced by a complete dataset and model build; it will reject legacy checkpoints. Use the tables and replay above to inspect the results.</p>
           </div>
         </div>
         <div class="steps">

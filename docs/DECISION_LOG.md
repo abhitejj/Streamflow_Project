@@ -1,6 +1,6 @@
 # Project decisions
 
-These are the main choices used in the corrected experiment.
+These are the main choices used in the experiment.
 
 | Decision | Why |
 | --- | --- |
@@ -16,12 +16,10 @@ These are the main choices used in the corrected experiment.
 | Use the supplied sources with their actual labels. | Later temperature and reference ET0 use Open-Meteo default Best Match, not verified pure ERA5-Land. Karnataka discharge was recovered from the merged daily records. |
 | Publish a static website. | Let readers inspect saved results without running training in their browser. |
 
-## Latest correction — 16 November 2026
+## Implementation and limitations
 
-The corrected run uses explicit preceding-week windows, no daily interpolation, training-only corrections and saved model preprocessing. All 12 datasets and 324 models were rebuilt. Old and new scores describe different pipeline versions; their differences cannot be attributed to one repair.
+The experiment uses explicit preceding-week windows, no daily interpolation, training-only source harmonization and saved model preprocessing. Dataset and model hashes link the reported results to their inputs.
 
-The weather-product mixture, missing observations, few drought events, related gauges and unverified real-time data availability remain limitations.
+The weather-product mixture, missing observations, few drought events, related gauges and unverified real-time data availability remain limitations. Comparisons between different pipeline versions cannot isolate the effect of one methodological change.
 
-See the [report](PROJECT_REPORT_DOCUMENTATION.md) for evidence and the [repair plan](METHODOLOGY_REPAIR_PLAN.md) for exact steps.
-
-The [earlier log](archive/DECISION_LOG_HISTORICAL.md) is retained only as history. It contains superseded methods, figures and claims; it is not the description of the current experiment.
+See the [report](PROJECT_REPORT_DOCUMENTATION.md) for methods and evidence, and the [README reproduction instructions](../README.md#reproduction-and-validation) for the command sequence.
