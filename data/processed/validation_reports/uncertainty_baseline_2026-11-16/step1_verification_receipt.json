@@ -1,0 +1,18 @@
+{
+  "verified_at_utc": "2026-11-16T05:46:38.057848+00:00",
+  "scope": "First step only: baseline preservation and withdrawal of unsupported station-bootstrap winner counts",
+  "unchanged_point_artifacts_verified": 377,
+  "archive_originals_byte_identical": true,
+  "generator_regeneration_restores_counts": false,
+  "existing_tests": "10 passed",
+  "retrained": false,
+  "uncertainty_algorithm_changed": false,
+  "uncertainty_outputs_changed": false,
+  "revised_uncertainty_analysis": "pending separate authorisation",
+  "current_document_sha256": {
+    "README.md": "44fa7a18cfddb9f2893968374cc2535fc20178b6c50df13b9ffaf58d237fe13d",
+    "docs/PROJECT_REPORT_DOCUMENTATION.md": "52d80565fce8d41cf856b8324d1734cd8219f13740865b755463dcf6453ac3ed",
+    "scripts/render_report_results.py": "0e6b414cd6b05da57406a5e5d51865093aa12b2cfc7b5fc178dff9c50fb00ab7"
+  },
+  "run_manifest_sha256": "062ff2b7805381c703464128927b67cba301eb5777faaec6a15e23f40f776ada"
+}

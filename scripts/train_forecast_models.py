@@ -563,6 +563,7 @@ def train_and_predict_m1(df_train, df_val, df_test, feature_cols, target_col, mo
     if save_path:
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
         artifact = {
+            'dataset_fingerprint': __import__('pipeline_integrity').dataset_fingerprint(TENSORS_DIR),
             'model': best_model,
             'scaler': fitted_scaler,
             'model_type': model_type,
@@ -941,6 +942,8 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], model_type='ridge'):
 # 9. CLI ENTRY POINT & ORCHESTRATION
 # ==============================================================================
 if __name__ == '__main__':
+    from pipeline_integrity import require_corrected_tensors
+    require_corrected_tensors(TENSORS_DIR)
     parser = argparse.ArgumentParser(
         description="Benchmark M0 (Persistence/Climatology) vs M1 (Autoregressive Flow-Only) Models."
     )

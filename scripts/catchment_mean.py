@@ -22,14 +22,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 def get_raw_dir():
     raw_env = os.environ.get("RAW_DIR")
-    if raw_env and os.path.isdir(raw_env):
+    if raw_env:
+        if not Path(raw_env).is_dir():
+            raise FileNotFoundError(f'Configured RAW_DIR does not exist: {raw_env}')
         return Path(raw_env)
     local_raw = PROJECT_ROOT / "data" / "raw"
     if local_raw.is_dir() and (local_raw / "camels_ind").is_dir():
         return local_raw
-    ml2_raw = Path("/Users/abhitej/Downloads/ML Project 2/data/raw")
-    if ml2_raw.is_dir():
-        return ml2_raw
     return local_raw
 
 def get_shapefile_path():
@@ -37,7 +36,6 @@ def get_shapefile_path():
     candidates = [
         raw_dir / "camels_ind" / "shapefiles_catchment" / "catchments.shp",
         PROJECT_ROOT / "data" / "raw" / "camels_ind" / "shapefiles_catchment" / "catchments.shp",
-        Path("/Users/abhitej/Downloads/ML Project 2/data/raw/camels_ind/shapefiles_catchment/catchments.shp"),
     ]
     for c in candidates:
         if c.is_file():
@@ -112,7 +110,6 @@ def get_catchment_cell_count(gauge_id, lats=None, lons=None):
         nc_candidates = [
             raw_dir / "imd" / "imd_rainfall_2001_2025.nc",
             PROJECT_ROOT / "data" / "raw" / "imd" / "imd_rainfall_2001_2025.nc",
-            Path("/Users/abhitej/Downloads/ML Project 2/data/raw/imd/imd_rainfall_2001_2025.nc")
         ]
         nc_path = next(p for p in nc_candidates if p.is_file())
         ds = xr.open_dataset(nc_path)
@@ -136,7 +133,7 @@ def catchment_mean(ds_var, gauge_id) -> pd.Series:
     da_weights = xr.DataArray(norm_w, dims="points")
 
     pts_data = ds_var.sel(lat=da_lats, lon=da_lons)
-    weighted_sum = (pts_data * da_weights).sum(dim="points")
+    weighted_sum = (pts_data * da_weights).sum(dim="points", skipna=False)
     s = weighted_sum.to_series()
     s.index = pd.to_datetime(s.index).normalize()
     return s

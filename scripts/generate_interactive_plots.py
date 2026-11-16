@@ -128,6 +128,10 @@ def load_estimator(model_path):
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"Model checkpoint missing: {model_path}")
     obj = joblib.load(model_path)
+    from pipeline_integrity import validate_model_dataset
+    if not isinstance(obj, dict):
+        raise ValueError('Legacy estimator cannot enter corrected chart generation')
+    validate_model_dataset(obj, TENSORS_DIR)
     if isinstance(obj, dict) and 'model' in obj:
         return obj['model'], obj.get('scaler'), obj.get('train_medians')
     return obj, None, None
@@ -379,7 +383,9 @@ def _station_importance(stn_name, gid, H, preds, n_repeats=10, seed=42):
     df = pd.read_csv(os.path.join(TENSORS_DIR, f"weekly_tensor_gauge_{gid:05d}_{stn_name}.csv"), parse_dates=['date']).set_index('date')
     d = preds[(preds['station'] == stn_name) & (preds['horizon'] == f'{H}w') & preds['scored']]
     X = df.loc[pd.to_datetime(d['issue_date']).values, M2_TABULAR_FEATURES]
-    X = X.fillna(medians if medians is not None else X.median()).values
+    if medians is None:
+        raise ValueError('Frozen training medians missing from feature-importance model')
+    X = X.fillna(medians).values
     y = d['y_obs'].values
     r = permutation_importance(model, X, y, n_repeats=n_repeats, random_state=seed, scoring='neg_mean_squared_error')
     imp = np.maximum(0.0, r.importances_mean)

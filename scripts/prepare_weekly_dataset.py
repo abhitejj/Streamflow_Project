@@ -6,7 +6,7 @@ Complies with strict operational rules:
 2. Resource management (<4GB RAM limit, lazy NetCDF extraction, pre-cached tables).
 3. 46-Year timeline verification (16,801 / 16,802 daily steps).
 4. Missingness & contiguous gap enforcement (<10% missing, <=35d gaps).
-5. Structural break mitigation via 2015–2020 boundary calibration for P, Tavg, Tmax, Tmin, and PET.
+5. Structural break mitigation via 2001–2010 boundary calibration for P, Tavg, Tmax, Tmin, and PET.
 6. IMD/CAMELS feature pruning (removes soil moisture sm1..sm4; keeps native P, T, PET).
 7. M0 Baseline correction (persistence for 1w/2w, climatology for 4w/8w; halts if persistence >2w).
 8. Holdout validation guardrail (flags/halts OOD transfer to coastal basins without scaling).
@@ -26,6 +26,8 @@ import xarray as xr
 # 1. DIRECTORY AND PATH ENFORCEMENT
 # ==============================================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, SCRIPT_DIR)
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 
 RAW_DIR = os.environ.get("RAW_DIR", os.path.join(PROJECT_ROOT, 'data/raw'))
@@ -33,7 +35,7 @@ RAW_DIR = os.environ.get("RAW_DIR", os.path.join(PROJECT_ROOT, 'data/raw'))
 CWC_DIR = os.path.join(RAW_DIR, 'cwc')
 IMD_NC_PATH = os.path.join(RAW_DIR, 'imd/imd_rainfall_2001_2025.nc')
 CAMELS_DIR = os.path.join(RAW_DIR, 'camels_ind')
-ERA5_DIR = os.path.join(PROJECT_ROOT, 'data/raw/era5_land') if os.path.isdir(os.path.join(PROJECT_ROOT, 'data/raw/era5_land')) else os.path.join(RAW_DIR, 'era5_land')
+ERA5_DIR = os.path.join(RAW_DIR, 'era5_land')
 CATALOG_PATH = os.path.join(PROJECT_ROOT, 'data/processed/station_catalog.csv')
 
 try:
@@ -188,13 +190,13 @@ def calculate_m0_baseline(train_series, eval_series, horizon_weeks):
         sys.exit(1)
 
 # ==============================================================================
-# 6. STRUCTURAL BREAK MITIGATION & CALIBRATION (2015–2020)
+# 6. STRUCTURAL BREAK MITIGATION & CALIBRATION (2001–2010)
 # ==============================================================================
 def calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_name):
     """
     Computes rigorous boundary calibration across Precipitation, Temperature (Tavg, Tmax, Tmin),
-    and Potential Evapotranspiration (PET) over the 2015-2020 overlap period (2,192 daily timesteps).
-    Mitigates structural breaks at the 2020/2021 seam between CAMELS-IND and operational products.
+    and Potential Evapotranspiration (PET) over the 2001-2010 overlap period (paired finite training daily observations).
+    Mitigates structural breaks at the 2020/2021 seam between CAMELS-IND and later-source products.
     """
     forcing_file = os.path.join(CAMELS_DIR, f'catchment_mean_forcings/{gauge_id:05d}.csv')
     if not os.path.isfile(forcing_file):
@@ -204,8 +206,8 @@ def calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_n
     df_f['dt'] = pd.to_datetime(df_f[['year', 'month', 'day']]).dt.normalize()
     df_f = df_f.set_index('dt')
     
-    # 2015-2020 Overlap slice from CAMELS
-    slice_camels = df_f.loc['2015-01-01':'2020-12-31']
+    # 2001-2010 Overlap slice from CAMELS
+    slice_camels = df_f.loc['2001-01-01':'2010-12-31']
     camels_p = slice_camels['prcp(mm/day)']
     camels_tavg = slice_camels['tavg(C)']
     camels_tmax = slice_camels['tmax(C)']
@@ -213,70 +215,84 @@ def calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_n
     camels_pet = slice_camels['pet_gleam(mm/day)']
     
     # 1. IMD Rainfall catchment-mean extraction (area-weighted zonal mean)
-    rain_slice_15_20 = ds_imd_lazy['rain'].sel(time=slice('2015-01-01', '2020-12-31'))
+    rain_slice_15_20 = ds_imd_lazy['rain'].sel(time=slice('2001-01-01', '2010-12-31'))
     imd_pt = catchment_mean(rain_slice_15_20, gauge_id)
     
     # Rainfall calibration metrics
-    comp_p = pd.DataFrame({'camels': camels_p, 'imd': imd_pt}).dropna()
+    from pipeline_integrity import calibration_pairs
+    comp_p = calibration_pairs(camels_p, imd_pt)
     sum_imd_p = comp_p['imd'].sum()
     sum_camels_p = comp_p['camels'].sum()
-    alpha_p = float(sum_camels_p / sum_imd_p) if sum_imd_p > 0 else 1.0
+    if sum_imd_p <= 0:
+        raise ValueError('Training rainfall calibration denominator must be positive')
+    alpha_p = float(sum_camels_p / sum_imd_p)
     mean_camels_p = float(comp_p['camels'].mean())
     mean_imd_p = float(comp_p['imd'].mean())
     bias_p = float(mean_imd_p - mean_camels_p) # Operational IMD point minus CAMELS catchment mean
     corr_p_daily = float(comp_p['camels'].corr(comp_p['imd']))
     
-    w_p_camels = comp_p['camels'].resample('W-MON').sum()
-    w_p_imd = comp_p['imd'].resample('W-MON').sum()
+    w_p_camels = comp_p['camels'].resample('W-MON', closed='left', label='right').sum()
+    w_p_imd = comp_p['imd'].resample('W-MON', closed='left', label='right').sum()
     corr_p_weekly = float(w_p_camels.corr(w_p_imd))
     
-    # 2. ERA5-Land loading for overlap
+    # 2. Open-Meteo default Best Match loading for overlap
     era5_file = os.path.join(ERA5_DIR, f'era5_land_{gauge_id:05d}_{station_name}.csv')
     if not os.path.isfile(era5_file):
-        raise FileNotFoundError(f"ERA5-Land file not found: {era5_file}")
+        raise FileNotFoundError(f"Open-Meteo default Best Match file not found: {era5_file}")
     df_era5 = pd.read_csv(era5_file)
     df_era5['dt'] = pd.to_datetime(df_era5['Date']).dt.normalize()
     df_era5 = df_era5.set_index('dt')
-    slice_era5 = df_era5.loc['2015-01-01':'2020-12-31']
+    slice_era5 = df_era5.loc['2001-01-01':'2010-12-31']
+    if slice_era5.empty:
+        raise ValueError('ERA5 training-period overlap is required; no test-period calibration allowed')
     
     # Temperature calibration metrics: Additive bias Bias_T = mu(CAMELS) - mu(ERA5)
     # Tavg
-    comp_tavg = pd.DataFrame({'camels': camels_tavg, 'era5': slice_era5['tavg_c']}).dropna()
+    comp_tavg = calibration_pairs(camels_tavg, slice_era5['tavg_c']).rename(columns={'imd': 'era5'})
     mean_camels_tavg = float(comp_tavg['camels'].mean())
     mean_era5_tavg = float(comp_tavg['era5'].mean())
     bias_tavg = float(mean_camels_tavg - mean_era5_tavg)
     corr_tavg_daily = float(comp_tavg['camels'].corr(comp_tavg['era5']))
-    corr_tavg_weekly = float(comp_tavg['camels'].resample('W-MON').mean().corr(comp_tavg['era5'].resample('W-MON').mean()))
+    corr_tavg_weekly = float(comp_tavg['camels'].resample('W-MON', closed='left', label='right').mean().corr(comp_tavg['era5'].resample('W-MON', closed='left', label='right').mean()))
     
     # Tmax
-    comp_tmax = pd.DataFrame({'camels': camels_tmax, 'era5': slice_era5['tmax_c']}).dropna()
+    comp_tmax = calibration_pairs(camels_tmax, slice_era5['tmax_c']).rename(columns={'imd': 'era5'})
     mean_camels_tmax = float(comp_tmax['camels'].mean())
     mean_era5_tmax = float(comp_tmax['era5'].mean())
     bias_tmax = float(mean_camels_tmax - mean_era5_tmax)
     corr_tmax_daily = float(comp_tmax['camels'].corr(comp_tmax['era5']))
-    corr_tmax_weekly = float(comp_tmax['camels'].resample('W-MON').mean().corr(comp_tmax['era5'].resample('W-MON').mean()))
+    corr_tmax_weekly = float(comp_tmax['camels'].resample('W-MON', closed='left', label='right').mean().corr(comp_tmax['era5'].resample('W-MON', closed='left', label='right').mean()))
 
     # Tmin
-    comp_tmin = pd.DataFrame({'camels': camels_tmin, 'era5': slice_era5['tmin_c']}).dropna()
+    comp_tmin = calibration_pairs(camels_tmin, slice_era5['tmin_c']).rename(columns={'imd': 'era5'})
     mean_camels_tmin = float(comp_tmin['camels'].mean())
     mean_era5_tmin = float(comp_tmin['era5'].mean())
     bias_tmin = float(mean_camels_tmin - mean_era5_tmin)
     corr_tmin_daily = float(comp_tmin['camels'].corr(comp_tmin['era5']))
-    corr_tmin_weekly = float(comp_tmin['camels'].resample('W-MON').mean().corr(comp_tmin['era5'].resample('W-MON').mean()))
+    corr_tmin_weekly = float(comp_tmin['camels'].resample('W-MON', closed='left', label='right').mean().corr(comp_tmin['era5'].resample('W-MON', closed='left', label='right').mean()))
     
-    # PET calibration metrics (GLEAM Priestley-Taylor vs ERA5-Land FAO-56 Penman-Monteith)
-    comp_pet = pd.DataFrame({'camels': camels_pet, 'era5': slice_era5['pet_mm']}).dropna()
+    # PET calibration metrics (GLEAM Priestley-Taylor vs Open-Meteo default Best Match FAO-56 Penman-Monteith)
+    comp_pet = calibration_pairs(camels_pet, slice_era5['pet_mm']).rename(columns={'imd': 'era5'})
     sum_era5_pet = comp_pet['era5'].sum()
     sum_gleam_pet = comp_pet['camels'].sum()
-    alpha_pet = float(sum_gleam_pet / sum_era5_pet) if sum_era5_pet > 0 else 1.0
+    if sum_era5_pet <= 0:
+        raise ValueError('Training PET calibration denominator must be positive')
+    alpha_pet = float(sum_gleam_pet / sum_era5_pet)
     mean_gleam_pet = float(comp_pet['camels'].mean())
     mean_era5_pet = float(comp_pet['era5'].mean())
     bias_pet = float(mean_era5_pet - mean_gleam_pet) # ERA5 minus GLEAM
     corr_pet_daily = float(comp_pet['camels'].corr(comp_pet['era5']))
-    corr_pet_weekly = float(comp_pet['camels'].resample('W-MON').sum().corr(comp_pet['era5'].resample('W-MON').sum()))
+    corr_pet_weekly = float(comp_pet['camels'].resample('W-MON', closed='left', label='right').sum().corr(comp_pet['era5'].resample('W-MON', closed='left', label='right').sum()))
     
     return {
         'gauge_id': gauge_id,
+        'calibration_start': '2001-01-01',
+        'calibration_end': '2010-12-31',
+        'rainfall_fit_days': len(comp_p),
+        'temperature_mean_fit_days': len(comp_tavg),
+        'temperature_max_fit_days': len(comp_tmax),
+        'temperature_min_fit_days': len(comp_tmin),
+        'pet_fit_days': len(comp_pet),
         'station_name': station_name,
         'mean_camels_p': mean_camels_p,
         'mean_imd_p': mean_imd_p,
@@ -311,7 +327,7 @@ def calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_n
 # 7. FEATURE ENGINEERING & MISSINGNESS ENFORCEMENT
 # ==============================================================================
 def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_lazy, timeline,
-                                 df_flow_all=None, df_topo=None, cwc_cache=None):
+                                 df_flow_all=None, df_topo=None, cwc_cache=None, cwc_source_path=None):
     """
     Stitches 46-year daily streamflow and meteorological forcings, verifies missingness,
     applies boundary calibration to 2021-2025 forcings, and aggregates to weekly timesteps.
@@ -334,10 +350,10 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
         s_camels = df_flow_raw.set_index('dt')[col_g]
     
     # 2. Load CWC streamflow (2001–2025)
+    cwc_path = str(cwc_source_path or os.path.join(CWC_DIR, cwc_csv_name))
     if cwc_cache is not None and cwc_csv_name in cwc_cache:
         df_cwc = cwc_cache[cwc_csv_name]
     else:
-        cwc_path = os.path.join(CWC_DIR, cwc_csv_name)
         df_cwc = pd.read_csv(cwc_path, low_memory=False)
         if cwc_cache is not None:
             cwc_cache[cwc_csv_name] = df_cwc
@@ -347,21 +363,21 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
         raise ValueError(f"Station {station_name} not found in {cwc_csv_name}")
     
     sub_cwc['dt'] = pd.to_datetime(sub_cwc['Data Acquisition Time'], dayfirst=True, errors='coerce').dt.normalize()
-    sub_cwc = sub_cwc.dropna(subset=['dt']).drop_duplicates('dt').set_index('dt')
+    sub_cwc = sub_cwc.dropna(subset=['dt']).drop_duplicates('dt').set_index('dt').sort_index()
     s_cwc = sub_cwc['Manual Daily River Water Discharge (m3/sec)'].copy()
     
     # Gate AG-TS-04: Enforce physical upper limit on daily CWC streamflow to eliminate clerical data entry errors
     n_outliers = int((s_cwc > 50000.0).sum())
     if n_outliers > 0:
-        print(f"      [!] AG-TS-04: Masked {n_outliers} daily CWC discharge observation(s) > 50,000 m³/s as NaN (temporal linear interpolation, limit=2d)")
-        s_cwc = s_cwc.mask(s_cwc > 50000.0, np.nan).interpolate(method='linear', limit=2)
+        print(f"      [!] AG-TS-04: Masked {n_outliers} daily CWC discharge observation(s) > 50,000 m³/s as NaN (no interpolation)")
+        s_cwc = s_cwc.mask(s_cwc > 50000.0, np.nan)
     
     lat = float(sub_cwc['Latitude'].iloc[0])
     lon = float(sub_cwc['Longitude'].iloc[0])
     
     # 3. Stitch streamflow
     stitched_q = s_cwc.combine_first(s_camels).reindex(timeline)
-    stitched_q = stitched_q.mask(stitched_q > 50000.0, np.nan).interpolate(method='linear', limit=2)
+    stitched_q = stitched_q.mask(stitched_q > 50000.0, np.nan)
 
     
     # Missingness check
@@ -374,15 +390,15 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     
     print(f"      Streamflow Missingness: {n_missing}/{len(timeline)} ({missing_pct:.2f}%), Max Contig Gap: {max_gap} days")
     
-    # Enforce Missingness Rules (< 10.0% overall missingness retained)
-    if missing_pct >= 10.0:
+    # Enforce Missingness Rules (< 15.0% overall missingness retained under Option M1: zero daily interpolation)
+    if missing_pct >= 15.0:
         report_path = os.path.join(REPORTS_DIR, f'ERROR_station_discarded_{station_name}.md')
         err_msg = (
             f"# ⚠️ STATION INTEGRITY FAILURE: {station_name} Discarded\n\n"
             f"- **Station:** `{station_name}` (Gauge `{gauge_id}`)\n"
-            f"- **Missingness Rate:** {missing_pct:.2f}% (Limit: <10.0%)\n"
+            f"- **Missingness Rate:** {missing_pct:.2f}% (Limit: <15.0%)\n"
             f"- **Max Contiguous Gap:** {max_gap} days\n"
-            f"- **Action Mandated:** Station discarded (overall missingness exceeds 10.0%).\n"
+            f"- **Action Mandated:** Station discarded (overall missingness exceeds 15.0%).\n"
         )
         with open(report_path, 'w') as f:
             f.write(err_msg)
@@ -391,13 +407,8 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
             'Max_Gap': max_gap, 'Status': 'DISCARDED (Missingness Breach)'
         }
     
-    # Safe conservative linear interpolation on small gaps (<= 35 days only)
-    is_null_daily = stitched_q.isnull()
-    blocks = (is_null_daily != is_null_daily.shift()).cumsum()
-    gap_sizes = is_null_daily.groupby(blocks).transform('sum')
-    small_gap_mask = is_null_daily & (gap_sizes <= 35)
-    interpolated_q = stitched_q.interpolate(method='linear')
-    stitched_q = stitched_q.where(~small_gap_mask, interpolated_q)
+    # Preserve missing observations: future daily values must not fill issue-time
+    # features or manufacture scored targets. Weekly counts below use raw values.
     
     # 4. Calibrate Meteorological Inputs (Structural Break Mitigation)
     calib = calibrate_meteorological_forcings(gauge_id, lat, lon, ds_imd_lazy, station_name)
@@ -429,7 +440,7 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     imd_cm_21_25 = catchment_mean(rain_slice_21_25, gauge_id)
     p_calibrated_21_25 = imd_cm_21_25 * alpha_p
     
-    # C. 2021–2025 ERA5-Land Temperature & PET with boundary calibrations applied
+    # C. 2021–2025 Open-Meteo default Best Match Temperature & PET with boundary calibrations applied
     era5_file = os.path.join(ERA5_DIR, f'era5_land_{gauge_id:05d}_{station_name}.csv')
     df_era5 = pd.read_csv(era5_file)
     df_era5['dt'] = pd.to_datetime(df_era5['Date']).dt.normalize()
@@ -442,11 +453,11 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     pet_calibrated_21_25 = slice_era5_21_25['pet_mm'] * alpha_pet
     
     # Stitch 46-year daily series
-    stitched_p = pd.concat([p_camels, p_calibrated_21_25]).reindex(timeline).fillna(0.0)
-    stitched_tavg = pd.concat([tavg_camels, tavg_calibrated_21_25]).reindex(timeline).interpolate(method='linear')
-    stitched_tmax = pd.concat([tmax_camels, tmax_calibrated_21_25]).reindex(timeline).interpolate(method='linear')
-    stitched_tmin = pd.concat([tmin_camels, tmin_calibrated_21_25]).reindex(timeline).interpolate(method='linear')
-    stitched_pet = pd.concat([pet_camels, pet_calibrated_21_25]).reindex(timeline).interpolate(method='linear')
+    stitched_p = pd.concat([p_camels, p_calibrated_21_25]).reindex(timeline)
+    stitched_tavg = pd.concat([tavg_camels, tavg_calibrated_21_25]).reindex(timeline)
+    stitched_tmax = pd.concat([tmax_camels, tmax_calibrated_21_25]).reindex(timeline)
+    stitched_tmin = pd.concat([tmin_camels, tmin_calibrated_21_25]).reindex(timeline)
+    stitched_pet = pd.concat([pet_camels, pet_calibrated_21_25]).reindex(timeline)
     
     # Daily DataFrame
     df_daily = pd.DataFrame({
@@ -459,9 +470,8 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     }, index=timeline)
     
     # 6. Aggregate to Weekly Timestep (ISO Weekly Resampling W-MON)
-    valid_days_per_week = df_daily['streamflow_m3s'].resample('W-MON').count()
-    weekly_flow = df_daily['streamflow_m3s'].resample('W-MON').mean()
-    weekly_flow[valid_days_per_week < 4] = np.nan
+    from pipeline_integrity import observed_weekly_flow, complete_weekly_sum
+    weekly_flow, valid_days_per_week = observed_weekly_flow(df_daily['streamflow_m3s'])
     
     # Area normalization factor: Specific runoff (mm/week)
     if df_topo is not None and gauge_id in df_topo.index:
@@ -475,29 +485,29 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     conv_factor = 604.8 / area_km2
 
     # Streamflow hydrograph shape
-    weekly_flow_std = df_daily['streamflow_m3s'].resample('W-MON').std().fillna(0.0)
-    weekly_flow_min = df_daily['streamflow_m3s'].resample('W-MON').min()
-    weekly_flow_max = df_daily['streamflow_m3s'].resample('W-MON').max()
+    weekly_flow_std = df_daily['streamflow_m3s'].resample('W-MON', closed='left', label='right').std().fillna(0.0)
+    weekly_flow_min = df_daily['streamflow_m3s'].resample('W-MON', closed='left', label='right').min()
+    weekly_flow_max = df_daily['streamflow_m3s'].resample('W-MON', closed='left', label='right').max()
     
     # Rainfall aggregations
-    weekly_rain_sum = df_daily['rainfall_mm'].resample('W-MON').sum()
-    weekly_dry_days = (df_daily['rainfall_mm'] < 1.0).resample('W-MON').sum()
-    daily_roll_14d = df_daily['rainfall_mm'].rolling(14, min_periods=1).sum().resample('W-MON').last()
-    daily_roll_30d = df_daily['rainfall_mm'].rolling(30, min_periods=1).sum().resample('W-MON').last()
-    daily_roll_60d = df_daily['rainfall_mm'].rolling(60, min_periods=1).sum().resample('W-MON').last()
-    daily_roll_90d = df_daily['rainfall_mm'].rolling(90, min_periods=1).sum().resample('W-MON').last()
+    weekly_rain_sum = complete_weekly_sum(df_daily['rainfall_mm'])
+    weekly_dry_days = (df_daily['rainfall_mm'] < 1.0).where(df_daily['rainfall_mm'].notna()).resample('W-MON', closed='left', label='right').sum(min_count=7)
+    daily_roll_14d = df_daily['rainfall_mm'].rolling(14, min_periods=14).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
+    daily_roll_30d = df_daily['rainfall_mm'].rolling(30, min_periods=30).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
+    daily_roll_60d = df_daily['rainfall_mm'].rolling(60, min_periods=60).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
+    daily_roll_90d = df_daily['rainfall_mm'].rolling(90, min_periods=90).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
     
     # Decayed Antecedent Precipitation Index (API: gamma=0.85 decayed 30-day sum, chronological decay)
-    daily_api = calc_daily_api(df_daily['rainfall_mm']).resample('W-MON').last()
+    daily_api = calc_daily_api(df_daily['rainfall_mm']).resample('W-MON', closed='left', label='right').last(skipna=False)
     
     # Temperature aggregations
-    weekly_temp_mean = df_daily['temp_avg_c'].resample('W-MON').mean()
-    weekly_temp_max = df_daily['temp_max_c'].resample('W-MON').max()
-    weekly_temp_min = df_daily['temp_min_c'].resample('W-MON').min()
+    weekly_temp_mean = df_daily['temp_avg_c'].resample('W-MON', closed='left', label='right').mean()
+    weekly_temp_max = df_daily['temp_max_c'].resample('W-MON', closed='left', label='right').max()
+    weekly_temp_min = df_daily['temp_min_c'].resample('W-MON', closed='left', label='right').min()
     
     # PET aggregations
-    weekly_pet_sum = df_daily['pet_mm'].resample('W-MON').sum()
-    daily_roll_pet_30d = df_daily['pet_mm'].rolling(30, min_periods=1).sum().resample('W-MON').last()
+    weekly_pet_sum = complete_weekly_sum(df_daily['pet_mm'])
+    daily_roll_pet_30d = df_daily['pet_mm'].rolling(30, min_periods=30).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
     
     # Hydrological water deficit (P - PET)
     water_deficit_1w = weekly_rain_sum - weekly_pet_sum
@@ -510,6 +520,8 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     
     # Assemble Weekly Dataset
     df_weekly = pd.DataFrame({
+        'pipeline_version': 2,
+        'observed_flow_days': valid_days_per_week,
         # Discharge features (Issue Time t)
         'flow_target_m3s': weekly_flow,
         'flow_target_specific_mm': weekly_flow * conv_factor,
@@ -561,6 +573,23 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     
     # Save station weekly tensor
     out_csv = os.path.join(OUTPUT_TENSORS_DIR, f'weekly_tensor_gauge_{gauge_id:05d}_{station_name}.csv')
+    import json, hashlib
+    forcing_source = os.path.join(CAMELS_DIR, f'catchment_mean_forcings/{gauge_id:05d}.csv')
+    source_hashes = {}
+    shape_dir = os.path.join(CAMELS_DIR, 'shapefiles_catchment')
+    shape_sources = [os.path.join(shape_dir, name) for name in os.listdir(shape_dir) if name.startswith('catchments.')]
+    for source in [forcing_source, era5_file, IMD_NC_PATH, cwc_path, os.path.join(CAMELS_DIR, 'streamflow_timeseries/streamflow_observed.csv'), get_camels_topo_path()] + shape_sources:
+        digest = hashlib.sha256()
+        with open(source, 'rb') as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b''):
+                digest.update(block)
+        source_hashes[os.path.relpath(source, RAW_DIR)] = digest.hexdigest()
+    with open(out_csv + '.provenance.json', 'w') as handle:
+        json.dump({'pipeline_version': 2, 'calibration': calib, 'source_sha256': source_hashes,
+                   'weather_source': {'provider': 'Open-Meteo Historical Weather API', 'model_selection': 'default Best Match (models parameter omitted)', 'model_homogeneity': 'not established; default may combine products', 'timezone': 'GMT', 'evaporation_variable': 'et0_fao_evapotranspiration (FAO reference ET0, not native GLEAM PET)', 'request_evidence': 'scripts/download_era5_land.py supplied by user; original HTTP responses not retained'},
+                   'cwc_source_kind': 'original archive' if cwc_source_path is None or os.path.abspath(cwc_path) == os.path.abspath(os.path.join(CWC_DIR, cwc_csv_name)) else 'explicit derived daily table; original archive lineage unavailable',
+                   'weekly_window': 'W-MON closed=left label=right',
+                   'minimum_observed_flow_days': 4}, handle, indent=2)
     df_weekly.to_csv(out_csv)
     
     valid_weeks = int(df_weekly['flow_target_m3s'].notnull().sum())
@@ -592,15 +621,39 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
 # ==============================================================================
 # 8. PIPELINE ORCHESTRATOR & REPORT GENERATOR
 # ==============================================================================
-def run_pipeline(target_stations=None, metric_scaled=False):
+def run_pipeline(target_stations=None, metric_scaled=False, derived_cwc=None):
+    from pipeline_integrity import preflight_era
+    from train_m2_models import PORTFOLIO_CONFIG
+    errors = []
+    try:
+        preflight_era(ERA5_DIR, PORTFOLIO_CONFIG)
+    except (FileNotFoundError, ValueError) as error:
+        errors.append(str(error))
+    from pipeline_integrity import resolve_cwc_source
+    cwc_sources = {}
+    for state in ['mh', 'od', 'ka']:
+        filename = f'river_discharge_manual_daily_cwc_{state}_2001_2025.csv'
+        try:
+            cwc_sources[filename] = resolve_cwc_source(os.path.join(CWC_DIR, filename), derived_cwc)
+        except (FileNotFoundError, ValueError) as error:
+            errors.append(str(error))
+    extra_sources = [get_camels_topo_path(), CATALOG_PATH] + [os.path.join(CAMELS_DIR, 'shapefiles_catchment', f'catchments.{ext}') for ext in ['shp', 'shx', 'dbf', 'prj']]
+    for source in extra_sources:
+        if not os.path.isfile(source):
+            errors.append(f'Missing source: {source}')
+    for source in [IMD_NC_PATH, os.path.join(CAMELS_DIR, 'streamflow_timeseries/streamflow_observed.csv')] + [os.path.join(CAMELS_DIR, f"catchment_mean_forcings/{station['gauge_id']:05d}.csv") for station in PORTFOLIO_CONFIG]:
+        if not os.path.isfile(source):
+            errors.append(f'Missing source: {source}')
+    if errors:
+        raise FileNotFoundError('Full rebuild blocked before writes:\n' + '\n'.join(errors))
     print("=" * 82)
-    print("      OPERATIONAL WEEKLY DATASET PIPELINE (1980–2025: 46 YEARS)")
+    print("      RETROSPECTIVE WEEKLY DATASET PIPELINE (1980–2025: 46 YEARS)")
     print("=" * 82)
     print(f"Project Root          : {PROJECT_ROOT}")
     print(f"IMD NetCDF Path       : {IMD_NC_PATH}")
     print(f"CWC Directory         : {CWC_DIR}")
     print(f"CAMELS Directory      : {CAMELS_DIR}")
-    print(f"ERA5-Land Directory   : {ERA5_DIR}")
+    print(f"Open-Meteo default Best Match Directory   : {ERA5_DIR}")
     print(f"Validation Reports    : {REPORTS_DIR}")
     print(f"Weekly Tensors Output : {OUTPUT_TENSORS_DIR}")
     print("-" * 82)
@@ -672,7 +725,7 @@ def run_pipeline(target_stations=None, metric_scaled=False):
     for stn_name, gid, cwc_file, is_coastal in portfolio:
         df_weekly, info = build_station_weekly_dataset(
             stn_name, gid, cwc_file, ds_imd_lazy, timeline,
-            df_flow_all=df_flow_all, df_topo=df_topo, cwc_cache=cwc_cache
+            df_flow_all=df_flow_all, df_topo=df_topo, cwc_cache=cwc_cache, cwc_source_path=cwc_sources[cwc_file]
         )
         summary_records.append(info)
         if 'Alpha_P' in info:
@@ -687,9 +740,9 @@ def run_pipeline(target_stations=None, metric_scaled=False):
         f.write("# 📋 Data Pipeline Integrity & Missingness Report (1980–2025)\n\n")
         f.write(f"- **Generated:** {datetime.datetime.now().isoformat()}\n")
         f.write(f"- **Timeline Array:** {START_DATE} to {END_DATE} ({len(timeline)} days)\n")
-        f.write(f"- **Missingness Limit:** < 10.0%\n")
-        f.write(f"- **Small Gap Interpolation Limit:** <= 35 consecutive days\n")
-        f.write(f"- **Large Gap Policy:** Gaps > 35 days marked as NaN (unobserved) to prevent synthetic imputation.\n\n")
+        f.write(f"- **Missingness Limit:** < 15.0% (Option M1 approved: zero daily interpolation; unobserved targets left as NaN requiring >=4 original measurements)\n")
+        f.write(f"- **Interpolation policy:** no daily flow interpolation\n")
+        f.write(f"- **Missing flow:** all gaps remain NaN; weekly targets require four original observations.\n\n")
         f.write("| Station | Gauge ID | Daily Missing % | Max Daily Gap | Total Weeks | Observed Weeks | Unobserved (NaN) | Status |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
         for r in summary_records:
@@ -699,19 +752,19 @@ def run_pipeline(target_stations=None, metric_scaled=False):
     # B. Calibration Workpaper
     cal_report_path = os.path.join(REPORTS_DIR, 'structural_break_calibration.md')
     with open(cal_report_path, 'w') as f:
-        f.write("# 📐 Structural Break Mitigation: 2015–2020 Boundary Calibration\n\n")
+        f.write("# 📐 Structural Break Mitigation: 2001–2010 Boundary Calibration\n\n")
         f.write("Calibrates the spatial and instrument mismatch between CAMELS-IND catchment-averaged historical forcings (1980–2020) ")
-        f.write("and operational products (2021–2025: IMD 0.25° Precipitation, ERA5-Land Temperature & PET) ")
-        f.write("using overlapping boundary observations (2015–2020: 2,192 daily timesteps).\n\n")
+        f.write("and later-source products (2021–2025: IMD 0.25° Precipitation, Open-Meteo default Best Match Temperature & PET) ")
+        f.write("using overlapping boundary observations (2001–2010: paired finite training daily observations).\n\n")
         
         f.write("### 1. Data Lineage & Extraction Rules Contract\n\n")
         f.write("- **Discharge ($Q$):** Stitched from CAMELS-IND observed streamflow (1980–2020) and CWC manual daily discharge (2001–2025). Coordinates: WGS84 (EPSG:4326). Units: $\\text{m}^3/\\text{s}$. Specific Runoff ($q = Q \\times 604.8 / \\text{Area}_{\\text{km}^2}$, mm/week).\n")
-        f.write("- **Precipitation ($P$):** 1980–2020 from CAMELS-IND (**Catchment-Averaged** zonal mean over polygon shapefile). 2021–2025 from IMD 0.25° NetCDF (**Nearest-Grid Point Extraction** at gauge coordinates). Scaled by $\\alpha_P = \\sum P_{\\text{CAMELS}} / \\sum P_{\\text{IMD}}$.\n")
-        f.write("- **Temperature ($T_{\\text{avg}}, T_{\\text{max}}, T_{\\text{min}}$):** 1980–2020 from CAMELS-IND (**Catchment-Averaged** from IMD 1.0° grids). 2021–2025 from ERA5-Land daily CSVs (**Nearest-Grid Point Extraction**). Bias corrected via $\\text{Bias}_T = \\mu(T_{\\text{CAMELS}}) - \\mu(T_{\\text{ERA5}})$.\n")
-        f.write("- **Evaporative Demand (PET):** 1980–2020 from CAMELS-IND GLEAM v3.6a (**Priestley-Taylor** formulation, catchment-averaged). 2021–2025 from ERA5-Land (**FAO-56 Penman-Monteith** reference crop evapotranspiration, point extraction). Scaled by $\\alpha_{\\text{PET}} = \\sum \\text{PET}_{\\text{GLEAM}} / \\sum \\text{PET}_{\\text{ERA5}}$.\n\n")
+        f.write("- **Precipitation ($P$):** 1980–2020 from CAMELS-IND (**Catchment-Averaged** zonal mean over polygon shapefile). 2021–2025 from IMD 0.25° NetCDF (**Catchment-area weighted extraction**). Scaled by $\\alpha_P = \\sum P_{\\text{CAMELS}} / \\sum P_{\\text{IMD}}$.\n")
+        f.write("- **Temperature ($T_{\\text{avg}}, T_{\\text{max}}, T_{\\text{min}}$):** 1980–2020 from CAMELS-IND (**Catchment-Averaged** from IMD 1.0° grids). 2021–2025 from Open-Meteo default Best Match daily CSVs (**Gauge-point request; provider grid metadata not retained**). Bias corrected via $\\text{Bias}_T = \\mu(T_{\\text{CAMELS}}) - \\mu(T_{\\text{Best Match}})$.\n")
+        f.write("- **Evaporative Demand (PET):** 1980–2020 from CAMELS-IND GLEAM v3.6a (**Priestley-Taylor** formulation, catchment-averaged). 2021–2025 from Open-Meteo default Best Match (**FAO-56 Penman-Monteith** reference crop evapotranspiration, point extraction). Scaled by $\\alpha_{\\text{PET}} = \\sum \\text{PET}_{\\text{GLEAM}} / \\sum \\text{PET}_{\\text{Best Match}}$.\n\n")
         
-        f.write("### 2. Comprehensive Boundary Calibration Audit Table (2015–2020: 2,192 Days)\n\n")
-        f.write("| Station | Gauge | Area (km²) | P Mean (CAM/IMD) | α_P | P Daily r | P Wkly r | Tavg Mean (CAM/ERA) | Tavg Bias (°C) | Tavg Daily r | Tavg Wkly r | PET Mean (GLM/ERA) | α_PET | PET Daily r | PET Wkly r | Daily Gate | Wkly Gate |\n")
+        f.write("### 2. Comprehensive Boundary Calibration Audit Table (2001–2010: training-period paired days)\n\n")
+        f.write("| Station | Gauge | Area (km²) | P Mean (CAM/IMD) | α_P | P Daily r | P Wkly r | Tavg Mean (CAM/Best Match) | Tavg Bias (°C) | Tavg Daily r | Tavg Wkly r | PET Mean (GLM/Best Match) | α_PET | PET Daily r | PET Wkly r | Daily Gate | Wkly Gate |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
         
         for c in calibration_records:
@@ -759,16 +812,6 @@ def run_pipeline(target_stations=None, metric_scaled=False):
             f.write(f"- **Temperature ($T_{{avg}}$) Correlation:** Daily Mean $r = {mean_corr_t_d:.4f}$ | Weekly Mean $r = {mean_corr_t_w:.4f}$ (Target: >0.9), Mean Bias: `{mean_bias_t:+.4f} ^\\circ C`\n")
             f.write(f"- **Evaporative Demand (PET) Correlation:** Daily Mean $r = {mean_corr_pet_d:.4f}$ | Weekly Mean $r = {mean_corr_pet_w:.4f}$ (Target: >0.6), Mean Scaling Ratio ($\\alpha_{{PET}}$): `{mean_scale_pet:.4f}`\n\n")
             
-            f.write("### 4. Critical Geospatial & Physical Findings (Approval Gate Audit):\n\n")
-            f.write("1. **Disproving the Uniform Daily Pass Assumption:**\n")
-            f.write("   - While portfolio-averaged correlations clear all three targets ($r_P=0.660 > 0.6$, $r_{Tavg}=0.947 > 0.9$, $r_{PET}=0.677 > 0.6$), **individual daily station correlations fail** in the Karnataka sub-portfolio.\n")
-            f.write("   - Specifically, daily $r_P < 0.6$ at Huvinhedigi ($0.349$), Haralahalli ($0.553$), and Yadgir ($0.571$). Daily $r_{PET} < 0.6$ across all 4 Karnataka stations ($0.522 - 0.568$). Daily $r_{Tavg} < 0.9$ at KUDIGE ($0.872$).\n")
-            f.write("2. **Scale Integration Effect (Daily vs Weekly Resolution):**\n")
-            f.write("   - Aggregation to the operational modeling scale (**ISO Weekly `W-MON`**) dramatically improves spatial coherence: weekly $r_P$ rises to $0.808$ for Yadgir, $0.676$ for Haralahalli, and portfolio weekly mean $r_P$ reaches $0.806$.\n")
-            f.write("   - Weekly temperature correlation clears $r > 0.92$ for **all 12 stations** (portfolio weekly mean $r = 0.965$).\n")
-            f.write("3. **Physical Evaporative Demand Divergence:**\n")
-            f.write("   - The PET correlation gap in semi-arid Karnataka ($r \\approx 0.52 - 0.57$) is an unavoidable physical artifact of contrasting formulations: CAMELS-IND uses radiation-driven Priestley-Taylor (GLEAM v3.6a), whereas ERA5-Land uses FAO-56 Penman-Monteith, which explicitly incorporates aerodynamic vapor pressure deficit ($VPD$) and wind speed.\n")
-            f.write("   - Multiplying ERA5-Land PET by $\\alpha_{\\text{PET}} \\approx 0.73$ successfully rescales absolute evaporative volume to match GLEAM water-balance continuity across the 2020/2021 boundary.\n")
 
     print(f"[+] Calibration report: {cal_report_path}")
     
@@ -780,9 +823,11 @@ def run_pipeline(target_stations=None, metric_scaled=False):
     print("=" * 82 + "\n")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Operational Weekly Hydro-Meteorological Dataset Preparation Pipeline.")
+    default_derived_cwc = os.path.join(PROJECT_ROOT, 'data/processed/merged/cwc_imd_merged_2001_2025.csv')
+    parser = argparse.ArgumentParser(description="Retrospective Weekly Hydro-Meteorological Dataset Preparation Pipeline.")
     parser.add_argument('--stations', nargs='+', help="Optional list of specific stations to process")
+    parser.add_argument('--derived-cwc', default=default_derived_cwc, help='Explicit daily merged CWC table used directly for Karnataka daily discharge')
     parser.add_argument('--metric-scaling', action='store_true', help="Explicitly enable metric scaling for OOD coastal holdout transfer")
     args = parser.parse_args()
     
-    run_pipeline(target_stations=args.stations, metric_scaled=args.metric_scaling)
+    run_pipeline(target_stations=args.stations, metric_scaled=args.metric_scaling, derived_cwc=args.derived_cwc)

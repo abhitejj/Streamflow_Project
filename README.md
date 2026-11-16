@@ -1,297 +1,110 @@
-# Streamflow & Drought Forecasting ML Project (1980–2025)
+# Streamflow & Hydrological Drought Forecasting
 
-An empirical machine learning framework evaluating the predictive value of India Meteorological Department (IMD) meteorological forcings for multi-horizon streamflow forecasting and hydrological drought early warning at 12 gauges across peninsular Indian subcatchments, including shared Godavari and Krishna drainages and the nested Warunji–Karad–Huvinhedigi cascade.
+A retrospective machine-learning benchmark at 12 Indian river gauges, comparing flow history, weather inputs and simple baselines at one-, two-, four- and eight-week leads.
 
----
+**Corrected run, 16 November 2026:** all twelve weekly datasets, 312 tabular models and twelve HydroLSTMs have been rebuilt/retrained. Point metrics, severity analysis, historical sensitivity, chart sources and exports have been regenerated. The earlier station bootstrap is archived and withdrawn. Its replacement preserves calendar gaps and withholds inference when reliability checks fail; retained intervals are exploratory. Earlier outputs are a different run and must not be mixed with these artifacts.
 
-## Core Research Question & Objectives
+## Question and scope
 
-> **Central Scientific Question:**  
-> *How much does adding meteorological information to historical streamflow improve 1-, 2-, 4-, and 8-week-ahead streamflow forecasts compared with streamflow history alone and a persistence baseline? Does this additional information improve the reliability of drought warnings, and how do these benefits change with forecast horizon and drought severity?*
+Does adding antecedent rainfall, temperature and atmospheric-demand information improve weekly streamflow forecasts over flow history alone, and do those improvements also produce better drought warnings? A row represents one gauge at a Monday-labelled forecast issue time. Targets are weekly mean discharge at the selected future lead, expressed in m³/s; specific runoff in mm/week is used for area-normalised and log-target models.
 
-### Specific Research Sub-Questions
-1. **Forecast Horizon Decay**: At what forecast horizon (1-, 2-, 4-, or 8-week ahead) does antecedent river discharge memory ($Q_t, \dots, Q_{t-k}$) lose predictive power, and at what horizon does IMD meteorological memory (precipitation accumulations, temperature/PET, soil moisture) become the dominant driver of predictive skill?
-2. **Drought Warning Reliability**: Does the inclusion of meteorological forcings reduce False Alarm Ratio (FAR) and increase Probability of Detection (POD) for hydrological drought events?
-3. **Drought Severity Sensitivity**: How does the value of meteorological inputs differ between mild low-flow anomalies ($Q_{80}$, training-period 20th percentile) and extreme multi-week hydrological droughts ($Q_{95}$, training-period 5th percentile)?
-4. **Spatial Basin Generalizability**: Can a hydro-meteorological model trained on three other catchments in a state transfer its drought warning skill zero-shot to an unseen 4th catchment at a held-out gauge?
+This is a retrospective hindcast. A Monday-labelled row aggregates the preceding Monday through Sunday, excluding the labelled Monday's daily record. Source measurement-day conventions and publication delays have not been demonstrated to support a midnight real-time forecast. Prediction does not establish causation.
 
----
+## Data and provenance
 
-## Experimental Design Matrix
+- CAMELS-IND historical observed flow and catchment forcings support the historical record.
+- CWC daily discharge is combined with CAMELS observations. The code uses CWC where available and CAMELS as the fallback; the precise selection is preserved in the rebuild code and source hashes.
+- Rainfall after 2020 uses IMD 0.25° grids and catchment-area weighting.
+- The supplied later temperature/reference-ET0 inputs come through the Open-Meteo Historical Weather API using **default Best Match**, GMT daily aggregation, and FAO reference evapotranspiration. The request omitted an explicit model selector; these inputs are **not verified pure ERA5-Land**. Existing ERA-named filenames are retained for compatibility.
+- The Karnataka CWC archive was reconstructed from existing merged daily records. The corrected run explicitly uses the derived daily table and records its hash and lineage limitation; its rainfall column is not used.
 
-| Factor | Configurations | Description |
-| :--- | :--- | :--- |
-| **Temporal Span** | **46 Years (1980–2025)** | 2,394 weekly timesteps combining CAMELS-IND (1980–2020) and CWC/IMD/ERA5-Land (2021–2025) |
-| **Forecast Horizons ($H$)** | **1-week, 2-week, 4-week, 8-week** | Direct multi-step weekly mean discharge forecasts ($y_{t+H}$) |
-| **Model Tiers** | **M0: Persistence Baseline**<br>**M1: Autoregressive (Flow Only)**<br>**M2: Hydro-Meteorological (Flow + Multi-Source Weather)** | $Q_{t+H} = Q_t$ for $H \le 2\text{w}$; seasonal weekly climatology for $H \ge 4\text{w}$<br>Input: Past discharge lags ($Q_t, \dots, Q_{t-7}$) + recession slope + within-week flow std + calendar Fourier seasonality<br>Input: Flow lags + IMD Rainfall ($P_{1w}, P_{2w}, P_{1m}, P_{2m}, P_{3m}, API_{30d}, \text{dry days}$) + ERA5-Land/GLEAM Temp & PET ($T_{mean}, T_{max}, PET_{1w}, PET_{1m}, \text{Water Deficit}_{1w}, \text{Water Deficit}_{1m}$) |
-| **Drought Severity Levels** | **Mild Drought** ($Q \le Q_{80}$)<br>**Moderate Drought** ($Q \le Q_{90}$)<br>**Severe Drought** ($Q \le Q_{95}$) | Empirically derived from historical baseline distribution |
-| **Evaluation Metrics** | **Track A: Continuous Hydrograph Accuracy**<br>**Track B: Drought Early Warning Reliability** | Track A: **NSE, KGE (decomposed into $r, \alpha, \beta$), RMSE, MAE**<br>Track B: **POD (Recall), FAR, CSI (Threat Score), PR-AUC**, scored across Severe ($Q_{95}$), Moderate ($Q_{90}$), and Mild ($Q_{80}$) drought tiers (audited in `scripts/audit_drought_sensitivity.py`, artifact: `data/processed/model_results/drought_severity_sensitivity.csv`; full comparison in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10.3.1). Log-NSE is computed and reported; Brier score and reliability curves are not computed. |
+See [source access and limitations](docs/DATA_ACCESS.md), [weather-source inventory](docs/WEATHER_SOURCE_PROVENANCE.md), the [input manifest](data/processed/validation_reports/weather_input_manifest.json), and each tensor's provenance JSON. Raw data stays local. Rights to redistribute source datasets are not asserted.
 
----
+The portfolio includes shared Godavari and Krishna drainages and nested Warunji–Karad–Huvinhedigi gauges; twelve station names do not establish twelve independent river systems.
 
-## Multi-Source Hydro-Meteorological Forcing Pipeline
+## Corrected preprocessing
 
-Meteorological inputs are harmonized across two continuous observation epochs to ensure physical consistency without artificial structural breaks at the 2020/2021 train/test seam:
+**CAMELS-IND citation:** [Mangukiya et al. (2025), CAMELS-IND data description](https://essd.copernicus.org/articles/17/461/2025/), with the [dataset repository](https://doi.org/10.5281/zenodo.14005378). The local bundle's exact release version has not been independently established; the run records the actual input-file hashes rather than assigning it a release identity from this citation.
 
-1. **Daily Precipitation ($P$, mm/day)**:
-   - **Historical Baseline (1980–2020)**: CAMELS-IND catchment-averaged daily precipitation (derived from IMD 0.25° gridded daily rainfall).
-   - **Operational Period (2021–2025)**: Reconstructed as catchment area-weighted means from IMD Pune's high-resolution **0.25° × 0.25° gridded daily rainfall dataset** (`data/raw/imd/imd_rainfall_2001_2025.nc`, 1.27 GB) using polygon-cell intersection weights against CAMELS catchment shapefiles (`camels_ind/shapefiles_catchment/catchments.shp`). Evaluated across the 2015–2020 overlap period against CAMELS-IND historical series, the catchment-averaged reconstruction achieves physical parity with portfolio mean scale ratio $\bar{\alpha}_P = 1.0009$ (vs 1.134 at nearest grid point), daily Pearson $r = 0.9994$ (vs 0.660), and weekly Pearson $r = 0.9998$ (vs 0.697).
-   - **Engineered Memory Windows**:
-     - $P_{1w}$ (7-day sum), $P_{2w}$ (14-day sum), $P_{1m}$ (30-day sum), $P_{2m}$ (60-day sum), $P_{3m}$ (90-day seasonal accumulation).
-     - **Antecedent Precipitation Index ($API_t = \sum_{k=0}^{29} 0.85^k P_{t-k}$)**: Decayed soil moisture recharge proxy.
-     - **Dry Spell Duration**: Count of dry days ($P < 1.0\,\text{mm}$) within the issuance week.
+- No two-sided daily flow or weather interpolation. Missing observations remain missing.
+- Weekly flow requires at least four original daily measurements, with the observed count retained. Complete seven-day rain/ET0 sums and complete rolling windows preserve missingness.
+- The approved **<15% raw daily missingness** rule retains all twelve gauges. KUDIGE and Haralahalli exceed the earlier <10% rule; their former discard reports are marked historical. Weekly scoring coverage still varies.
+- Source harmonisation is fitted only on paired finite daily observations during **2001–2010**, before validation and testing. Scaling reference ET0 does not make it physically equivalent to GLEAM PET.
+- Predictors missing at inference use frozen training medians. Scalers and feature order are saved with model bundles; LSTM preprocessing is reused unchanged by the auditor.
+- At four configured stations, recorded zeros are treated as unmeasured according to the documented monitoring-pattern inference. Training/validation masking and shared evaluation exclusions are retained. Severe-drought thresholds remain fitted on the training targets under the existing definition.
+- `api_30d` is a normalised exponentially weighted precipitation average: sum(0.85^k × rainfall[t−k]) / sum(0.85^k), over thirty days. It is a proxy, not measured soil moisture.
 
-2. **Atmospheric Evaporative Demand & Thermal Forcings**:
-   - **Historical Baseline (1980–2020)**: Sourced from CAMELS-IND, which compiles IMD gridded daily temperature ($T_{max}, T_{min}, T_{avg}$) and GLEAM v3.6a Potential Evapotranspiration ($PET_{GLEAM}$, mm/day; Priestley-Taylor formulation).
-   - **Operational Period (2021–2025)**: To preserve source continuity with the CAMELS-IND baseline and eliminate structural breaks at the 2020/2021 boundary, non-rainfall forcings are ingested from **ERA5-Land reanalysis** (gauge-point extractions calibrated to GLEAM), matching the evaporative demand formulation via reference evapotranspiration.
-   - **Boundary Calibration (2015–2020 Overlap)**:
-     - **Temperature**: Ingests daily $T_{avg}$ and $T_{max}$ from ERA5-Land, calibrated with an additive bias correction ($\text{Bias}_T = \mu_{CAMELS} - \mu_{ERA5}$; Mean Absolute Bias across portfolio: $0.84\,^\circ\text{C}$, signed portfolio mean: $-0.035\,^\circ\text{C}$, $r = 0.947$).
-     - **PET**: Ingests FAO-56 Penman-Monteith ET0, calibrated via multiplicative scaling ($\alpha_{PET} = \sum PET_{GLEAM} / \sum PET_{ERA5} \approx 0.734$, $r = 0.677$).
-   - **Engineered Weekly Features**:
-     - $T_{mean, 1w}$ (7-day mean), $T_{max, 1w}$ (7-day max).
-     - $PET_{1w}$ (7-day sum), $PET_{1m}$ (30-day sum).
-     - **Hydrological Water Deficit**: $\text{Deficit}_{1w} = P_{1w} - PET_{1w}$ and $\text{Deficit}_{1m} = P_{1m} - PET_{1m}$ capturing net atmospheric water deficit and catchment drying stress.
-   - **Aridity Index Definition**: Catchment aridity used in this project is the Budyko index $\overline{\text{PET}} / \bar{P}$, computed from the weekly tensors over 1980–2020 (values $> 1.0$ indicate water-limited regimes; values $< 1.0$ indicate energy-limited/humid regimes).
+## Models and evaluation
 
-3. **Multi-Depth Soil Moisture Pruning**:
-   - As mandated by data integrity rules, multi-depth soil moisture ($sm_1 \dots sm_4$) has been pruned from the operational pipeline to eliminate non-native scraping dependencies and ensure 100% auditable traceability.
+M0 uses lagged persistence at one and two weeks and training-period weekly climatology at four and eight weeks. Both baselines are also retained separately in diagnostic outputs.
 
----
+M1 uses flow and calendar features, comparing Ridge and gradient boosting. M2 gradient boosting adds rainfall, temperature, reference-ET0 and deficit features. Log-target variants fit log(1 + specific runoff); both ordinary NSE and Log-NSE are reported. Protocol 2 pools three training gauges per state and transfers an eight-week-lookback, two-layer HydroLSTM to the fourth gauge. Its local baseline still uses that held-out gauge's history, so this is not an ungauged operational test.
 
-## 12-Station Catchment Portfolio
+Chronological splits remain **1980–2010 train**, **2011–2015 validation**, **2016–2025 test**. The final H rows of training and validation are purged for an H-week forecast. Hyperparameters/early stopping use validation only; final test results are not used to select the models. Sequence buffers retain chronological historical features without fitting embargoed targets.
 
-The experimental portfolio encompasses **12 CWC/CAMELS-IND river gauging catchments** spanning three distinct macro-climatic and physiographic zones of peninsular and eastern India (Maharashtra, Odisha, Karnataka) across a 46-year span (1980–2025: 2,394 weekly timesteps).
-
-### Shared drainages and nested gauges
-The portfolio includes shared major drainages and a nested gauge cascade. Distinct station names do not establish statistical independence:
-1. **Shared major drainages**: CAMELS-IND station metadata places Wainganga and Wardha within Godavari, and Koyna, Bhima, Tungabhadra, and the Krishna main-stem gauges within Krishna. The portfolio also includes Tel/Mahanadi, Baitarani, Brahmani, Vamsadhara, and Cauvery subcatchments.
-2. **1 Three-Gauge Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
-   - **Warunji (Gauge 4063)**: Headwater catchment on the Koyna River ($1,890.0\,\text{km}^2$) in the Western Ghats high-rainfall crest.
-   - **Karad (Gauge 4021)**: Upper Krishna mainstem gauge ($5,462.0\,\text{km}^2$), directly receiving Koyna outflow. Warunji represents **34.6% of Karad's drainage area**.
-   - **Huvinhedigi (Gauge 4017)**: Downstream regional trunk gauge on the peninsular Krishna in Karnataka ($55,150.0\,\text{km}^2$). Warunji comprises **3.4%** and Karad comprises **9.9%** of Huvinhedigi's upstream catchment.
-   - *Audit Disclosure*: We explicitly retire the former 'Zero Sub-Basin Overlap' claim. Models evaluated on Warunji, Karad, and Huvinhedigi evaluate multi-scale hydrological propagation along a 55,000 km² drainage cascade rather than mutually independent catchments.
-
-### Unmeasured Low Flows Recorded as Zero (Karad, Warunji, Yadgir, Huvinhedigi)
-After about 2010 CWC operated Karad, Warunji and Yadgir as monsoon-season stations; weeks that were not measured are logged as exactly $0.0000\,\text{m}^3/\text{s}$ (see `docs/AUDIT_LOG.md`, Issue C). Share of weeks recorded as zero:
-
-| Station | Train 1980–2010 | Val 2011–2015 | Test 2016–2025 | Test zeros falling in Jun–Oct |
-| :-- | --: | --: | --: | --: |
-| Karad | 2.1% | 76.6% | 69.0% | 21% |
-| Warunji | 4.0% | 77.0% | 70.0% | 22% |
-| Yadgir | 19.9% | 65.1% | 62.3% | 18% |
-| Huvinhedigi | 0.0% | 0.0% | 14.1% | 28% |
-
-These are missing measurements, not droughts (about a fifth fall inside the monsoon). At these four stations every week whose issue-time or target flow is a recorded zero is excluded from scoring for all models (`ZERO_AS_MISSING_STATIONS` in `scripts/audit_metrics.py`). This lowers the pooled severe-drought base rate from 0.238 to about 0.065, close to the nominal 0.05. Haralahalli's zeros (dry season only, also present in training) are kept. Drought thresholds are fitted on the 1980–2010 training fold (Gate AG-TS-07). All models are trained and tuned with zero-flow masking applied to both training (1980–2010) and validation (2011–2015) folds at these four stations, ensuring spurious telemetry zeros do not distort model fitting or early stopping. In addition, log-target regression variants (`M1-log`, `M2-log`) fit specific runoff in log space to mitigate heteroskedasticity and preserve low-flow sensitivity.
-
-
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                               12-STATION EXPERIMENTAL MATRIX: REGIMES & ATTRIBUTES                                    │
-├─────────────────┬────────────────────────┬──────────────────────┬─────────────┬───────────┬──────────┬────────────────┤
-│ State           │ Station Name           │ Sub-Basin / River    │ CAMELS ID   │ Area(km²) │ Aridity* │ Regime Type    │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Maharashtra** │ 1. Karad (Cascade 2)   │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.977  │ Deccan Plains  │
-│                 │ 2. Warunji (Cascade 1) │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   0.747  │ Ghats Headwater│
-│                 │ 3. Ashti               │ Wainganga Sub-basin  │ Gauge 3005  │  50,990.0 │   0.852  │ Sub-Humid East │
-│                 │ 4. Bamni (Holdout)     │ Wardha Sub-basin     │ Gauge 3008  │  46,020.0 │   1.110  │ Vidarbha Basin │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Odisha**      │ 1. Anandpur            │ Baitarani Sub-basin  │ Gauge 7002  │   8,570.0 │   0.674  │ Humid Coastal  │
-│                 │ 2. Kashinagar          │ Vamsadhara Basin     │ Gauge 16007 │   7,820.0 │   0.770  │ Eastern Ghats  │
-│                 │ 3. Gomlai              │ Upper Brahmani Basin │ Gauge 7007  │  21,950.0 │   0.751  │ Highland Plain │
-│                 │ 4. Kantamal (Holdout)  │ Tel / Mahanadi Basin │ Gauge 8013  │  19,600.0 │   0.740  │ Inland Delta   │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Karnataka**   │ 1. Yadgir              │ Bhima Sub-basin      │ Gauge 4064  │  69,863.0 │   1.440  │ Semi-Arid Soil │
-│                 │ 2. Huvinhedigi(Casc. 3)│ Upper Krishna Main   │ Gauge 4017  │  55,150.0 │   1.367  │ Peninsular Mid │
-│                 │ 3. KUDIGE              │ Upper Cauvery Basin  │ Gauge 5010  │   1,934.0 │   0.725  │ High-Rain Head │
-│                 │ 4. Haralahalli(Holdout)│ Tungabhadra Basin    │ Gauge 4013  │  14,582.0 │   0.901  │ Central Valley │
-└─────────────────┴────────────────────────┴──────────────────────┴─────────────┴───────────┴──────────┴────────────────┘
-* Aridity is the Budyko aridity index PET/P over 1980–2020, computed from the weekly tensors; > 1.0 = water-limited.
-```
-
-### Data Continuity & Gap Handling Protocol
-To uphold scientific integrity without fabricating streamflow observations:
-1. **Missingness Retention Threshold**: Stations with total 46-year streamflow missingness $< 10.0\%$ are retained. All 12 stations qualify (ranging from 0.00% to 7.52% missingness).
-2. **Small Gap Interpolation ($\le 35$ days)**: Minor recording breaks (such as dry-season low-flow cessations or the nationwide May 2020 COVID-19 lockdown) are linearly interpolated to preserve weekly inertia.
-3. **Large Gap Policy ($> 35$ days)**: Contiguous gaps exceeding 35 days are **strictly preserved as `NaN` (unobserved)** without automated imputation. In weekly resampling, any week with $< 4$ daily observations is marked as `NaN` and masked out from loss and metric evaluation, ensuring models evaluate solely on true physical observations.
-
----
-
-## Dual Evaluation Protocol
-
-```text
-45-Year Timeline (1980 - 2025):
-|◄──────────── Train (1980–2010) ────────────►| [Embargo] |◄── Val (2011–2015) ──►| [Embargo] |◄── Test (2016–2025) ──►|
-           ~1,617 weekly steps                                 ~261 weekly steps                  ~522 weekly steps (10 yrs)
-```
-
-### Protocol 1: Station-Specific Multi-Horizon Forecasting (Temporal Split)
-* Evaluates how much IMD weather inputs extend forecast horizon ($H = 1, 2, 4, 8$ weeks) over flow inertia alone.
-* Evaluated across the 10-year out-of-sample test window (2016–2025) containing the severe 2018 drought and 2019 super-monsoon.
-
-### Protocol 2: Spatial Generalization to Unseen River Basins (Spatial Split)
-* In each state, train models on **Stations 1, 2, and 3** using area-normalized specific discharge ($q = Q / \text{Catchment Area}$ in mm/week) and CAMELS-IND static catchment attributes.
-* Evaluate zero-shot transfer onto **Station 4 (Holdout)** at a held-out gauge; some training and held-out gauges share major drainages.
-* Directly answers: *Can a drought warning system calibrated on regional basins issue reliable drought warnings for an unseen catchment?*
-
----
-
-## Empirical Benchmark Results (Audited)
+NSE measures squared flow error relative to the test mean. KGE combines correlation, variability and bias. Drought thresholds Q80/Q90/Q95 are the training 20th/10th/5th percentiles. CSI, POD, FAR and average precision assess warning behaviour. Undefined ratios are distinct from zero skill. Paired comparisons use the same scored observations within each station and lead.
 
 <!-- README_RESULTS:START -->
-### Audited results (test block 2016–2025, 12 stations)
+### Corrected retrospective results (2016–2025 test block)
 
-Generated by `scripts/render_report_results.py`; full tables in `docs/PROJECT_REPORT_DOCUMENTATION.md` §10. Recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi are treated as unmeasured weeks. Δ = paired median of per-station differences; *p* = uncorrected exploratory Wilcoxon signed-rank. Across four NSE lead comparisons, the Bonferroni reference is 0.0125. The one-week value 0.027 does not meet it, while the two-week value 0.007 does. Shared drainages and nested gauges also limit inference.
+Generated from newly audited models and observed targets. M0 is lagged persistence at one and two weeks, weekly climatology at four and eight weeks. NSE differences below are paired station differences, not differences between portfolio medians. Weather includes catchment-mean IMD rainfall and calibrated Open-Meteo default Best Match temperature/reference ET0 after 2020; it is not verified pure ERA5-Land.
 
-| Lead | NSE M0 / M1 / M2 | ΔNSE (M2−M1), *p* | Log-NSE M0 / M2-log | Q95 CSI M0 / M2 / M2-log | Climatology or persistence beats M2 |
-| :-- | :-- | :-- | :-- | :-- | :-- |
-| **1w** | +0.284 / +0.458 / +0.486 | +0.045, 0.027 | +0.829 / +0.844 | 0.529 / 0.000 / 0.229 | 0 of 12 |
-| **2w** | -0.185 / +0.282 / +0.331 | +0.034, 0.007 | +0.649 / +0.746 | 0.379 / 0.000 / 0.060 | 0 of 12 |
-| **4w** | +0.364 / +0.273 / +0.292 | -0.007, 0.677 | +0.623 / +0.647 | 0.000 / 0.000 / 0.000 | 9 of 12 |
-| **8w** | +0.353 / +0.237 / +0.271 | -0.014, 0.569 | +0.622 / +0.609 | 0.000 / 0.000 / 0.000 | 11 of 12 |
+| Lead | M0 NSE | M1 NSE | M2 NSE | Paired median M2-M1 | Raw p | Pairs | p<0.0125 | Climatology beats M2 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1w | 0.2129 | 0.3578 | 0.4593 | 0.0498 | 0.1514 | 12 | False | 0 |
+| 2w | -0.1906 | 0.2184 | 0.2416 | 0.0221 | 0.2661 | 12 | False | 3 |
+| 4w | 0.1725 | 0.2548 | 0.2228 | -0.0137 | 0.1514 | 12 | False | 7 |
+| 8w | 0.1431 | 0.1943 | 0.1812 | 0.0037 | 0.5186 | 12 | False | 8 |
 
-**Key findings.**
-- **Weather inputs improve short-lead NSE:** M2 exceeds M1 by +0.045 paired median NSE at 1 week and +0.034 at 2 weeks. Reported KGE tests do not show significant gains at these leads.
-- **Seasonal averages remain important:** Weekly climatology beats M2 at 9 and 11 of 12 stations at 4 and 8 weeks.
-- **Flow accuracy and warning skill differ:** Persistence has median Q95 CSI 0.529 and 0.379 at 1 and 2 weeks. The additional 4-week lagged-persistence diagnostic has pooled CSI 0.251, versus M2 0.043. Official M0 at 4 weeks is climatology. Log-target M2 improves one-week median CSI to 0.229 but lowers continuous NSE from 0.486 to 0.464.
-- **Zero-shot spatial transfer:** Pooled HydroLSTM beats the held-out station's own baseline only at 1–2 weeks.
-- **Known limitations:** 2021–2025 temperature and PET remain gauge-point extractions from ERA5-Land rather than catchment-averaged means. Dynamic permutation feature importance shows that shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%). Catchment-averaging rainfall resolved the dominant spatial mismatch while avoiding error propagation from uncalibrated reanalysis ET0 grids.
+The p-values are exploratory and uncorrected. The p<0.0125 column is a four-horizon Bonferroni reference, not evidence of independent gauges. Shared drainages and nested gauges still limit inference. Prediction differences do not establish causation.
+
+**Warning performance:** Compare severity-specific counts and the five-model tables in the report/explorer. Good continuous flow scores do not establish good drought-warning performance. Undefined ratios are not zero skill.
+
+**Scope:** These are retrospective forecasts; real-time data publication delays are not simulated. Sources, preprocessing, missingness, and models changed together in this repair, so old/new score changes cannot be attributed to one cause.
 
 <!-- README_RESULTS:END -->
 
----
+## Reproduction and validation
 
-## Repository Structure
+The installed Python 3.14.4 environment is recorded in `requirements.txt`. This is an observed environment specification, not a platform-independent lock file. No packages were installed during this repair.
 
+After acquiring the documented inputs and retaining source provenance, run these stages in order:
 
-```text
-ML Project/
-├── data/
-│   ├── raw/
-│   │   ├── cwc/                          # CWC observed discharge (2001-2025)
-│   │   │   ├── river_discharge_manual_daily_cwc_mh_2001_2025.csv   # Maharashtra (Daily, 49 MB)
-│   │   │   ├── river_discharge_manual_daily_cwc_ka_2001_2025.csv   # Karnataka (Daily, 45 MB)
-│   │   │   ├── river_discharge_manual_daily_cwc_od_2001_2025.csv   # Odisha (Daily, 31 MB)
-│   │   │   └── ...
-│   │   ├── imd/                          # IMD 0.25° x 0.25° gridded daily rainfall
-│   │   │   ├── Rainfall_ind2001_rfp25.grd ... Rainfall_ind2025_rfp25.grd
-│   │   │   └── imd_rainfall_2001_2025.nc # Unified NetCDF spatial grid (1.27 GB)
-│   │   └── camels_ind/                   # CAMELS-IND 41-year hydro-climatic archive (1980-2020)
-│   │       ├── attributes_csv/           # Static catchment attributes (topo, climate, soil, geology)
-│   │       ├── catchment_mean_forcings/  # Daily basin-averaged forcings (P, T, PET)
-│   │       ├── shapefiles_catchment/     # Catchment drainage boundary polygons (.shp)
-│   │       └── streamflow_timeseries/    # Observed daily streamflow (14,976 days)
-│   └── processed/
-│       ├── station_catalog.csv           # Master catalog of 285 stations across India
-│       ├── validation_reports/           # Structural validation and boundary calibration logs
-│       ├── weekly_tensors/               # Harmonized 46-year weekly feature tensors (2,394 steps)
-│       └── model_results/                # Evaluated experiment metric tables (CSV)
-├── docs/
-│   ├── PROJECT_REPORT_DOCUMENTATION.md   # Complete publication-grade technical report reference
-│   ├── DECISION_LOG.md                   # Formal approval gates and strategic decision trail
-│   ├── PROGRESS.md                       # Automated deployment and progress tracking log
-│   └── 00_CAMELS_IND_Data_Description.pdf# Official CAMELS-IND documentation
-├── README.md                             # This guide
-├── deploy.sh                             # Automated artifact porting and gh-pages deployment script
-└── scripts/
-    ├── station_explorer.py               # CLI tool to browse, search, and select stations
-    ├── imd_cwc_alignment_test.py         # Parametric meteorological alignment test suite
-    ├── prepare_weekly_dataset.py         # 46-year weekly tensor extraction & calibration pipeline
-    ├── train_forecast_models.py          # M0 vs M1 multi-horizon training & benchmarking engine
-    ├── train_m2_models.py                # M2 Hydro-Meteorological models (HistGradientBoosting & PyTorch LSTM)
-    ├── eval_config.py                    # Shared evaluation settings (stations whose recorded zeros are unmeasured)
-    ├── audit_metrics.py                  # Scores every saved model on one shared mask (source of all published numbers)
-    ├── export_benchmark_data.py          # Writes assets/benchmark-data.js for the website
-    ├── generate_interactive_plots.py     # Plotly chart sources from the scored predictions
-    ├── uncertainty_tests.py              # Wilcoxon tests and bootstrap confidence intervals
-    └── render_report_results.py          # Regenerates report sections 10-12 and the README results
+```sh
+python3 -m pytest tests -q
+python3 scripts/prepare_weekly_dataset.py --derived-cwc data/processed/merged/cwc_imd_merged_2001_2025.csv
+python3 scripts/train_forecast_models.py --protocol all --model all --target raw
+python3 scripts/train_forecast_models.py --protocol 1 --model all --target log
+python3 scripts/train_m2_models.py --protocol 1 --target raw
+python3 scripts/train_m2_models.py --protocol 1 --target log
+python3 scripts/train_m2_models.py --protocol 2 --epochs 50 --device cpu
+python3 scripts/audit_metrics.py
+python3 scripts/audit_drought_sensitivity.py
+python3 scripts/generate_interactive_plots.py
+python3 scripts/uncertainty_tests.py --write-analysis
+python3 scripts/robustness_camels_era.py
+python3 scripts/export_benchmark_data.py
+python3 scripts/export_explorer_data.py
+python3 scripts/export_replay_data.py --assets-dir assets
+python3 scripts/render_report_results.py
+python3 scripts/validate_corrected_run.py
 ```
 
----
+Dataset and model stages overwrite processed artifacts; preserve a previous run before executing them. Retraining, especially the LSTM, can vary. Inspecting saved outputs differs from reproducing every training bit.
 
-## Technical Report & Decision Documentation
+The validator binds the input/tensor/model/output hashes and checks all 48 station–lead targets and scoring counts. Regression tests cover week boundaries, missing observation counts, calibration-period isolation, frozen preprocessing, model reload parity, sequence continuity, source opt-in, model/tensor mismatch rejection, calendar-bootstrap screening and drought-assessment availability. Browser tests and screenshots remain local under ignored `browser-tests/`.
 
-For submission in academic and course project reports, complete technical specifications, mathematical derivations, and audit trails are pre-compiled in `docs/`:
+The static website is maintained in the separate `gh-pages` worktree at `site/`. Rebuild its data locally from the newly generated sources; do not run `deploy.sh` while preparing an unapproved preview, because that script commits and pushes.
 
-1. **[Master Project Report Documentation (`docs/PROJECT_REPORT_DOCUMENTATION.md`)](docs/PROJECT_REPORT_DOCUMENTATION.md)**:
-   - Full scientific motivation, hypothesis formulation, and research sub-questions.
-   - Comprehensive 12-catchment portfolio table and physical hydrological regime descriptions.
-   - 2015–2020 boundary calibration equations and daily vs weekly correlation audit table.
-   - 39-feature schema breakdown, chronological API decay formulation, and issue-time leakage proof.
-   - Exact mathematical formulas for Track A continuous accuracy (NSE, KGE-2009 with guards, RMSE, MAE) and Track B drought early warning (Mild $Q_{80}$, Moderate $Q_{90}$, Severe $Q_{95}$ with POD, FAR, CSI).
-   - Direct mapping to the IITGN ES 335 course evaluation rubric.
-2. **[Formal Decision & Approval Gates Log (`docs/DECISION_LOG.md`)](docs/DECISION_LOG.md)**:
-   - Immutable audit trail of all approved gates: AG-01 (sub-basin relaxation), AG-02 (gap policy), AG-03 (ERA5-Land ingestion), AG-TS-01 (API weight fix), AG-TS-02 (terminal $H$-week purge embargo), AG-TS-04 (outlier masking), AG-TS-05 (M2 hydro-meteorological models), AG-TS-06 (nested cascade reframe H1), AG-TS-07 (Karad regime shift & threshold retention C1), and AG-TS-08 (objective statistical reporting & climatology pivot).
+## Limitations and interpretation
 
----
+Shared drainages, rare drought events, missing observations, changing monitoring regimes and the mixed weather-source selection limit generalisation. Permutation importance describes changes in prediction error, not causal importance or proof that point-versus-catchment aggregation is negligible. Previous station bootstrap inference is withdrawn: it compressed calendar gaps and can produce degenerate intervals for short series. Point-forecast scores are unaffected. The replacement calendar bootstrap reports coverage, finite draws, block-length sensitivity and explicit withholding reasons. Its screens are heuristic, and retained intervals are exploratory rather than a guarantee of 95% coverage. Original outputs and the algorithm are preserved in `data/processed/validation_reports/uncertainty_baseline_2026-11-16/` as superseded provenance. Portfolio bootstrap intervals are withheld because stations share drainage systems. Raw exploratory p-values remain separately reported. See [uncertainty method](docs/UNCERTAINTY_METHOD.md). Severe-drought detection is not assessable where scored event counts are zero; at Yadgir a zero Q95 threshold plus the recorded-zero exclusion makes that event structurally unavailable.
 
-## Quickstart Commands
+The before/after runs changed weather source, week boundaries, interpolation, preprocessing and scoring membership together. Common issue dates can have different weekly targets. A change in score therefore cannot be attributed solely to the repairs.
 
-### 1. Browse Stations by State & River Basin
-```bash
-# View all Karnataka stations with CAMELS catchments
-python3 "scripts/station_explorer.py" --state Karnataka --matched-only
+## AI assistance disclosure
 
-# Search for specific basins
-python3 "scripts/station_explorer.py" --basin Cauvery
-python3 "scripts/station_explorer.py" --basin Mahanadi
-python3 "scripts/station_explorer.py" --basin Godavari
-```
+Antigravity and Codex assisted with coding, debugging, documentation, and visualisation. The authors remain responsible for submitted code, interpretations and results. Important outputs require independent checking; use of these tools is not itself evidence that a scientific claim is verified.
 
-### 2. Run IMD Meteorological Alignment Test
-```bash
-# Run multi-state alignment test across distinct sub-basins:
-python3 "scripts/imd_cwc_alignment_test.py" \
-  --stations "Karad" "Kantamal" "KUDIGE"
 
-# Test specific regional stations:
-python3 "scripts/imd_cwc_alignment_test.py" \
-  --stations "Warunji" "Gomlai" "Huvinhedigi"
-```
-
-### 3. Generate 46-Year Weekly Feature Tensors
-```bash
-# Process all 12 stations across Maharashtra, Odisha, and Karnataka (Peak RAM < 0.5 GB):
-python3 "scripts/prepare_weekly_dataset.py"
-```
-
-### 4. Benchmark M0 Baseline vs M1 Autoregressive Models
-> **Warning:** steps 4 and 5 retrain the models and overwrite `models/`. Retrained models, especially the LSTM, may not reproduce the published numbers exactly. To reproduce the published results from the committed models, skip to step 6.
-```bash
-# Protocol 1: Station-Specific Temporal Benchmarking across 1, 2, 4, 8 weeks:
-python3 "scripts/train_forecast_models.py" --protocol 1 --model ridge
-
-# Protocol 2: Cross-Basin Zero-Shot Spatial Transfer to held-out sub-basins:
-python3 "scripts/train_forecast_models.py" --protocol 2 --model ridge
-
-# Full Evaluation Suite (Protocol 1 & 2 across Ridge and Gradient Boosting):
-python3 "scripts/train_forecast_models.py" --protocol all --model all --horizons 1 2 4 8
-```
-
-### 5. Benchmark Tier M2 Hydro-Meteorological Models (Implemented & Evaluated)
-```bash
-# Protocol 1: Temporal Benchmarking with HistGradientBoosting on 26 Hydro-Met features:
-python3 "scripts/train_m2_models.py" --protocol 1 --horizons 1 2 4 8
-
-# Protocol 2: Cross-Basin Spatial Transfer with PyTorch Deep Recurrent LSTM:
-python3 "scripts/train_m2_models.py" --protocol 2 --seq-len 8 --hidden-dim 64 --epochs 50
-
-# Full M2 Evaluation Suite:
-python3 "scripts/train_m2_models.py" --protocol all --horizons 1 2 4 8
-```
-
-### 6. Score the Saved Models and Rebuild All Published Numbers
-These steps use only the committed weekly tensors and models, and reproduce every number on the website and in the report.
-```bash
-python3 scripts/audit_metrics.py              # score every model on the shared mask -> audited_metrics_recomputed.csv, test_predictions.csv
-python3 scripts/export_benchmark_data.py      # site data file assets/benchmark-data.js (medians, paired deltas, Wilcoxon tests)
-python3 scripts/generate_interactive_plots.py # Plotly chart sources in visualizations/source/ and feature-importance CSVs
-python3 scripts/uncertainty_tests.py          # Wilcoxon + bootstrap confidence intervals (Issue K)
-python3 scripts/render_report_results.py      # regenerate report sections 10-12 and the README results section
-```
-
-### 7. Deploy Interactive Visualizations to GitHub Pages
-`deploy.sh` runs step 6, commits `main`, then updates the `gh-pages` worktree (`site/`, created if missing): it copies the chart sources, site data and docs, rebuilds `figdata.js`, the chart pages and the benchmark table, then commits and pushes `gh-pages`.
-```bash
-# Execute from the main branch; requires a progress update message
-./deploy.sh "Regenerated audited metrics, charts and report tables"
-```
+See the [repair plan and completion record](docs/METHODOLOGY_REPAIR_PLAN.md) and [technical report](docs/PROJECT_REPORT_DOCUMENTATION.md). The [project decisions](docs/DECISION_LOG.md) give a short explanation of the main choices and why they were made.

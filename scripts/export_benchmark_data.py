@@ -283,8 +283,8 @@ def build_benchmark_data(csv_path: Path) -> tuple[list[dict], dict]:
         med_delta_nse = (sub["m2_nse"] - sub["m1_nse"]).median()
         med_delta_kge = (sub["m2_kge"] - sub["m1_kge"]).median()
         med_r = {m: sub[f"{m}_r"].median() for m in ("m0", "m1", "m2")}
-        n_clim_beats_m2 = int((sub["m0_nse_fixed"] > sub["m2_nse"]).sum())
-        n_clim_beats_m1 = int((sub["m0_nse_fixed"] > sub["m1_nse"]).sum())
+        n_clim_beats_m2 = int((sub["m0clim_nse"] > sub["m2_nse"]).sum())
+        n_clim_beats_m1 = int((sub["m0clim_nse"] > sub["m1_nse"]).sum())
         pooled_base_rate = sub["test_q95_event_count"].sum() / sub["n_eval"].sum()
         p_nse_m2_m1 = float(wilcoxon(sub["m2_nse"], sub["m1_nse"]).pvalue)
         p_kge_m2_m1 = float(wilcoxon(sub["m2_kge"], sub["m1_kge"]).pvalue)

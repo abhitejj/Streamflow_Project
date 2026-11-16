@@ -62,6 +62,7 @@ PORTFOLIO = [
 
 # Recorded zeros at these stations are unmeasured weeks; see scripts/eval_config.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_integrity import require_saved_medians
 from eval_config import ZERO_AS_MISSING_STATIONS  # noqa: E402
 
 PREDICTIONS_CSV = RESULTS_DIR / "test_predictions.csv"
@@ -112,28 +113,7 @@ def prepare_log_features(df: pd.DataFrame, feature_cols: list, area_km2: float) 
 # ==============================================================================
 # PYTORCH LSTM ARCHITECTURE (FOR PROTOCOL 2 ZERO-SHOT EVALUATION)
 # ==============================================================================
-class HydroLSTM(nn.Module):
-    def __init__(self, input_dim=10, hidden_dim=64, num_layers=2, dropout=0.2):
-        super().__init__()
-        self.lstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0.0
-        )
-        self.fc1 = nn.Linear(hidden_dim, 32)
-        self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(dropout)
-        self.fc2 = nn.Linear(32, 1)
-
-    def forward(self, x):
-        out, _ = self.lstm(x)
-        last_hidden = out[:, -1, :]
-        h = self.relu(self.fc1(last_hidden))
-        h = self.dropout(h)
-        pred = self.fc2(h)
-        return torch.relu(pred).squeeze(-1)
+from train_m2_models import HydroLSTM
 
 # ==============================================================================
 # 1. SHARED METRIC ENGINE
@@ -279,8 +259,12 @@ def compute_drought_metrics(y_true: np.ndarray, y_pred: np.ndarray, threshold: f
 # ==============================================================================
 def load_estimator(model_path: Path):
     if not model_path.is_file():
-        return None, None, None
+        raise FileNotFoundError(f'Complete corrected audit requires model: {model_path}')
     obj = joblib.load(model_path)
+    from pipeline_integrity import validate_model_dataset
+    if not isinstance(obj, dict):
+        raise ValueError('Legacy estimator missing preprocessing/dataset provenance; retrain')
+    validate_model_dataset(obj, TENSORS_DIR)
     if isinstance(obj, dict) and 'model' in obj:
         return obj['model'], obj.get('scaler'), obj.get('train_medians')
     return obj, None, None
@@ -311,6 +295,8 @@ def recompute_all_predictions():
     Loads raw weekly tensors and saved models, generating identical-masked predictions
     for M0 (persistence & climatology), M1 (GBT & Ridge), M2 (GBT), and Protocol 2 (LSTM).
     """
+    from pipeline_integrity import require_corrected_tensors
+    require_corrected_tensors(TENSORS_DIR)
     records = []
     pred_frames = []
 
@@ -391,7 +377,7 @@ def recompute_all_predictions():
             m1_gbt_log_est, _, med1_gbt_log = load_estimator(m1_gbt_log_path)
             if m1_gbt_log_est is not None:
                 X1_log_df = prepare_log_features(df_test, M1_FEATURES, area)
-                impute_val = med1_gbt_log if med1_gbt_log is not None else X1_log_df.median()
+                impute_val = require_saved_medians(med1_gbt_log)
                 X1_log = X1_log_df.fillna(impute_val)
                 preds_log = m1_gbt_log_est.predict(X1_log.values)
                 preds_m1_gbt_log = np.maximum(0.0, np.expm1(preds_log)) * (area / 604.8)
@@ -403,7 +389,7 @@ def recompute_all_predictions():
             m1_rdg_log_est, scaler1_log, med1_rdg_log = load_estimator(m1_rdg_log_path)
             if m1_rdg_log_est is not None:
                 X1r_log_df = prepare_log_features(df_test, M1_FEATURES, area)
-                impute_val = med1_rdg_log if med1_rdg_log is not None else X1r_log_df.median()
+                impute_val = require_saved_medians(med1_rdg_log)
                 X1r_log = X1r_log_df.fillna(impute_val)
                 X1r_logs = scaler1_log.transform(X1r_log) if scaler1_log else X1r_log.values
                 preds_log = m1_rdg_log_est.predict(X1r_logs)
@@ -416,7 +402,7 @@ def recompute_all_predictions():
             m2_gbt_log_est, _, med2_gbt_log = load_estimator(m2_gbt_log_path)
             if m2_gbt_log_est is not None:
                 X2_log_df = prepare_log_features(df_test, M2_TABULAR_FEATURES, area)
-                impute_val = med2_gbt_log if med2_gbt_log is not None else X2_log_df.median()
+                impute_val = require_saved_medians(med2_gbt_log)
                 X2_log = X2_log_df.fillna(impute_val)
                 preds_log = m2_gbt_log_est.predict(X2_log.values)
                 preds_m2_gbt_log = np.maximum(0.0, np.expm1(preds_log)) * (area / 604.8)
@@ -436,7 +422,7 @@ def recompute_all_predictions():
                 p2_gbt_path = MODELS_DIR / "protocol2" / f"m1_gbt_pool_{state.lower()}_heldout_{clean_name}_H{H}.joblib"
                 p2_gbt_est, _, med_p2_g = load_estimator(p2_gbt_path)
                 if p2_gbt_est is not None:
-                    X1_p2 = df_test[m1_spec_features].fillna(med_p2_g if med_p2_g is not None else df_test[m1_spec_features].median())
+                    X1_p2 = df_test[m1_spec_features].fillna(require_saved_medians(med_p2_g))
                     preds_p2_gbt_spec = p2_gbt_est.predict(X1_p2.values)
                     preds_p2_gbt = np.maximum(0.0, preds_p2_gbt_spec / conv_h)
                     
@@ -444,44 +430,35 @@ def recompute_all_predictions():
                 p2_ridge_path = MODELS_DIR / "protocol2" / f"m1_ridge_pool_{state.lower()}_heldout_{clean_name}_H{H}.joblib"
                 p2_ridge_est, scaler_p2_r, med_p2_r = load_estimator(p2_ridge_path)
                 if p2_ridge_est is not None:
-                    X1_p2r = df_test[m1_spec_features].fillna(med_p2_r if med_p2_r is not None else df_test[m1_spec_features].median())
+                    X1_p2r = df_test[m1_spec_features].fillna(require_saved_medians(med_p2_r))
                     X1_p2rs = scaler_p2_r.transform(X1_p2r) if scaler_p2_r else X1_p2r.values
                     preds_p2_ridge_spec = p2_ridge_est.predict(X1_p2rs)
                     preds_p2_ridge = np.maximum(0.0, preds_p2_ridge_spec / conv_h)
                     
                 # M2 Pool LSTM (.pt)
                 p2_lstm_path = MODELS_DIR / "protocol2" / f"m2_lstm_pool_{state.lower()}_heldout_{clean_name}_H{H}.pt"
+                if not p2_lstm_path.is_file():
+                    raise FileNotFoundError(f'Complete corrected audit requires LSTM checkpoint: {p2_lstm_path}')
                 if p2_lstm_path.is_file():
                     try:
                         # Extract test sequences with buffer
                         seq_len = 8
-                        buffer_slice = df_val.iloc[-(seq_len - 1):]
-                        comb = pd.concat([buffer_slice, df_test], axis=0)
                         
-                        # Load training pool scaler from protocol 2
-                        # Fit scaler on pool train fold (Stations 1,2,3) to match train_m2_models.py
-                        pool_train_dfs = []
-                        for p_stn in PORTFOLIO:
-                            if p_stn['state'] == state and not p_stn['is_holdout']:
-                                p_path = TENSORS_DIR / f"weekly_tensor_gauge_{p_stn['gauge_id']:05d}_{p_stn['station']}.csv"
-                                p_df = pd.read_csv(p_path, parse_dates=['date']).set_index('date')
-                                tr, _, _ = partition_splits_with_embargo(p_df, horizon_weeks=H)
-                                pool_train_dfs.append(tr)
-                        all_pool_train = pd.concat(pool_train_dfs, axis=0)
-                        scaler_lstm = StandardScaler()
-                        scaler_lstm.fit(all_pool_train[M2_SEQUENTIAL_FEATURES].fillna(all_pool_train[M2_SEQUENTIAL_FEATURES].median()))
-                        
-                        comb_feats = comb[M2_SEQUENTIAL_FEATURES].fillna(all_pool_train[M2_SEQUENTIAL_FEATURES].median())
-                        comb_scaled = scaler_lstm.transform(comb_feats)
-                        
-                        seqs = []
-                        start_idx = seq_len - 1
-                        for i in range(start_idx, len(comb)):
-                            seq = comb_scaled[i - seq_len + 1 : i + 1, :]
-                            seqs.append(seq)
-                            
+                        # Load identical training preprocessing; never reconstruct it from evaluation data.
+                        from train_m2_models import extract_station_sequences, mask_zero_flows_for_sequences
+                        sidecar = joblib.load(str(p2_lstm_path) + '.preprocessing.joblib')
+                        from pipeline_integrity import validate_model_dataset
+                        validate_model_dataset(sidecar, TENSORS_DIR)
+                        if sidecar.get('version') != 2:
+                            raise ValueError('Legacy LSTM checkpoint requires retraining')
+                        seq_len = sidecar['seq_len']
+                        history = df.loc[df.index < df_test.index[0]]
+                        history = mask_zero_flows_for_sequences(history, info['station'], f'target_specific_H{H}')
+                        seqs, _, seq_dates, _ = extract_station_sequences(
+                            mask_zero_flows_for_sequences(df_test, info['station'], f'target_specific_H{H}'), seq_len, sidecar['features'], f'target_specific_H{H}',
+                            scaler=sidecar['scaler'], buffer_df=history)
                         device = torch.device('cpu')
-                        lstm = HydroLSTM(input_dim=len(M2_SEQUENTIAL_FEATURES), hidden_dim=64, num_layers=2)
+                        lstm = HydroLSTM(input_dim=len(M2_SEQUENTIAL_FEATURES), hidden_dim=sidecar['hidden_dim'], num_layers=sidecar['num_layers'])
                         lstm.load_state_dict(torch.load(p2_lstm_path, map_location=device))
                         lstm.eval()
                         with torch.no_grad():
@@ -492,9 +469,9 @@ def recompute_all_predictions():
                         # conversion factor: Area * 1000 / (7 * 86400) = Area / 604.8
                         # Q (m3/s) = q (mm/week) * Area / 604.8 = pred_spec * conv
                         conv = area / 604.8
-                        preds_p2_lstm = np.maximum(0.0, pred_spec * conv)
+                        preds_p2_lstm = pd.Series(np.maximum(0.0, pred_spec * conv), index=seq_dates).reindex(df_test.index).values
                     except Exception as e:
-                        print(f"[-] Error evaluating LSTM for {station} H{H}: {e}")
+                        raise RuntimeError(f'LSTM evaluation blocked for {station} H{H}; no partial audit may be published') from e
 
             # Enforce Evaluation Mask Contract:
             # Row evaluated iff target, flow_lag_0, M0, M1_GBT, M2_GBT are non-NaN, and,
@@ -651,7 +628,9 @@ def recompute_all_predictions():
             })
             records.append(rec)
             
-    pd.concat(pred_frames, ignore_index=True).to_csv(PREDICTIONS_CSV, index=False, float_format='%.4f')
+    # Keep source precision: rounding values at a drought boundary can change an
+    # event classification when exports independently recompute contingency counts.
+    pd.concat(pred_frames, ignore_index=True).to_csv(PREDICTIONS_CSV, index=False)
     print(f"[+] Saved per-week test predictions to: {PREDICTIONS_CSV}")
     return pd.DataFrame(records)
 

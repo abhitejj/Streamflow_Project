@@ -50,6 +50,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 from eval_config import ZERO_AS_MISSING_STATIONS
+from pipeline_integrity import fit_sequence_preprocessor, transform_sequence_features
 
 TENSORS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/weekly_tensors')
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'data/processed/model_results')
@@ -516,6 +517,7 @@ def train_and_predict_m2_gbt(df_train, df_val, df_test, feature_cols, target_col
     if save_path:
         os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
         artifact = {
+            'dataset_fingerprint': __import__('pipeline_integrity').dataset_fingerprint(TENSORS_DIR),
             'model': best_model,
             'scaler': None,
             'model_type': 'gbt',
@@ -777,13 +779,10 @@ def extract_station_sequences(df, seq_len, feature_cols, target_col, scaler=None
     # Impute missing feature values using column medians
     if fit_scaler:
         scaler = StandardScaler()
-        impute_vals = features_raw.median()
-        features_imputed = features_raw.fillna(impute_vals)
-        features_scaled = scaler.fit_transform(features_imputed)
+        scaler = fit_sequence_preprocessor(features_raw, feature_cols)
+        features_scaled = transform_sequence_features(features_raw, feature_cols, scaler)
     else:
-        impute_vals = features_raw.median()
-        features_imputed = features_raw.fillna(impute_vals)
-        features_scaled = scaler.transform(features_imputed) if scaler is not None else features_imputed.values
+        features_scaled = transform_sequence_features(features_raw, feature_cols, scaler)
         
     targets_raw = combined[target_col].values
     
@@ -792,6 +791,9 @@ def extract_station_sequences(df, seq_len, feature_cols, target_col, scaler=None
     valid_indices = []
     
     for i in range(start_idx, len(combined)):
+        dates = combined.index[i - seq_len + 1 : i + 1]
+        if len(dates) != seq_len or not (np.diff(dates.values) == np.timedelta64(7, 'D')).all():
+            raise ValueError('Sequence context must contain consecutive seven-day rows')
         seq = features_scaled[i - seq_len + 1 : i + 1, :]
         tgt = targets_raw[i]
         
@@ -934,14 +936,13 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
                 
             # Fit feature scaler strictly on pooled training fold
             concat_pool_train = pd.concat(pooled_train_dfs, axis=0)
-            scaler = StandardScaler()
-            scaler.fit(concat_pool_train[M2_SEQUENTIAL_FEATURES].fillna(concat_pool_train[M2_SEQUENTIAL_FEATURES].median()))
+            scaler = fit_sequence_preprocessor(concat_pool_train, M2_SEQUENTIAL_FEATURES)
             
             # Extract sequences from each training station independently
             train_seqs, train_tgts = [], []
             val_seqs, val_tgts = [], []
             
-            for tr_df, va_df in zip(pooled_train_dfs, pooled_val_dfs):
+            for tr_df, va_df, (s_info, full_history) in zip(pooled_train_dfs, pooled_val_dfs, dfs_train_list):
                 s_tr, y_tr, _, _ = extract_station_sequences(
                     tr_df, seq_len=seq_len, feature_cols=M2_SEQUENTIAL_FEATURES,
                     target_col=target_spec_col, scaler=scaler, fit_scaler=False
@@ -954,7 +955,7 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
                 s_va, y_va, _, _ = extract_station_sequences(
                     va_df, seq_len=seq_len, feature_cols=M2_SEQUENTIAL_FEATURES,
                     target_col=target_spec_col, scaler=scaler, fit_scaler=False,
-                    buffer_df=tr_df
+                    buffer_df=mask_zero_flows_for_sequences(full_history.loc[full_history.index < va_df.index[0]], s_info['station'], target_spec_col)
                 )
                 if len(s_va) > 0:
                     val_seqs.append(s_va)
@@ -979,6 +980,14 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
             clean_holdout = holdout_stn['station'].replace(' ', '_').replace('(', '').replace(')', '')
             pt_save_path = os.path.join(MODELS_DIR, 'protocol2', f"m2_lstm_pool_{state.lower()}_heldout_{clean_holdout}_H{H}.pt")
             torch.save(lstm_model.state_dict(), pt_save_path)
+            import hashlib
+            joblib.dump({'version': 2, 'scaler': scaler,
+                         'dataset_fingerprint': __import__('pipeline_integrity').dataset_fingerprint(TENSORS_DIR),
+                         'features': list(M2_SEQUENTIAL_FEATURES), 'seq_len': seq_len,
+                         'hidden_dim': hidden_dim, 'num_layers': 2, 'horizon': H,
+                         'seed': 42, 'holdout': holdout_stn['station'],
+                         'training_sha256': hashlib.sha256(pd.util.hash_pandas_object(concat_pool_train, index=True).values.tobytes()).hexdigest()},
+                        pt_save_path + '.preprocessing.joblib')
             
             # Partition holdout station with embargo
             df_h_train, df_h_val, df_h_test = partition_splits_with_embargo(df_holdout, horizon_weeks=H)
@@ -994,9 +1003,9 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
             
             # 3. Extract test sequences from holdout station with buffer from df_h_val
             test_seqs, test_tgts, valid_dates, _ = extract_station_sequences(
-                df_h_test, seq_len=seq_len, feature_cols=M2_SEQUENTIAL_FEATURES,
+                mask_zero_flows_for_sequences(df_h_test, holdout_stn['station'], target_spec_col), seq_len=seq_len, feature_cols=M2_SEQUENTIAL_FEATURES,
                 target_col=target_spec_col, scaler=scaler, fit_scaler=False,
-                buffer_df=df_h_val
+                buffer_df=mask_zero_flows_for_sequences(df_holdout.loc[df_holdout.index < df_h_test.index[0]], holdout_stn['station'], target_spec_col)
             )
             
             # Predict zero-shot on holdout sequences
@@ -1110,6 +1119,8 @@ def execute_protocol_2(horizons=[1, 2, 4, 8], seq_len=8, hidden_dim=64, epochs=5
 # 8. MAIN CLI ENTRY POINT
 # ==============================================================================
 if __name__ == '__main__':
+    from pipeline_integrity import require_corrected_tensors
+    require_corrected_tensors(TENSORS_DIR)
     parser = argparse.ArgumentParser(
         description="Tier M2 Hydro-Meteorological Model Training (GBT & PyTorch LSTM)."
     )

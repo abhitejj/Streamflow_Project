@@ -1,0 +1,159 @@
+{
+  "inventory_date": "2026-11-16",
+  "download_script": "scripts/download_era5_land.py",
+  "provider": "Open-Meteo Historical Weather API (inferred from script endpoint; response provenance was not independently verified)",
+  "endpoint": "https://archive-api.open-meteo.com/v1/archive",
+  "model_parameter": null,
+  "model_selection": "Default Best Match; may select/combine products; not explicitly ERA5-Land",
+  "request": {
+    "period": [
+      "2001-01-01",
+      "2025-12-31"
+    ],
+    "timezone": "GMT",
+    "daily_variables": [
+      "temperature_2m_mean",
+      "temperature_2m_max",
+      "temperature_2m_min",
+      "et0_fao_evapotranspiration"
+    ],
+    "pet_semantics": "FAO reference evapotranspiration (ET0), not GLEAM PET"
+  },
+  "file_validation": {
+    "expected_files": 12,
+    "present_files": 12,
+    "rows_per_file": 9131,
+    "date_start": "2001-01-01",
+    "date_end": "2025-12-31",
+    "columns": [
+      "Date",
+      "tavg_c",
+      "tmax_c",
+      "tmin_c",
+      "pet_mm"
+    ],
+    "missing_cells": 0,
+    "duplicate_dates": 0,
+    "numeric_values_finite": true,
+    "note": "File shape does not independently validate provider/model provenance or daily observation boundaries."
+  },
+  "stations": [
+    {
+      "file": "data/raw/era5_land/era5_land_03005_Ashti.csv",
+      "sha256": "25999c4cae5fb1a01111c6519aa10df9c06f82877215474c996b5f62fbebe7c9",
+      "gauge_id": 3005,
+      "station": "Ashti",
+      "latitude_request": 19.6847,
+      "longitude_request": 79.7886
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_03008_Bamni (Ballarsha).csv",
+      "sha256": "dc7729121519d1d174e69443cc9c7ff411693cef9d530662575ff5c3026d39bb",
+      "gauge_id": 3008,
+      "station": "Bamni (Ballarsha)",
+      "latitude_request": 19.8144,
+      "longitude_request": 79.3792
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_04013_Haralahalli.csv",
+      "sha256": "1048f0cbaa4faa0d179e981d40fa7be0f06af60d352c1ba1dbd48a840a313bf1",
+      "gauge_id": 4013,
+      "station": "Haralahalli",
+      "latitude_request": 14.8306,
+      "longitude_request": 75.6744
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_04017_Huvinhedigi.csv",
+      "sha256": "580982eda53e392e060b3d971baf35526443c9745836779677d17b14a790f671",
+      "gauge_id": 4017,
+      "station": "Huvinhedigi",
+      "latitude_request": 16.4903,
+      "longitude_request": 76.9231
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_04021_Karad.csv",
+      "sha256": "5d70c3c812bf298a72f18d064abcd021099bd39f130c197386794177bc95b620",
+      "gauge_id": 4021,
+      "station": "Karad",
+      "latitude_request": 17.2936,
+      "longitude_request": 74.19
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_04063_Warunji.csv",
+      "sha256": "36ca604ac5467a1e95bfea38f3f8877ba9e840ef51553419403b39b389955eb6",
+      "gauge_id": 4063,
+      "station": "Warunji",
+      "latitude_request": 17.2728,
+      "longitude_request": 74.1647
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_04064_Yadgir.csv",
+      "sha256": "aac33a25c62807a74f1c80979c066c2b079d56f8b2578ab933f994f1ee7b8d03",
+      "gauge_id": 4064,
+      "station": "Yadgir",
+      "latitude_request": 16.7375,
+      "longitude_request": 77.1253
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_05010_KUDIGE.csv",
+      "sha256": "3bf49be5fd9a616f2f7fd90c559eb8ef6ad55990d30e76fd0342005c9714967b",
+      "gauge_id": 5010,
+      "station": "KUDIGE",
+      "latitude_request": 12.5025,
+      "longitude_request": 75.9608
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_07002_Anandpur.csv",
+      "sha256": "ba8f8ce33e9faf19a4fcc7d5fd44e736162bb575e3fa67c2cd0fddff39df0712",
+      "gauge_id": 7002,
+      "station": "Anandpur",
+      "latitude_request": 21.2111,
+      "longitude_request": 86.1206
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_07007_Gomlai.csv",
+      "sha256": "6bf6d1142b2fca0e9564cd10e38557675307c6781a727ec1fabfd36e459ec0b6",
+      "gauge_id": 7007,
+      "station": "Gomlai",
+      "latitude_request": 21.8344,
+      "longitude_request": 84.9128
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_08013_Kantamal.csv",
+      "sha256": "6d23c338582474326aa2af5ad5460d34d1f93085f2a887ae3df6913a95a9e641",
+      "gauge_id": 8013,
+      "station": "Kantamal",
+      "latitude_request": 20.655,
+      "longitude_request": 83.7275
+    },
+    {
+      "file": "data/raw/era5_land/era5_land_16007_Kashinagar.csv",
+      "sha256": "19c4919628bcba5469b87535849010a520a9b7d2b52867c275f1f9e377201fda",
+      "gauge_id": 16007,
+      "station": "Kashinagar",
+      "latitude_request": 18.8483,
+      "longitude_request": 83.8731
+    }
+  ],
+  "karnataka_cwc_archive": {
+    "file": "data/raw/cwc/river_discharge_manual_daily_cwc_ka_2001_2025.csv",
+    "sha256": "dfb2f06d4433d99f9569933b045d4cf377ae7d40cbfdadd19d0f98c16343fb9d",
+    "rows": 34007,
+    "station_rows": {
+      "Yadgir": 8949,
+      "Huvinhedigi": 8961,
+      "KUDIGE": 8341,
+      "Haralahalli": 7756
+    },
+    "required_fields_present": [
+      "Station",
+      "State",
+      "Data Acquisition Time",
+      "Manual Daily River Water Discharge (m3/sec)",
+      "Latitude",
+      "Longitude"
+    ],
+    "lineage": "Supplied/recreated archive; relationship to merged product not established by whole-file hash comparison."
+  },
+  "official_documentation": "https://open-meteo.com/en/docs/historical-weather-api"
+}

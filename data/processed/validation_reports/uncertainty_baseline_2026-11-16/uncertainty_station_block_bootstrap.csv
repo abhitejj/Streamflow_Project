@@ -1,0 +1,49 @@
+station,horizon,n_scored,dNSE,ci_lo,ci_hi,verdict
+Karad,1w,138,0.1069,-0.1088,0.2249,not distinguishable
+Karad,2w,127,0.0668,-0.1530,0.1728,not distinguishable
+Karad,4w,109,-0.0733,-0.2462,-0.0541,M1 better
+Karad,8w,77,0.2937,0.1222,0.5555,M2 better
+Warunji,1w,131,0.0168,-0.0303,0.1783,not distinguishable
+Warunji,2w,123,0.1262,-0.0620,0.2235,not distinguishable
+Warunji,4w,105,0.0528,-0.1232,0.1102,not distinguishable
+Warunji,8w,72,0.0432,0.0317,0.2232,M2 better
+Ashti,1w,511,0.1536,0.0702,0.2730,M2 better
+Ashti,2w,508,-0.0058,-0.0357,0.0459,not distinguishable
+Ashti,4w,504,-0.0014,-0.0704,0.0584,not distinguishable
+Ashti,8w,500,0.0143,-0.0346,0.0450,not distinguishable
+Bamni (Ballarsha),1w,507,0.1153,0.0454,0.1627,M2 better
+Bamni (Ballarsha),2w,504,0.0895,0.0082,0.1496,M2 better
+Bamni (Ballarsha),4w,500,0.0242,-0.0368,0.0493,not distinguishable
+Bamni (Ballarsha),8w,496,0.0245,-0.0081,0.0678,not distinguishable
+Anandpur,1w,513,0.0775,-0.0350,0.2195,not distinguishable
+Anandpur,2w,510,0.0362,-0.0207,0.0804,not distinguishable
+Anandpur,4w,506,-0.0250,-0.1021,0.0926,not distinguishable
+Anandpur,8w,502,0.0099,-0.0567,0.0891,not distinguishable
+Kashinagar,1w,511,0.0265,-0.0863,0.1244,not distinguishable
+Kashinagar,2w,508,-0.0161,-0.0793,0.0228,not distinguishable
+Kashinagar,4w,504,-0.0857,-0.1866,-0.0425,M1 better
+Kashinagar,8w,500,-0.0755,-0.1926,-0.0054,M1 better
+Gomlai,1w,505,0.0731,0.0555,0.1532,M2 better
+Gomlai,2w,503,-0.0044,-0.0336,0.0627,not distinguishable
+Gomlai,4w,499,-0.0272,-0.0762,0.0132,not distinguishable
+Gomlai,8w,495,0.0397,0.0130,0.0806,M2 better
+Kantamal,1w,496,0.1167,0.0652,0.1641,M2 better
+Kantamal,2w,492,0.0768,0.0142,0.1471,M2 better
+Kantamal,4w,485,0.0508,-0.0245,0.1649,not distinguishable
+Kantamal,8w,477,-0.0511,-0.1295,0.0116,not distinguishable
+Yadgir,1w,71,-0.1540,-0.1620,-0.0241,M1 better
+Yadgir,2w,34,-0.8801,-0.8801,-0.8801,M1 better
+Yadgir,4w,132,-0.0777,-0.1510,-0.0503,M1 better
+Yadgir,8w,93,-0.3850,-0.9156,0.3851,not distinguishable
+Huvinhedigi,1w,178,0.0134,-0.5538,0.2189,not distinguishable
+Huvinhedigi,2w,114,0.0308,-1.0863,0.1610,not distinguishable
+Huvinhedigi,4w,228,-0.0755,-0.1347,-0.0245,M1 better
+Huvinhedigi,8w,194,-0.4841,-0.7615,-0.2260,M1 better
+KUDIGE,1w,188,-0.0923,-0.4450,0.1899,not distinguishable
+KUDIGE,2w,152,-0.0282,-0.0948,0.0420,not distinguishable
+KUDIGE,4w,230,0.0008,-0.0290,0.0540,not distinguishable
+KUDIGE,8w,201,-0.0764,-0.3181,0.0349,not distinguishable
+Haralahalli,1w,118,-0.0132,-0.8324,0.0321,not distinguishable
+Haralahalli,2w,107,0.0134,-5.9532,0.0679,not distinguishable
+Haralahalli,4w,152,-0.0024,-0.0074,0.0262,not distinguishable
+Haralahalli,8w,122,-0.0024,-0.0126,0.3414,not distinguishable

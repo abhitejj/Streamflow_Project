@@ -1,478 +1,388 @@
-# 🌊 Empirical Streamflow & Hydrological Drought Forecasting (1980–2025)
-## Comprehensive Technical Documentation & Course Project Report Reference
+# Streamflow and Hydrological Drought Forecasting
+## ES 335 project report — corrected retrospective benchmark
 
-**Author / Team:** ML Course Project Team  
-**Institution:** Indian Institute of Technology Gandhinagar (IITGN) — ES 335  
-**Version:** 2.1 (Audited; external review response)  
-**Date of Current Audit:** November 4, 2026  
-**Repository Working Directory:** `ML Project/`
+**Team:** Abhitej Singh Bhullar and Dhruv Jalan
 
----
+**Institution:** Indian Institute of Technology Gandhinagar
+**Revision:** Corrected experiment, 16 November 2026
 
-## 1. Executive Summary & Research Motivation
+This report explains the corrected experiment. Numerical sections below are generated from saved evaluation artifacts; the run manifest, rather than a filename or an earlier score, identifies the inputs and models. Earlier results are preserved separately for comparison and must not be combined with the corrected tensors.
 
-Predicting river discharge ($Q$) and providing actionable early warnings for hydrological droughts across peninsular India is vital for reservoir operation, water allocation, and disaster preparedness. Conventional hydrological modeling relies heavily on either purely physical conceptual models (which require dense, poorly available parameterizations) or short-term statistical persistence. 
+## 1. Question, scope and unit of analysis
 
-This project establishes an empirical, leakage-free machine learning benchmark spanning **46 years (1980–2025: 16,802 daily timesteps $\to$ 2,394 weekly timesteps)** across **12 gauges across peninsular subcatchments, including shared Godavari and Krishna drainages and a three-gauge nested cascade** in three climatically diverse states: **Maharashtra (Deccan Plateau / Western Ghats)**, **Odisha (Sub-Humid Eastern Ghats / Deltaic Plains)**, and **Karnataka (Semi-Arid Peninsular Basin / Upper Cauvery)**.
+Does adding antecedent weather information to river-flow history improve one-, two-, four- and eight-week forecasts? Does better discharge prediction also improve low-flow drought warnings? A separate spatial-transfer experiment tests models at three gauges excluded from fitting.
 
-### Core Scientific Questions
-1. **Forecast Horizon Decay**: At what forecast horizon ($H \in \{1, 2, 4, 8\}$ weeks ahead) does antecedent river discharge memory ($Q_t, \dots, Q_{t-7}$) lose predictive skill, and at what lead time do hydro-meteorological forcings (precipitation memory, evaporative demand, and climatic water deficit $P - PET$) become the dominant predictor of streamflow?
-2. **Drought Early Warning Reliability**: Does the inclusion of meteorological forcings reduce False Alarm Ratios (FAR) and increase Critical Success Indices (CSI / Threat Score) for drought events compared to flow-only autoregression and seasonal climatology?
-3. **Severity Sensitivity**: How does forecasting skill vary across standardized drought severity tiers:
-   - Mild Low-Flow Anomalies ($Q \le Q_{80}$ / 20th percentile of historical baseline)
-   - Moderate Drought ($Q \le Q_{90}$ / 10th percentile)
-   - Severe Drought ($Q \le Q_{95}$ / 5th percentile)
-4. **Cross-Basin Zero-Shot Spatial Transfer**: Can a model trained on three other catchments within a state transfer its streamflow and drought prediction capability zero-shot to an unseen fourth held-out sub-basin using area-normalized specific runoff ($q = Q \cdot 604.8 / \text{Area}_{\text{km}^2}$ in mm/week)?
+One row represents **one gauge at one weekly issue date**. For each horizon H, its target is the mean measured discharge in the week ending H weeks after that date, subject to the observation-coverage rule below. Discharge Q is in m³/s. Specific runoff q = Q × 604.8 / catchment area is in mm/week and allows comparisons across catchment sizes; it is based on a weekly mean and does not establish a fully measured seven-day volume.
 
----
+The study is a **retrospective hindcast** using historical observations and meteorological inputs. It does not establish a real-time service, source release availability at Monday 00:00 UTC, or causal effects of weather. Differences between trained models are predictive comparisons.
 
-## 2. Experimental Matrix & Station Portfolio
+## 2. Gauges, sources and access
 
-The 12 gauges include shared major drainages and a nested gauge cascade. Distinct station names do not establish statistical independence:
-1. **Shared major drainages**: CAMELS-IND station metadata places Wainganga and Wardha within Godavari, and Koyna, Bhima, Tungabhadra, and the Krishna main-stem gauges within Krishna. The portfolio also includes Tel/Mahanadi, Baitarani, Brahmani, Vamsadhara, and Cauvery subcatchments.
-2. **1 Three-Gauge Nested Cascade (Upper Krishna Basin)**: Three stations form an upstream-to-downstream nested drainage hierarchy:
-   - **Warunji (Gauge 4063)**: Headwater catchment on the Koyna River ($1,890.0\,\text{km}^2$) in the Western Ghats high-rainfall crest.
-   - **Karad (Gauge 4021)**: Upper Krishna mainstem gauge ($5,462.0\,\text{km}^2$), directly receiving Koyna outflow. Warunji represents **34.6% of Karad's drainage area**.
-   - **Huvinhedigi (Gauge 4017)**: Downstream regional trunk gauge on the peninsular Krishna in Karnataka ($55,150.0\,\text{km}^2$). Warunji comprises **3.4%** and Karad comprises **9.9%** of Huvinhedigi's upstream catchment.
-   - *Audit Disclosure (Gate AG-TS-06 / Option H1)*: We explicitly retire the former 'Zero Sub-Basin Overlap' claim. Models evaluated on Warunji, Karad, and Huvinhedigi evaluate multi-scale hydrological propagation along a 55,000 km² drainage cascade rather than mutually independent catchments.
+The portfolio contains 12 gauges in Maharashtra, Odisha and Karnataka. Warunji, Karad and Huvinhedigi form a nested cascade; other gauges share major drainages. Twelve station names do not constitute twelve independent river systems. The website and exported station metadata give gauge IDs, drainage areas and model roles.
 
-### Unmeasured Low Flows Recorded as Zero (Karad, Warunji, Yadgir, Huvinhedigi)
-After about 2010 CWC operated Karad, Warunji and Yadgir as monsoon-season stations; weeks that were not measured are logged as exactly $0.0000\,\text{m}^3/\text{s}$ (see `docs/AUDIT_LOG.md`, Issue C). Share of weeks recorded as zero:
+| Input | Historical component | Later component and qualification |
+| --- | --- | --- |
+| Discharge | CAMELS-IND historical records | CWC manual daily records; source precedence and date matching are implemented in the dataset builder |
+| Rainfall | CAMELS-IND catchment-mean forcings through 2020 | IMD 0.25° daily grids for 2021–2025, averaged using catchment/grid intersection weights |
+| Temperature | CAMELS-IND catchment forcings through 2020 | User-supplied Open-Meteo Archive daily mean/max/min temperature, requested at gauge coordinates |
+| Evaporative demand | CAMELS-IND GLEAM series through 2020 | Open-Meteo FAO reference ET₀, magnitude-scaled using the training overlap; this is not the same physical quantity as GLEAM PET |
+| Geography | CAMELS-IND attributes and catchment polygons | Static catchment area is used for runoff conversion and rainfall extraction |
 
-| Station | Train 1980–2010 | Val 2011–2015 | Test 2016–2025 | Test zeros falling in Jun–Oct |
-| :-- | --: | --: | --: | --: |
-| Karad | 2.1% | 76.6% | 69.0% | 21% |
-| Warunji | 4.0% | 77.0% | 70.0% | 22% |
-| Yadgir | 19.9% | 65.1% | 62.3% | 18% |
-| Huvinhedigi | 0.0% | 0.0% | 14.1% | 28% |
+The weather acquisition script omits the model-selection parameter. Open-Meteo documents its default **Best Match** as combining weather products; the supplied files are not verified homogeneous ERA5-Land data. Their filenames retain an earlier naming convention. The reconstructed request uses catalog coordinates rounded to four decimal places, daily variables, GMT and 2001–2025 dates. Exact provider-returned grid/elevation metadata were not retained, so a nearest-cell or uniform-resolution claim is not established.
 
-These are missing measurements, not droughts (about a fifth fall inside the monsoon). At these four stations every week whose issue-time or target flow is a recorded zero is excluded from scoring for all models (`ZERO_AS_MISSING_STATIONS` in `scripts/audit_metrics.py`). This lowers the pooled severe-drought base rate from 0.238 to about 0.065, close to the nominal 0.05. Haralahalli's zeros (dry season only, also present in training) are kept. Drought thresholds are still fitted on the 1980–2010 training fold (Gate AG-TS-07); models were retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds at the four configured stations.
+All 12 supplied weather CSVs contain 9,131 daily rows for 2001–2025, with unique dates, finite fields, ordered temperature extrema and nonnegative ET₀. These are integrity checks, not independent verification of the provider's physical measurements or product identity.
 
-**Data Lineage & Overlap Audit (2011–2020)**: To verify that pipeline stitching (`prepare_weekly_dataset.py`) did not overwrite valid discharge, we evaluated all 8,740 station-days where CWC recorded zero flow over the 2011–2020 overlap across the four affected stations (audited via `scripts/audit_overlap_lineage.py`, artifact: `data/processed/validation_reports/overlap_lineage_audit.csv`, reproducible when `data/raw/camels_ind` is present). On 82.8% of those days (7,236 days), published CAMELS-IND already recorded exact 0.000 m³/s, and 17.2% (1,499 days) were unmeasured NaNs; CAMELS had positive flow on only 5 days (0.06% of all CWC-zero days). This proves that post-2010 zero inflation was inherited directly from published CAMELS-IND, ruling out a local pipeline merge defect, while the underlying institutional CWC operational cause (e.g. seasonal gauge operation) remains a documented inference.
+Karnataka daily discharge was recovered from the processed merged file. The recreated archive matches its Karnataka original-field records apart from row order and serial numbering. The corrected build explicitly identifies the derived input and records its hash; it does not claim recovery of the original CWC archive.
 
+Raw inputs remain local and excluded from Git. Access and redistribution rights must be checked with the source providers. See [data requirements](DATA_ACCESS.md), [weather provenance](WEATHER_SOURCE_PROVENANCE.md), the local source inventory and each tensor's provenance sidecar. The [Open-Meteo source documentation](https://open-meteo.com/en/docs/historical-weather-api) explains model selection and reference evapotranspiration.
 
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                               12-STATION EXPERIMENTAL MATRIX: REGIMES & ATTRIBUTES                                    │
-├─────────────────┬────────────────────────┬──────────────────────┬─────────────┬───────────┬──────────┬────────────────┤
-│ State           │ Station Name           │ Sub-Basin / River    │ CAMELS ID   │ Area(km²) │ Aridity* │ Regime Type    │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Maharashtra** │ 1. Karad (Cascade 2)   │ Upper Krishna Stem   │ Gauge 4021  │   5,462.0 │   0.977  │ Deccan Plains  │
-│                 │ 2. Warunji (Cascade 1) │ Koyna Headwaters     │ Gauge 4063  │   1,890.0 │   0.747  │ Ghats Headwater│
-│                 │ 3. Ashti               │ Wainganga Sub-basin  │ Gauge 3005  │  50,990.0 │   0.852  │ Sub-Humid East │
-│                 │ 4. Bamni (Holdout)     │ Wardha Sub-basin     │ Gauge 3008  │  46,020.0 │   1.110  │ Vidarbha Basin │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Odisha**      │ 1. Anandpur            │ Baitarani Sub-basin  │ Gauge 7002  │   8,570.0 │   0.674  │ Humid Coastal  │
-│                 │ 2. Kashinagar          │ Vamsadhara Basin     │ Gauge 16007 │   7,820.0 │   0.770  │ Eastern Ghats  │
-│                 │ 3. Gomlai              │ Upper Brahmani Basin │ Gauge 7007  │  21,950.0 │   0.751  │ Highland Plain │
-│                 │ 4. Kantamal (Holdout)  │ Tel / Mahanadi Basin │ Gauge 8013  │  19,600.0 │   0.740  │ Inland Delta   │
-├─────────────────┼────────────────────────┼──────────────────────┼─────────────┼───────────┼──────────┼────────────────┤
-│ **Karnataka**   │ 1. Yadgir              │ Bhima Sub-basin      │ Gauge 4064  │  69,863.0 │   1.440  │ Semi-Arid Soil │
-│                 │ 2. Huvinhedigi(Casc. 3)│ Upper Krishna Main   │ Gauge 4017  │  55,150.0 │   1.367  │ Peninsular Mid │
-│                 │ 3. KUDIGE              │ Upper Cauvery Basin  │ Gauge 5010  │   1,934.0 │   0.725  │ High-Rain Head │
-│                 │ 4. Haralahalli(Holdout)│ Tungabhadra Basin    │ Gauge 4013  │  14,582.0 │   0.901  │ Central Valley │
-└─────────────────┴────────────────────────┴──────────────────────┴─────────────┴───────────┴──────────┴────────────────┘
-* Aridity is the Budyko aridity index PET/P over 1980–2020, computed from the weekly tensors (GLEAM PET / IMD-based P); > 1.0 = water-limited.
-```
+The local CAMELS-IND disclaimer requires citation of its data-description article: [Mangukiya et al. (2025), *CAMELS-IND: hydrometeorological time series and catchment attributes for 228 catchments in Peninsular India*](https://essd.copernicus.org/articles/17/461/2025/). The article links the [dataset repository](https://doi.org/10.5281/zenodo.14005378); the local-file hashes identify the bundle actually used and should not be mistaken for verification of a particular downloaded release.
 
-### Outlier Imputation & Data Quality Protocol
-To prevent anomalous clerical errors in the test block from severely distorting evaluation metrics (e.g., Ashti's unclipped clerical peak of $1,829,351\,\text{m}^3/\text{s}$ on `05-10-2025` and Kudige's clerical spike on `27-08-2020`, both occurring in the 2016–2025 test period rather than training fold 1980–2010):
-- A physical clipping ceiling of $> 50,000\,\text{m}^3/\text{s}$ is enforced.
-- Values exceeding this threshold are masked to `NaN` and immediately undergo **temporal linear interpolation with a limit of $\le 2$ days** before weekly aggregation. This prevents unclipped test targets from inflating evaluation squared errors while preserving physical storm peaks.
-- *Recommendation for Future Pipelines*: Because a universal $50,000\,\text{m}^3/\text{s}$ ceiling is physically implausible for smaller headwater catchments (such as Kudige, $1,934\,\text{km}^2$), future operational pipelines should enforce a per-station physical plausibility screen (e.g., flagging or masking observations exceeding $> 20\times$ the station's historical training maximum flow).
+## 3. Cleaning and measured-target provenance
 
----
+Invalid discharge above the existing 50,000 m³/s ceiling is masked. This ceiling is a coarse clerical-error screen, not proof of physical plausibility for every catchment. **No daily discharge or weather series is filled by two-sided temporal interpolation.**
 
-## 3. Data Lineage & Provenance Contract
+Under the approved revised inclusion rule, a station is retained if raw daily discharge missingness over the full record is below 15%. This descriptive cohort rule is distinct from the weekly target-eligibility rule. Recorded zeros can additionally represent unmeasured flow, so the raw non-missing percentage alone does not establish usable low-flow coverage.
 
-Data ingestion spans two observation eras, harmonized to ensure continuous physical forcing without synthetic fabrication or structural breaks:
+A weekly discharge target requires at least **four original measured daily values**. The builder records the measured-day count before any model feature imputation. Weeks below this minimum remain missing and are not used as observed targets. A four-day mean is not a complete seven-day measurement.
 
-| Variable | Temporal Span | Primary Source & Resolution | Processing & Extraction Rule |
-| :--- | :--- | :--- | :--- |
-| **Streamflow ($Q$)** | 1980–2020 | CAMELS-IND observed streamflow (CWC gauge records) | Extracted from gauge ID timeseries column |
-| | 2001–2025 | Central Water Commission (CWC) daily manual discharge | Matched by station string name; normalized to m³/s |
-| | Combined | Stitched series (1980–2025: 16,802 daily timesteps) | Conservative linear interpolation on gaps $\le 35$ days; gaps $> 35$ days remain `NaN` |
-| **Precipitation ($P$)**| 1980–2020 | CAMELS-IND daily catchment-averaged precipitation | Zonal mean derived from IMD 0.25° gridded rainfall |
-| | 2021–2025 | IMD Pune 0.25° × 0.25° Gridded NetCDF (`imd_rainfall_2001_2025.nc`) | Exact catchment area-weighted mean across intersecting grid cells (8–129 cells weighted by intersection area $\times \cos(\text{lat})$); boundary calibration $\alpha_P = 1.0009$ ($r = 0.9994$) |
-| **Temperature ($T$)** | 1980–2020 | CAMELS-IND daily $T_{\text{max}}, T_{\text{min}}, T_{\text{avg}}$ | Zonal mean derived from IMD 1.0° gridded temperature |
-| | 2021–2025 | ERA5-Land Reanalysis (0.1° resolution daily CSVs) | Point extraction at station coordinates; corrected via additive bias $\text{Bias}_T$. Retained at gauge point because atmospheric demand accounts for only ~3% of M2 permutation importance (vs ~84% for rainfall), making spatial aggregation effect negligible |
-| **Evaporation (PET)** | 1980–2020 | CAMELS-IND GLEAM v3.6a PET (`pet_gleam(mm/day)`) | Priestley-Taylor catchment zonal mean (0 NaNs in 1980) |
-| | 2021–2025 | ERA5-Land FAO-56 Penman-Monteith reference ET0 | Point extraction at station coordinates; scaled by $\alpha_{\text{PET}}$. Retained at gauge point due to ~3% feature importance share |
+At Karad, Warunji, Yadgir and Huvinhedigi, the configured scoring policy excludes rows with recorded-zero issue or target discharge. The corresponding training/validation exclusion policy is applied in the trainers. Haralahalli's dry-season zeros are retained under the existing station-specific policy. Seasonal patterns support the unmeasured-zero interpretation but do not independently establish an institutional explanation for every zero.
 
----
+The current station-integrity report and generated results provide observed and scored counts. Old discard reports based on the former 10% rule are historical, not current station-status decisions.
 
-## 4. Boundary Calibration Audit (2015–2020 Overlap)
+## 4. Training-only harmonization
 
-To prevent step-change artifacts at the 2020/2021 data-source seam (CAMELS-IND → CWC/IMD/ERA5-Land), which falls inside the 2016–2025 test block (December 31, 2020 / January 1, 2021), a formal boundary calibration was executed over the **2,192 overlapping daily timesteps (2015–2020)**.
+Weather source corrections are fitted on **paired finite daily observations from 2001–2010**, entirely within the primary training period. The available rainfall overlap begins in 2001. Each fitted variable requires at least 365 paired days.
 
-### Calibration Formulations
-1. **Precipitation Multiplicative Scaling**:
-   $$\alpha_P = \frac{\sum_{t} P_{\text{CAMELS}}(t)}{\sum_{t} P_{\text{IMD}}(t)}, \quad P_{\text{calibrated}}(t) = \alpha_P \cdot P_{\text{IMD}}(t)$$
-2. **Temperature Additive Bias Correction**:
-   $$\text{Bias}_{T} = \mu(T_{\text{CAMELS}}) - \mu(T_{\text{ERA5}}), \quad T_{\text{calibrated}}(t) = T_{\text{ERA5}}(t) + \text{Bias}_{T}$$
-3. **Evaporative Demand Multiplicative Scaling**:
-   $$\alpha_{\text{PET}} = \frac{\sum_{t} \text{PET}_{\text{GLEAM}}(t)}{\sum_{t} \text{PET}_{\text{ERA5}}(t)}, \quad \text{PET}_{\text{calibrated}}(t) = \alpha_{\text{PET}} \cdot \text{PET}_{\text{ERA5}}(t)$$
+Rainfall and evaporative-demand multipliers are ratios of paired training sums. Temperature offsets are paired training mean differences. The builder rejects invalid denominators and records fit dates, paired counts, coefficients and input hashes. Later years must not change these fitted quantities.
 
-#### Comprehensive 12-Station Boundary Calibration Audit Table
-*Artifact Logs:* [`data/processed/validation_reports/rainfall_catchment_mean_rebuild.md`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/validation_reports/rainfall_catchment_mean_rebuild.md) & [`structural_break_calibration.md`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/validation_reports/structural_break_calibration.md)
+These corrections adjust average magnitude. They do not establish identical physical formulations, remove all structural breaks, or prove that a changing weather-product blend is homogeneous. Temperature and ET₀ remain gauge-point inputs rather than catchment averages. Low permutation importance cannot prove their spatial mismatch is negligible.
 
-| Station | Gauge | Area (km²) | Grid Cells | Rebuilt $\alpha_P$ | $P$ Daily $r$ | $P$ Wkly $r$ | $T_{\text{avg}}$ Bias ($^\circ$C) | $T_{\text{avg}}$ Daily $r$ | $T_{\text{avg}}$ Wkly $r$ | $\alpha_{\text{PET}}$ | PET Daily $r$ | PET Wkly $r$ | Audit Status |
-| :--- | :---: | ---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Karad** | `4021` | 5,462 | 15 | `1.0009` | **0.9997** | **0.9999** | $+1.07$ | 0.943 | **0.961** | `0.7196` | 0.760 | **0.781** | `PASS` |
-| **Warunji** | `4063` | 1,890 | 10 | `1.0023` | **0.9995** | **0.9999** | $+1.45$ | 0.933 | **0.950** | `0.7260` | 0.796 | **0.825** | `PASS` |
-| **Ashti** | `3005` | 50,990 | 97 | `1.0029` | **0.9994** | **0.9999** | $-1.47$ | 0.949 | **0.961** | `0.6937` | 0.708 | **0.736** | `PASS` |
-| **Bamni** | `3008` | 46,020 | 95 | `1.0021` | **0.9996** | **0.9998** | $-0.47$ | 0.976 | **0.984** | `0.7351` | 0.688 | **0.706** | `PASS` |
-| **Anandpur** | `7002` | 8,570 | 22 | `1.0029` | **0.9994** | **0.9997** | $+0.44$ | 0.973 | **0.987** | `0.7913` | 0.776 | **0.785** | `PASS` |
-| **Kashinagar**| `16007` | 7,820 | 21 | `1.0036` | **0.9972** | **0.9988** | $-0.09$ | 0.964 | **0.980** | `0.7652` | 0.789 | **0.811** | `PASS` |
-| **Gomlai** | `7007` | 21,950 | 47 | `1.0006` | **0.9984** | **0.9997** | $-0.48$ | 0.965 | **0.974** | `0.7430` | 0.713 | **0.720** | `PASS` |
-| **Kantamal** | `8013` | 19,600 | 46 | `1.0007` | **0.9997** | **0.9999** | $-0.65$ | 0.956 | **0.967** | `0.6965` | 0.724 | **0.732** | `PASS` |
-| **Yadgir** | `4064` | 69,863 | 129 | `1.0032` | **0.9996** | **0.9998** | $-0.88$ | 0.950 | **0.966** | `0.6529` | 0.532 | **0.533** | `PASS` |
-| **Huvinhedigi**| `4017` | 55,150 | 105 | `1.0044` | **0.9994** | **0.9998** | $-1.17$ | 0.945 | **0.966** | `0.6410` | 0.543 | **0.542** | `PASS` |
-| **KUDIGE** | `5010` | 1,934 | 8 | `1.0045` | **0.9432** | **0.9946** | $+2.35$ | 0.872 | **0.924** | `0.9030` | 0.522 | **0.522** | `PASS` |
-| **Haralahalli**| `4013` | 14,582 | 32 | `0.9833` | **0.9827** | **0.9938** | $-0.52$ | 0.935 | **0.960** | `0.7445` | 0.568 | **0.568** | `PASS` |
+The previous experiment's 2015–2020 calibration overlapped its test period. Those coefficients and diagnostic correlations are not reused for the corrected run. See the freshly generated structural-break report for current coefficients and fit diagnostics.
 
-### Critical Physical Insights Disclosed in Report
-1. **Catchment-Mean Rainfall Reconstruction**: To eliminate spatial measurement discrepancy across the 2020/2021 seam, 2021–2025 precipitation was rebuilt as exact area-weighted catchment zonal means across intersecting IMD 0.25° grid cells (weighted by fractional polygon area $\times \cos(\text{lat})$). Boundary calibration across the 2015–2020 overlap period shows that $\alpha_P$ collapsed from distorted point values (0.782–2.180) to exact physical parity ($\bar{\alpha}_P = 1.0009$, range 0.9833–1.0045). Daily correlation against CAMELS-IND precipitation surged from a median of $r = 0.678$ to $r = 0.9994$ (weekly $r = 0.9998$).
-2. **Atmospheric Demand & Temperature Lineage**: Temperature and PET forcings for 2021–2025 remain gauge-point ERA5-Land extractions rather than catchment area averages. Permutation importance analysis confirms that atmospheric demand contributes only 3.1% of M2's predictive variance (versus 114% for precipitation), leaving the spatial aggregation effect of temperature/PET negligible.
-3. **Evaporative Demand Formulation Disparity**: The correlation ceiling in semi-arid Karnataka ($r_{\text{PET}} \approx 0.53$) reflects genuine physical physics: GLEAM is radiation-constrained Priestley-Taylor, whereas ERA5-Land Penman-Monteith incorporates aerodynamic drying (vapor pressure deficit and wind speed). Multiplicative scaling ($\alpha_{\text{PET}} \approx 0.734$) aligns the volumetric evaporative demand seamlessly across the boundary.
-4. **Temperature Bias Structure**: While the arithmetic signed mean bias across all 12 stations is $-0.035\,^\circ\text{C}$ ($r = 0.947$), this reflects cancellation between positive biases in high-elevation Western Ghats headwaters (e.g., Kudige $+2.35\,^\circ\text{C}$, Warunji $+1.45\,^\circ\text{C}$) and negative biases in inland plains (e.g., Ashti $-1.47\,^\circ\text{C}$, Huvinhedigi $-1.17\,^\circ\text{C}$). The true portfolio **Mean Absolute Bias (MAB) is $0.92\,^\circ\text{C}$** ($\text{RMSE} = 1.15\,^\circ\text{C}$), which is fully corrected via station-specific additive bias calibration.
+## 5. Weekly timing and features
 
----
+Weekly bins are explicit: **left-closed and right-labelled at Monday**. A row labelled Monday t uses daily dates from the preceding Monday through Sunday; it excludes the daily record labelled t. Rolling weather windows are extracted at the final daily date of that preceding week, without skipping a missing endpoint.
 
-## 5. Feature Engineering Schema & Leakage Prevention
+For a concrete example, the row issued on Monday 4 January 2016 uses daily dates 28 December 2015–3 January 2016. Its one-week target is the measured mean over 4–10 January, labelled 11 January. This describes date bins, not a verified provider publication schedule.
 
-The pipeline generates **2,394 weekly timesteps** across **39 audited features and targets** in [`data/processed/weekly_tensors/`](file:///Users/abhitej/Downloads/ML%20Project/data/processed/weekly_tensors/):
+Rainfall and ET₀ totals require the stated complete daily window rather than treating absent days as zero. Missing features are handled downstream using frozen training replacement values. Targets are never replaced by feature-imputation values.
 
-### Feature Schema (39 Columns)
-1. **Contemporaneous Streamflow State (Issue Time $t$)**:
-   - `flow_target_m3s`: Mean weekly discharge $Q_t$ (set to `NaN` if observed daily records $< 4$).
-   - `flow_target_specific_mm`: Specific runoff $q_t = Q_t \cdot 604.8 / \text{Area}_{\text{km}^2}$ (mm/week).
-   - `flow_lag_0` to `flow_lag_7`: Autoregressive lags ($Q_t, Q_{t-1}, Q_{t-2}, Q_{t-3}, Q_{t-4}, Q_{t-7}$).
-   - `flow_std_7d`: Within-week daily flow standard deviation (flashiness proxy).
-   - `flow_min_7d`, `flow_max_7d`: Within-week daily baseflow minimum and peak flow maximum.
-   - `flow_recession_slope`: Weekly hydrograph recession delta $Q_t - Q_{t-1}$.
-2. **Antecedent Precipitation Memory**:
-   - `rain_sum_1w`: 7-day cumulative rainfall.
-   - `rain_sum_2w`: 14-day cumulative rainfall (`rolling(14).sum()`).
-   - `rain_sum_1m`: 30-day cumulative rainfall (`rolling(30).sum()`).
-   - `rain_sum_2m`: 60-day cumulative rainfall (`rolling(60).sum()`).
-   - `rain_sum_3m`: 90-day seasonal cumulative rainfall (`rolling(90).sum()`).
-   - `api_30d`: Decayed Antecedent Precipitation Index ($\sum_{k=0}^{29} 0.85^k P_{t-k}$ with chronologically reversed weights).
-   - `dry_days_count`: Count of zero-rain days ($P < 1.0\,\text{mm}$) during the 7 days of week $t$.
-3. **Atmospheric Demand & Thermal Drivers**:
-   - `temp_mean_1w`: 7-day mean of daily average temperature ($T_{\text{avg}}$).
-   - `temp_max_1w`: 7-day maximum of daily maximum temperature ($T_{\text{max}}$).
-   - `temp_min_1w`: 7-day minimum of daily minimum temperature ($T_{\text{min}}$).
-   - `pet_sum_1w`: 7-day cumulative Potential Evapotranspiration.
-   - `pet_sum_1m`: 30-day cumulative Potential Evapotranspiration.
-4. **Climatic Water Deficit (Catchment Drying Stress)**:
-   - `water_deficit_1w`: Net weekly atmospheric water balance ($P_{1w} - \text{PET}_{1w}$).
-   - `water_deficit_1m`: Net 30-day atmospheric water balance ($P_{1m} - \text{PET}_{1m}$).
-5. **Calendar Seasonality & Attributes**:
-   - `week_of_year`: ISO week integer (1 to 53).
-   - `sin_week`, `cos_week`: Cyclical Fourier harmonics:
-     $$\sin\left(\frac{2\pi \cdot \text{week}}{52.1775}\right), \quad \cos\left(\frac{2\pi \cdot \text{week}}{52.1775}\right)$$
-   - `catchment_area_km2`: Topographic drainage area.
-6. **Multi-Horizon Targets (Future Lead Shifts)**:
-   - Volumetric targets ($y_{t+H} \in \text{m}^3/\text{s}$): `target_H1`, `target_H2`, `target_H4`, `target_H8`.
-   - Specific runoff targets ($q_{t+H} \in \text{mm/week}$): `target_specific_H1`, `target_specific_H2`, `target_specific_H4`, `target_specific_H8`.
+Flow-history features include current and lagged weekly flow, within-week variability/extrema, recession and calendar harmonics. Weather features add trailing rainfall totals, dry-day count, temperature, ET₀, water deficit and a normalized exponentially weighted rainfall average. The API feature uses decay 0.85 and divides the weighted sum by its weight sum; it is not an unnormalized accumulated rainfall depth.
 
-### Leakage Prevention Guarantees
-* **Zero Future Weather**: Predictors terminate strictly on Monday 00:00 UTC of issue week $t$. Absolutely no meteorological observations from $t+1 \dots t+H$ enter the feature set.
-* **Warmup Alignment**: The initial 7 weeks (`1980-01-01` to `1980-02-18`) are dropped to initialize the 7-week autoregressive lag window, producing exactly 2,394 aligned weekly timesteps.
+The saved tensors contain the measured-day counts, pipeline version and all horizon targets. Their hashes bind the fitted models to the dataset. Actual row and eligible-sample counts are measured from artifacts rather than inferred from the nominal 46-year span.
 
----
+## 6. Baselines and model choices
 
-## 6. Evaluation Protocols & Guardrails
+**M0:** Lagged persistence at one and two weeks; training-period weekly climatology at four and eight weeks. Persistence tests short-lived flow memory; climatology tests whether the seasonal calendar already explains the apparent skill. Any additional four-week persistence diagnostic is labelled separately from official M0.
 
-```text
-46-Year Temporal Partitioning:
-|◄────────── Train (1980-02-25 to 2010-12-31) ──────────►|◄── Val (2011–2015) ──►|◄── Test (2016–2025) ──►|
-|◄─────────────── Active Train ───────────────►|[H Purge]|◄ Active Val ►|[H Purge]|◄──── Final Test ─────►|
-```
+**M1:** Flow-history and calendar predictors. Ridge provides a regularized linear comparison; histogram gradient boosting captures nonlinear relationships.
 
-### 6.1 Terminal $H$-Week Purge Embargo (Approval Gate AG-TS-02)
-For forecast horizon $H \in \{1, 2, 4, 8\}$ weeks:
-* **Train Set**: Drops the final $H$ weeks before `2010-12-31` (`df_train.iloc[:-H]`).
-* **Val Set**: Drops the final $H$ weeks before `2015-12-31` (`df_val.iloc[:-H]`).
-* **Test Set**: Un-purged final 10-year out-of-sample block (`2016-01-01` to `2025-12-31`).
-* **Result**: Zero target label leakage across split seams.
+**M2:** M1 predictors plus antecedent weather information. Its gradient-boosting comparison tests predictive value beyond flow history. Raw-target models minimize squared prediction error; log-target variants fit log(1 + specific runoff) to alter emphasis across the flow range. Neither objective guarantees drought-warning skill.
 
-### 6.2 Identical Row Evaluation Contract
-To eliminate missingness and selection bias across model tiers (M0 vs M1 vs M2):
-$$\mathcal{M}_{\text{eval}} = \left\{ t \;\middle|\; y_t, Q_t, \hat{y}_{\text{M0}, t}, \hat{y}_{\text{M1}, t}, \hat{y}_{\text{M2}, t} \ne \text{NaN} \;\land\; \lnot\big(\text{station} \in \mathcal{Z} \land (y_t = 0 \lor Q_t = 0)\big) \right\}$$
-with $\mathcal{Z}$ = {Karad, Warunji, Yadgir, Huvinhedigi} (recorded zeros = unmeasured weeks, §2). All models are evaluated on the identical row set per catchment and horizon; the scored rows are flagged in `data/processed/model_results/test_predictions.csv`.
+Ridge selects among eight regularization values using chronological validation RMSE. The M1 boosting search evaluates nine depth/regularization combinations at learning rate 0.05. M2 evaluates 27 depth/regularization/learning-rate combinations. Both use the existing 150-iteration configuration. Test scores are not used to choose these settings.
 
-### 6.3 Track A: Continuous Hydrograph Metrics
-* **Nash-Sutcliffe Efficiency (NSE)**:
-  $$\text{NSE} = 1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$$
-  *Guard*: In dry-season zero-variance regimes ($SS_{\text{tot}} < 10^{-6}$), returns $1.0$ if $SS_{\text{res}} < 10^{-6}$; otherwise clamps lower bound at $-10.0$ and flags `is_degenerate = True`.
-* **Kling-Gupta Efficiency (KGE-2009)**:
-  $$\text{KGE} = 1 - \sqrt{(r - 1)^2 + (\alpha - 1)^2 + (\beta - 1)^2}$$
-  where $r$ is Pearson correlation, $\alpha = \sigma_{\hat{y}} / \sigma_y$ is flow variability, and $\beta = \mu_{\hat{y}} / \mu_y$ is volume bias ratio.
-* **RMSE & MAE**: Computed with physical non-negativity constraint $\hat{y} = \max(\hat{y}, 0.0)$.
+The pooled spatial-transfer model is the existing two-layer HydroLSTM with eight-week sequences, hidden size 64, maximum 50 epochs and validation early stopping. A pooled flow-only model is its comparison. Held-out gauges are excluded from fitting, but local baselines and drought thresholds use their historical records: this is not evidence of performance at an entirely ungauged site.
 
-### 6.4 Track B: Drought Early Warning Metrics
-* **Threshold Fitting Scope**: Mild ($Q_{80}$), Moderate ($Q_{90}$), and Severe ($Q_{95}$) thresholds are fitted **strictly on the purged Training fold (1980–2010)**. Never fit on Validation or Test folds.
-* **Contingency Formulations**:
-  - Probability of Detection: $\text{POD} = \frac{H}{H + M}$
-  - False Alarm Ratio: $\text{FAR} = \frac{FA}{H + FA}$ (defined as $\text{NaN}$ if $H+FA=0$ and events occurred)
-  - Critical Success Index: $\text{CSI} = \frac{H}{H + M + FA}$ (returns $1.0$ if $H+M+FA=0$, complete null agreement)
+The fitted feature ordering, training replacement values, scaling, dataset hashes and configuration are saved with models. LSTM validation/test sequences use uninterrupted chronological feature context, including previously observed features from embargoed issue rows, while their future labels remain excluded from fitting. Training and audit inference share the same model class and sequence preprocessing.
 
----
+## 7. Evaluation design and metrics
 
-## 7. Model Architecture Hierarchy
+The primary split remains **1980–2010 training, 2011–2015 validation, and 2016–2025 testing**. The last H issue rows of training and validation are purged for horizon H so their future targets do not cross split boundaries. Feature-only historical context is not a fitting label.
 
-```text
-Model Tiers:
-┌────────────────────────┬─────────────────────────────────────────────────────────────────────────────┐
-│ Tier                   │ Mathematical / Feature Formulation                                          │
-├────────────────────────┼─────────────────────────────────────────────────────────────────────────────┤
-│ M0: Baseline           │ H <= 2w: Pure Persistence (Q_{t+H} = Q_t)                                   │
-│                        │ H >= 4w: Seasonal Weekly Climatology from Training Fold                     │
-├────────────────────────┼─────────────────────────────────────────────────────────────────────────────┤
-│ M1: Flow-Only          │ Ridge (alpha-tuned) & HistGradientBoostingRegressor                         │
-│                        │ Features: Past flow lags (Q_t..Q_{t-7}) + recession slope + Fourier calendar│
-│                        │ Strictly 0 weather features.                                                │
-├────────────────────────┼─────────────────────────────────────────────────────────────────────────────┤
-│ M2: Hydro-Meteorology  │ Protocol 1: HistGradientBoostingRegressor (26 hydro-met features)           │
-│                        │ Protocol 2: Deep Recurrent PyTorch HydroLSTM (L=8 lookback, 64 hidden units)│
-│                        │ Features: Flow lags + IMD Rainfall + Water Deficit (P−PET) +                │
-│                        │ Temp/PET: CAMELS-IND/GLEAM 1980–2020, ERA5-Land (bias-corrected) 2021–2025 │
-│                        │ Status: Fully trained, evaluated, and audited across 12 catchments.         │
-└────────────────────────┴─────────────────────────────────────────────────────────────────────────────┘
-```
+The corrected model comparison uses a common evaluation mask within each station/horizon: valid observed target and issue flow, required finite predictions, and the station-specific recorded-zero rule. The full forecast export also retains unscored rows; its scored flag must be respected. Reported station medians and pooled weekly scores answer different questions and are labelled separately.
 
----
+- **NSE:** Squared-error skill relative to the evaluated observations' mean; one is perfect and zero matches that reference. It is not a universal comparison with the project's M0.
+- **KGE:** Combines correlation, relative variability and mean bias; one is ideal. Its components help explain failures.
+- **Log-NSE:** Applies the NSE calculation to log-transformed discharge to inspect performance across a different flow emphasis.
+- **CSI, POD and FAR:** Event detection and false alarms at frozen training thresholds. Q80, Q90 and Q95 denote the training 20th, 10th and 5th percentiles.
+- **PR-AUC:** Pooled average precision used by the published precision–recall comparison. A low base rate makes interpretation different from balanced classification.
+- **Undefined ratios:** No observed events or no issued alerts can make a ratio undefined. Undefined values must not be replaced by a reported success.
 
-## 8. Formal Human Approval Gates Log
+Thresholds, model replacement values and scalers are training-derived. Validation controls model selection and LSTM stopping. Repeated work on an already inspected historical test block is a methodological correction, not a newly collected blind prospective test.
 
-Every strategic, architectural, and data alteration was paused at a formal Human Approval Gate before code modification:
+## 8. Interpretation, uncertainty and limitations
 
-| Gate ID | Decision Topic | Status | Formal Decision & Evidence |
-| :--- | :--- | :---: | :--- |
-| **AG-01** | Macro-Basin to Sub-Basin Relaxation | **APPROVED** | Relaxed macro-basin constraint to distinct sub-basin networks to guarantee 46-year continuous data without synthetic multi-month gap imputation. |
-| **AG-02** | Contiguous Gap Policy | **APPROVED** | Relaxed 30-day discard rule: retain stations with $<10\%$ missingness; linearly interpolate gaps $\le 35$ days; leave gaps $> 35$ days as unobserved `NaN`. |
-| **AG-03** | Dropping Artificial IMD-Only Constraint | **APPROVED** | Ingested ERA5-Land reanalysis for 2021–2025 non-rainfall forcings ($T$, $\text{PET}$) to mitigate the 2020/2021 data-source seam (CAMELS-IND → CWC/IMD/ERA5-Land), which falls inside the 2016–2025 test block. |
-| **AG-TS-01**| API Weight Vector Chronological Reversal | **APPROVED** | Corrected inverted array weighting in `calc_daily_api` using `weights[::-1]`, assigning weight 1.0 to day $t$ and decaying backwards. |
-| **AG-TS-02**| Terminal $H$-Week Purge Embargo | **APPROVED** | Purged terminal $H$ weeks from Training (2010) and Validation (2015) sets to eliminate target leakage into subsequent folds. |
-| **AG-TS-04**| Upper Physical Discharge Clipping & Interpolation | **APPROVED** | Enforced $50,000\,\text{m}^3/\text{s}$ ceiling and $\le 2$ days linear interpolation to eliminate CWC clerical typos (e.g. Ashti $1.8\times 10^6\,\text{m}^3/\text{s}$). |
-| **AG-TS-05**| Tier M2 Hydro-Meteorological Models Execution | **APPROVED** | Evaluated HistGradientBoosting (Protocol 1) and PyTorch HydroLSTM (Protocol 2) under strict $H$-week purge embargoes and identical-row masks. |
-| **AG-TS-06**| Basin Topology Reframe (Option H1) | **APPROVED** | Retired "Zero Overlap" claim; reframed as 10 river systems: 9 independent gauges and 1 three-gauge nested cascade ($\text{Warunji} \subset \text{Karad} \subset \text{Huvinhedigi}$). |
-| **AG-TS-07**| Karad Regime Shift & Threshold Retention (Option C1) | **APPROVED** | Retained training $Q_{95}=5.994\,\text{m}^3/\text{s}$; documented post-2010 Koyna diversion/shutdown (69.2% zero-flow test weeks) and empirical 0.238 PR baseline. Scoring now treats recorded zeros at Karad, Warunji, Yadgir and Huvinhedigi as unmeasured (AUDIT_LOG §7). |
-| **AG-TS-08**| Strategic Pivot to Objective Statistical Storytelling | **APPROVED** | Explicitly reported that M2 vs M1 is not statistically significant ($p > 0.20$); highlighted seasonal climatology winning at $H \ge 4\text{w}$. |
+The strongest claims concern **comparisons within the corrected experiment** on the same observed targets. Old-versus-new results describe two pipeline versions: target windows, weather inputs and eligible rows changed. Common issue dates alone do not make them the same evaluation task. A difference between their scores must not be presented as a causal improvement due to one repair.
 
----
+Wilcoxon tests are exploratory. For four horizon-specific comparisons of a metric, 0.0125 is a Bonferroni reference; the generated section uses current p-values. Shared drainages and nested gauges limit treating stations as independent replicates. The earlier station bootstrap inference is withdrawn. The replacement preserves weekly calendar gaps and applies explicit coverage, finite-draw, degeneracy and block-sensitivity screens. These are heuristic diagnostics; retained intervals remain exploratory and conditional on fitted models and the observed scoring pattern. Low drought-event counts still limit station-level claims even when aggregate differences appear positive.
 
-## 9. Alignment with Course Evaluation Rubric (IITGN ES 335)
+Errors should be read alongside the replay, baseline, lead time, number of observed weeks and event counts. Negative scores and cases where the calendar or persistence wins are retained. Forecast accuracy is not evidence of a physical causal mechanism or automatically of warning usefulness.
 
-| Course Rubric Criteria | Project Implementation & Evidence Artifact |
-| :--- | :--- |
-| **1. Scientific Problem Formulation** | Central research question decomposing forecast horizon decay, drought reliability, severity sensitivity, and zero-shot cross-basin transfer. |
-| **2. Data Lineage & Engineering Rigor** | 46-year timeline (1980–2025) harmonizing CWC discharge, CAMELS-IND, IMD 0.25° NetCDF, and ERA5-Land. Memory operations constrained $<0.5\,\text{GB}$ via lazy loading. |
-| **3. Methodological Honesty & Leakage Prevention** | Strictly backward-looking windows; terminal $H$-week purge embargo; identical row evaluation mask across missing flow intervals. |
-| **4. Rigorous Baseline Benchmarking** | M0 baseline enforced: pure persistence for $H \le 2\text{w}$, climatology for $H \ge 4\text{w}$. Halt guardrail if persistence attempted $>2\text{w}$. |
-| **5. Dual-Track Metric Evaluation** | Evaluated on continuous hydrograph accuracy (NSE, KGE, RMSE, MAE) and categorical drought early warning (CSI, POD, FAR). |
-| **6. Reproducibility & Traceability** | Static parameterizations, deterministic seed setting, pre-cached tensor pipelines, and fully logged validation reports. |
+The primary limitations are incomplete low-flow observation, possible nonrandom missingness, heterogeneous weather products, gauge-point temperature/ET₀, differing PET definitions, a small dependent portfolio and retrospective data availability. A pinned-product sensitivity study and further independent periods are useful future work, not implied completed experiments.
 
----
+## 9. Reproduction, integrity and assistance
+
+Use the [repair plan](METHODOLOGY_REPAIR_PLAN.md) for the ordered commands and verification criteria. The root requirements file records the environment used; it is not a guaranteed cross-platform lock. Raw-source access details are in [DATA_ACCESS.md](DATA_ACCESS.md).
+
+The corrected order is: verify sources; build all tensors; train raw and log variants and pooled models; audit saved models; recompute severity, uncertainty, feature importance and historical robustness; export benchmark/explorer/replay assets; render the report; rebuild the static site locally. A complete run manifest must bind these artifacts. Audits reject legacy or mismatched model/tensor combinations rather than silently refitting preprocessing.
+
+The website exposes fixed precomputed outputs. It has no live model training or Python service. Browser tests and captures remain local and excluded from Git. Publication requires a separate review of the rendered site.
+
+Antigravity and Codex assisted with coding, debugging, documentation and visualization. The authors remain responsible for scientific choices, source permissions, verification and their individual defence. AI assistance does not establish that an output is correct.
+
+The numerical sections below are generated from the evaluation artifacts.
 
 <!-- REPORT_RESULTS:START -->
-## 10. Empirical Results (Audited, Zero-Flow Mask Applied)
+## 10. Corrected results and evaluation
 
-> These sections are generated by `scripts/render_report_results.py` from `data/processed/model_results/audited_metrics_recomputed.csv`, `test_predictions.csv`, and `robustness_camels_era.csv` (written by `scripts/audit_metrics.py` and `scripts/robustness_camels_era.py`). Do not edit by hand; rerun the script.
+These tables are regenerated from the complete corrected run; old model scores are not reused. Train/validation/test dates, lead horizons and primary metrics are unchanged. Daily targets are never filled from future observations; a weekly discharge target requires four original daily measurements. Weekly bins explicitly exclude the labelled Monday's daily record. Source harmonisation fits only 2001–2010.
 
-**Evaluation set.** Test block 2016–2025 (up to 521 scored weeks per station). All models are scored on the same weeks. At Karad, Warunji, Yadgir and Huvinhedigi, weeks whose issue-time or target flow is recorded as exactly 0 m³/s are treated as unmeasured and excluded (see §2). Weeks removed per station (at the longest lead): Huvinhedigi 121, Karad 434, Warunji 439, Yadgir 400. M0 is persistence at 1–2 weeks and the training-period weekly climatology at 4–8 weeks. Δ values are paired: the median over the 12 stations of each station's own difference. *p* = uncorrected exploratory Wilcoxon signed-rank test, *n* = 12 stations.
-Across four lead-time NSE comparisons, a Bonferroni reference is 0.0125. The one-week *p* = 0.027 does not meet it, while the two-week *p* = 0.007 does. The reported tests are retained. Shared drainages and nested gauges limit interpreting stations as independent replicates. KGE gains at 1 and 2 weeks are not significant in the reported tests.
+Later temperature and FAO reference ET0 inputs were supplied through Open-Meteo's historical API with its default Best Match model selection. Their filenames retain an ERA5 label for compatibility, but do not establish a homogeneous ERA5-Land product. GMT calendar-day aggregation is documented; original CWC and CAMELS observation-day timing is not established as operationally available at midnight.
 
-### 10.1 Protocol 1: 12-Station Medians
+### 10.1 Continuous forecast comparisons
 
-| Lead | NSE M0 / M1 / M2 | ΔNSE (M2−M1), *p* | KGE M0 / M1 / M2 | ΔKGE (M2−M1), *p* | r M0 / M1 / M2 | Climatology or persistence beats M2 |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| **1w** | +0.284 / +0.458 / +0.486 | +0.045, 0.027 | +0.643 / +0.537 / +0.543 | +0.018, 0.519 | 0.643 / 0.686 / 0.721 | 0 of 12 |
-| **2w** | -0.185 / +0.282 / +0.331 | +0.034, 0.007 | +0.408 / +0.355 / +0.375 | +0.020, 0.129 | 0.408 / 0.547 / 0.577 | 0 of 12 |
-| **4w** | +0.364 / +0.273 / +0.292 | -0.007, 0.677 | +0.366 / +0.328 / +0.344 | -0.006, 0.622 | 0.616 / 0.541 / 0.565 | 9 of 12 |
-| **8w** | +0.353 / +0.237 / +0.271 | -0.014, 0.569 | +0.367 / +0.326 / +0.358 | -0.004, 0.791 | 0.602 / 0.534 / 0.543 | 11 of 12 |
+| Lead | M0 NSE | M1 NSE | M2 NSE | Paired median M2-M1 | Raw p | Pairs | p<0.0125 | Climatology beats M2 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1w | 0.2129 | 0.3578 | 0.4593 | 0.0498 | 0.1514 | 12 | False | 0 |
+| 2w | -0.1906 | 0.2184 | 0.2416 | 0.0221 | 0.2661 | 12 | False | 3 |
+| 4w | 0.1725 | 0.2548 | 0.2228 | -0.0137 | 0.1514 | 12 | False | 7 |
+| 8w | 0.1431 | 0.1943 | 0.1812 | 0.0037 | 0.5186 | 12 | False | 8 |
 
-#### 10.1.1 Sub-Period Analysis (2016–2020 Historical vs 2021–2025 Catchment-Mean Rebuild)
+M0 uses persistence at 1–2 weeks and weekly climatology at 4–8 weeks. Both additional baselines remain in the audited data at every horizon. All comparisons use the shared scored-week mask. Raw signed-rank p-values are exploratory; four lead comparisons imply a Bonferroni reference of 0.0125. Nested gauges and shared major drainages prevent treating all station results as independent experimental replications.
 
-To isolate the effect of forcing data resolution across the 2020/2021 seam, evaluation metrics are partitioned into the 2016–2020 pre-seam block (true CAMELS-IND catchment-averaged forcings) and the 2021–2025 post-seam block (where 2021–2025 precipitation was reconstructed as exact area-weighted catchment means from IMD 0.25° grids). Climatology and persistence baselines are evaluated strictly on the matched period rows.
+### 10.2 Severe-drought warning performance
 
-**Pre-Seam Sub-Period (2016–2020: Catchment-Averaged Forcings):**
+| Lead | Model | Median Q95 CSI | CSI stations | Median FAR | FAR stations |
+| --- | --- | --- | --- | --- | --- |
+| 1w | M0 | 0.5000 | 9 | 0.3067 | 8 |
+| 1w | M1 | 0.0000 | 11 | 1.0000 | 5 |
+| 1w | M2 | 0.0000 | 9 | 0.7083 | 4 |
+| 1w | M1-log | 0.2083 | 9 | 0.0833 | 8 |
+| 1w | M2-log | 0.1538 | 9 | 0.3542 | 8 |
+| 2w | M0 | 0.2857 | 9 | 0.5051 | 8 |
+| 2w | M1 | 0.0192 | 10 | 0.7857 | 7 |
+| 2w | M2 | 0.0000 | 10 | 1.0000 | 3 |
+| 2w | M1-log | 0.0278 | 9 | 0.3261 | 6 |
+| 2w | M2-log | 0.0435 | 9 | 0.5000 | 8 |
+| 4w | M0 | 0.0000 | 9 | undefined | 0 |
+| 4w | M1 | 0.0357 | 11 | 0.7222 | 10 |
+| 4w | M2 | 0.0000 | 11 | 1.0000 | 9 |
+| 4w | M1-log | 0.0278 | 9 | 0.5000 | 5 |
+| 4w | M2-log | 0.0000 | 9 | 0.5000 | 3 |
+| 8w | M0 | 0.0000 | 9 | undefined | 0 |
+| 8w | M1 | 0.0882 | 11 | 0.7857 | 11 |
+| 8w | M2 | 0.0000 | 10 | 0.7500 | 7 |
+| 8w | M1-log | 0.0606 | 9 | 0.5833 | 6 |
+| 8w | M2-log | 0.0526 | 9 | 0.6071 | 6 |
 
-| Lead | M0 Climatology | M0 Persistence | M1 (Flow-Only) | M2 (Hydro-Met) | Paired ΔNSE (M2−M1), *p* |
-| :-- | --: | --: | --: | --: | :-- |
-| **1w** | +0.334 | +0.166 | +0.445 | +0.463 | +0.048, 0.129 |
-| **2w** | +0.337 | -0.330 | +0.263 | +0.363 | +0.043, 0.009 |
-| **4w** | +0.347 | -0.241 | +0.243 | +0.285 | +0.002, 0.622 |
-| **8w** | +0.334 | -0.843 | +0.189 | +0.258 | +0.018, 0.151 |
+CSI is hits/(hits+misses+false alarms). FAR is false alarms/(hits+false alarms). Zero observed/predicted events can leave a ratio undefined; medians therefore have different station counts. Median station scores and pooled contingency scores answer different questions and must not be interchanged.
 
-**Post-Seam Sub-Period (2021–2025: Rebuilt Catchment-Mean Rainfall):**
+### 10.3 Scoring coverage and event counts
 
-| Lead | M0 Climatology | M0 Persistence | M1 (Flow-Only) | M2 (Hydro-Met) | Paired ΔNSE (M2−M1), *p* |
-| :-- | --: | --: | --: | --: | :-- |
-| **1w** | +0.368 | +0.361 | +0.499 | +0.570 | +0.069, 0.003 |
-| **2w** | +0.364 | -0.132 | +0.326 | +0.364 | +0.023, 0.176 |
-| **4w** | +0.382 | -0.358 | +0.305 | +0.321 | -0.004, 0.569 |
-| **8w** | +0.376 | -0.790 | +0.314 | +0.279 | -0.027, 0.176 |
+| station | horizon | n_eval | n_masked_zero_weeks | q95_threshold | test_q95_event_count | test_q95_base_rate | assessment |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Karad | 1w | 138 | 374 | 6.0571 | 1 | 0.0072 | observed_events |
+| Karad | 2w | 127 | 382 | 6.0500 | 1 | 0.0079 | observed_events |
+| Karad | 4w | 109 | 395 | 6.0357 | 1 | 0.0092 | observed_events |
+| Karad | 8w | 77 | 423 | 6.1457 | 1 | 0.0130 | observed_events |
+| Warunji | 1w | 131 | 383 | 0.5680 | 0 | 0.0000 | no_observed_events |
+| Warunji | 2w | 123 | 389 | 0.5764 | 0 | 0.0000 | no_observed_events |
+| Warunji | 4w | 105 | 403 | 0.6183 | 0 | 0.0000 | no_observed_events |
+| Warunji | 8w | 72 | 432 | 0.6879 | 0 | 0.0000 | no_observed_events |
+| Ashti | 1w | 511 | 0 | 3.5886 | 50 | 0.0978 | observed_events |
+| Ashti | 2w | 508 | 0 | 3.5864 | 49 | 0.0965 | observed_events |
+| Ashti | 4w | 504 | 0 | 3.5821 | 49 | 0.0972 | observed_events |
+| Ashti | 8w | 500 | 0 | 3.5736 | 50 | 0.1000 | observed_events |
+| Bamni (Ballarsha) | 1w | 507 | 0 | 1.7113 | 32 | 0.0631 | observed_events |
+| Bamni (Ballarsha) | 2w | 504 | 0 | 1.7109 | 32 | 0.0635 | observed_events |
+| Bamni (Ballarsha) | 4w | 500 | 0 | 1.7100 | 33 | 0.0660 | observed_events |
+| Bamni (Ballarsha) | 8w | 496 | 0 | 1.7068 | 33 | 0.0665 | observed_events |
+| Anandpur | 1w | 513 | 0 | 4.3431 | 36 | 0.0702 | observed_events |
+| Anandpur | 2w | 510 | 0 | 4.3707 | 36 | 0.0706 | observed_events |
+| Anandpur | 4w | 506 | 0 | 4.3636 | 36 | 0.0711 | observed_events |
+| Anandpur | 8w | 502 | 0 | 4.3493 | 36 | 0.0717 | observed_events |
+| Kashinagar | 1w | 511 | 0 | 1.9511 | 9 | 0.0176 | observed_events |
+| Kashinagar | 2w | 508 | 0 | 1.9511 | 9 | 0.0177 | observed_events |
+| Kashinagar | 4w | 504 | 0 | 1.9509 | 9 | 0.0179 | observed_events |
+| Kashinagar | 8w | 500 | 0 | 1.9519 | 9 | 0.0180 | observed_events |
+| Gomlai | 1w | 505 | 0 | 10.2590 | 23 | 0.0455 | observed_events |
+| Gomlai | 2w | 503 | 0 | 10.2764 | 23 | 0.0457 | observed_events |
+| Gomlai | 4w | 499 | 0 | 10.2750 | 23 | 0.0461 | observed_events |
+| Gomlai | 8w | 495 | 0 | 10.2862 | 23 | 0.0465 | observed_events |
+| Kantamal | 1w | 496 | 0 | 1.1648 | 0 | 0.0000 | no_observed_events |
+| Kantamal | 2w | 492 | 0 | 1.1646 | 0 | 0.0000 | no_observed_events |
+| Kantamal | 4w | 485 | 0 | 1.1917 | 0 | 0.0000 | no_observed_events |
+| Kantamal | 8w | 477 | 0 | 1.2611 | 0 | 0.0000 | no_observed_events |
+| Yadgir | 1w | 71 | 153 | 0.0000 | 0 | 0.0000 | unavailable_zero_threshold |
+| Yadgir | 2w | 34 | 131 | 0.0000 | 0 | 0.0000 | unavailable_zero_threshold |
+| Yadgir | 4w | 132 | 141 | 0.0000 | 0 | 0.0000 | unavailable_zero_threshold |
+| Yadgir | 8w | 93 | 149 | 0.0000 | 0 | 0.0000 | unavailable_zero_threshold |
+| Huvinhedigi | 1w | 178 | 29 | 11.4100 | 23 | 0.1292 | observed_events |
+| Huvinhedigi | 2w | 114 | 31 | 11.4086 | 26 | 0.2281 | observed_events |
+| Huvinhedigi | 4w | 228 | 28 | 11.4057 | 35 | 0.1535 | observed_events |
+| Huvinhedigi | 8w | 194 | 28 | 11.4289 | 33 | 0.1701 | observed_events |
+| KUDIGE | 1w | 188 | 0 | 3.2697 | 11 | 0.0585 | observed_events |
+| KUDIGE | 2w | 152 | 0 | 3.2687 | 11 | 0.0724 | observed_events |
+| KUDIGE | 4w | 230 | 0 | 3.2668 | 11 | 0.0478 | observed_events |
+| KUDIGE | 8w | 201 | 0 | 3.2629 | 10 | 0.0498 | observed_events |
+| Haralahalli | 1w | 118 | 0 | 5.4269 | 23 | 0.1949 | observed_events |
+| Haralahalli | 2w | 107 | 0 | 5.4267 | 23 | 0.2150 | observed_events |
+| Haralahalli | 4w | 152 | 0 | 5.4264 | 17 | 0.1118 | observed_events |
+| Haralahalli | 8w | 122 | 0 | 5.4259 | 16 | 0.1311 | observed_events |
 
-#### 10.1.2 Low-Flow-Aware Regression Comparison (`M1-log`, `M2-log` vs Standard Models)
+12 of 48 station–lead cases have no scored severe-drought events. Detection cannot be assessed in those cases; false-alarm counts are still observable. At Yadgir the frozen Q95 threshold is zero and recorded-zero targets are excluded, so the approved evaluation rule makes the event structurally unavailable. These statuses do not change thresholds, masks, raw contingency counts or the reported metric definitions. Raw CSI ratios in zero-event cases are not evidence of detection skill.
 
-Standard regression models trained on volumetric discharge ($m^3/s$) under mean squared error loss disproportionately penalize high-flow monsoon errors, causing near-complete threshold collapse ($CSI \approx 0.000$) during severe low-flow periods. Models trained on log-transformed specific runoff ($\log(1 + q)$, with $q = Q \times 604.8 / \text{Area}$) restore balanced hydrograph sensitivity.
+Recorded-zero gaps at the four configured stations are excluded using the same rule for all models. That classification remains an inference from the monitoring pattern rather than a complete source flag for every measurement.
 
-**Persistence is the benchmark to beat at 1–2 weeks:** In the low-flow regime, lagged streamflow persistence ($Q_{t+H} = Q_t$) achieves substantial warning skill (Q95 CSI of 0.529 at 1w and 0.379 at 2w). While standard regression models fail to issue reliable alerts, log-target models (`M1-log`, `M2-log`) restore drought early warning skill without artificial classification rebalancing, while simultaneously improving Log-NSE above climatology.
+### 10.4 KGE components and log-target trade-offs
 
-| Lead | Model | Raw Volumetric NSE | Log-NSE | Q95 Severe CSI | Q95 PR-AUC | Q90 Moderate CSI | Q80 Mild CSI |
-| :-- | :-- | --: | --: | --: | --: | --: | --: |
-| **1w** | M0 Baseline | +0.284 | +0.829 | 0.529 | 0.561 | 0.585 | 0.615 |
-| | M1 (Flow-only GBT) | +0.458 | +0.616 | 0.000 | 0.159 | 0.000 | 0.000 |
-| | M2 (Coupled GBT) | +0.486 | +0.627 | 0.000 | 0.154 | 0.000 | 0.000 |
-| | **M1-log (Log Flow GBT)** | +0.430 | +0.820 | 0.176 | 0.379 | 0.391 | 0.573 |
-| | **M2-log (Log Coupled GBT)** | +0.464 | +0.844 | 0.229 | 0.374 | 0.429 | 0.525 |
-| **2w** | M0 Baseline | -0.185 | +0.649 | 0.379 | 0.409 | 0.422 | 0.494 |
-| | M1 (Flow-only GBT) | +0.282 | +0.515 | 0.029 | 0.197 | 0.032 | 0.042 |
-| | M2 (Coupled GBT) | +0.331 | +0.519 | 0.000 | 0.187 | 0.000 | 0.000 |
-| | **M1-log (Log Flow GBT)** | +0.254 | +0.730 | 0.052 | 0.281 | 0.161 | 0.390 |
-| | **M2-log (Log Coupled GBT)** | +0.286 | +0.746 | 0.060 | 0.257 | 0.061 | 0.398 |
-| **4w** | M0 Baseline | +0.364 | +0.623 | 0.000 | 0.193 | 0.000 | 0.159 |
-| | M1 (Flow-only GBT) | +0.273 | +0.501 | 0.014 | 0.175 | 0.036 | 0.029 |
-| | M2 (Coupled GBT) | +0.292 | +0.426 | 0.000 | 0.139 | 0.000 | 0.000 |
-| | **M1-log (Log Flow GBT)** | +0.228 | +0.659 | 0.059 | 0.251 | 0.130 | 0.307 |
-| | **M2-log (Log Coupled GBT)** | +0.208 | +0.647 | 0.000 | 0.230 | 0.103 | 0.245 |
-| **8w** | M0 Baseline | +0.353 | +0.622 | 0.000 | 0.194 | 0.000 | 0.165 |
-| | M1 (Flow-only GBT) | +0.237 | +0.512 | 0.111 | 0.216 | 0.152 | 0.127 |
-| | M2 (Coupled GBT) | +0.271 | +0.425 | 0.000 | 0.181 | 0.000 | 0.016 |
-| | **M1-log (Log Flow GBT)** | +0.225 | +0.646 | 0.029 | 0.242 | 0.133 | 0.280 |
-| | **M2-log (Log Coupled GBT)** | +0.221 | +0.609 | 0.000 | 0.202 | 0.029 | 0.194 |
+KGE combines correlation, variability ratio and mean bias ratio; its zero is not a universal no-skill reference. Log-target training changes error emphasis, so both ordinary NSE and Log-NSE are reported.
 
-### 10.2 Station-by-Station NSE (Protocol 1)
+| horizon | m0_kge_fixed | m1_kge | m2_kge | m0_log_nse | m1_gbt_log_nse | m2_gbt_log_nse | m1_gbt_log_log_nse | m2_gbt_log_log_nse |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1w | 0.6077 | 0.4674 | 0.5179 | 0.6647 | 0.2923 | 0.4268 | 0.6851 | 0.6698 |
+| 2w | 0.4071 | 0.3626 | 0.3993 | 0.4614 | 0.2393 | 0.2879 | 0.6223 | 0.6356 |
+| 4w | 0.3069 | 0.3961 | 0.3895 | 0.4411 | 0.2195 | 0.2165 | 0.5657 | 0.5623 |
+| 8w | 0.3002 | 0.2423 | 0.3582 | 0.4513 | 0.1804 | 0.1752 | 0.5556 | 0.4827 |
 
-Each cell: M0 / M1 GBT / M2 GBT. † = recorded zeros treated as unmeasured.
+### 10.5 Severity sensitivity
 
-| Station | Scored weeks (1w) | 1w | 2w | 4w | 8w |
-| :-- | --: | :-- | :-- | :-- | :-- |
-| Karad † | 142 | -0.157 / +0.378 / +0.376 | -0.943 / +0.088 / +0.224 | +0.133 / +0.086 / -0.249 | +0.084 / +0.102 / +0.020 |
-| Warunji † | 133 | -0.165 / +0.330 / +0.360 | -1.017 / +0.069 / +0.150 | +0.080 / +0.130 / +0.131 | +0.044 / +0.082 / +0.042 |
-| Ashti | 521 | +0.407 / +0.525 / +0.584 | -0.011 / +0.378 / +0.388 | +0.417 / +0.365 / +0.334 | +0.416 / +0.365 / +0.317 |
-| Bamni (Ballarsha) | 521 | +0.250 / +0.349 / +0.511 | -0.256 / +0.199 / +0.273 | +0.234 / +0.184 / +0.208 | +0.233 / +0.138 / +0.182 |
-| Anandpur | 521 | +0.410 / +0.558 / +0.587 | +0.157 / +0.336 / +0.417 | +0.409 / +0.310 / +0.295 | +0.408 / +0.254 / +0.337 |
-| Kashinagar | 521 | +0.298 / +0.473 / +0.452 | -0.069 / +0.418 / +0.436 | +0.419 / +0.413 / +0.427 | +0.417 / +0.348 / +0.324 |
-| Gomlai | 510 | +0.469 / +0.578 / +0.644 | +0.258 / +0.499 / +0.481 | +0.482 / +0.457 / +0.466 | +0.481 / +0.453 / +0.471 |
-| Kantamal | 507 | +0.388 / +0.444 / +0.604 | -0.030 / +0.312 / +0.406 | +0.483 / +0.319 / +0.425 | +0.481 / +0.402 / +0.291 |
-| Yadgir † | 179 | +0.173 / +0.328 / +0.427 | -0.532 / +0.137 / +0.135 | -0.028 / +0.088 / +0.024 | -0.059 / -0.045 / -0.073 |
-| Huvinhedigi † | 421 | +0.270 / +0.473 / +0.595 | -0.478 / +0.252 / +0.257 | +0.346 / +0.235 / +0.288 | +0.326 / +0.205 / +0.252 |
-| KUDIGE | 489 | +0.314 / +0.524 / +0.461 | -0.113 / +0.407 / +0.444 | +0.381 / +0.357 / +0.341 | +0.379 / +0.359 / +0.356 |
-| Haralahalli | 415 | -0.149 / +0.298 / +0.312 | -0.469 / +0.194 / +0.225 | +0.210 / +0.204 / +0.190 | +0.206 / +0.219 / +0.225 |
+See drought_severity_sensitivity.csv for all station and pooled contingency counts.
 
-### 10.3 Track B: Severe Drought (Q95) Early Warning
+### 10.6 Feature reliance
 
-Thresholds are the training-period (1980–2010) 5th percentile at each station. CSI and FAR are medians over the stations where they are defined (*n* in brackets). PR-AUC is average precision on all scored weeks pooled.
+Permutation importance measures the change in prediction error when a feature or group is shuffled. It does not measure causal importance or establish that spatial aggregation errors are negligible.
 
-| Lead | Pooled base rate (events / weeks) | CSI M0 | CSI M1 | CSI M2 | FAR M1 | FAR M2 | PR-AUC M0 / M1 / M2 |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| **1w** | 0.065 (319 / 4880) | 0.529 (n=9) | 0.000 (n=10) | 0.000 (n=10) | 1.000 (n=4) | 0.789 (n=5) | 0.561 / 0.159 / 0.154 |
-| **2w** | 0.064 (308 / 4819) | 0.379 (n=8) | 0.029 (n=9) | 0.000 (n=9) | 0.696 (n=8) | 0.650 (n=5) | 0.409 / 0.197 / 0.187 |
-| **4w** | 0.066 (313 / 4725) | 0.000 (n=9) | 0.014 (n=12) | 0.000 (n=11) | 0.750 (n=11) | 1.000 (n=9) | 0.193 / 0.175 / 0.139 |
-| **8w** | 0.067 (305 / 4552) | 0.000 (n=9) | 0.111 (n=12) | 0.000 (n=9) | 0.696 (n=12) | 0.718 (n=6) | 0.194 / 0.216 / 0.181 |
+| index | H1_share_pct | H8_share_pct |
+| --- | --- | --- |
+| flow_lag_0 | 4.7454 | 0.2791 |
+| flow_lag_1 | 1.6865 | 2.6012 |
+| flow_lag_2 | 3.7621 | 0.5594 |
+| flow_lag_3 | 6.9064 | 1.4806 |
+| flow_lag_4 | 2.3938 | 0.7534 |
+| flow_lag_7 | 0.0242 | 1.3681 |
+| flow_std_7d | 1.9392 | 0.9992 |
+| flow_min_7d | 4.5555 | 3.0122 |
+| flow_max_7d | 3.9688 | 0.0867 |
+| flow_recession_slope | 2.2423 | 0.9202 |
+| rain_sum_1w | 2.2661 | 0.5233 |
+| rain_sum_2w | 1.4941 | 0.6308 |
+| rain_sum_1m | 1.0631 | 0.6718 |
+| rain_sum_2m | 3.0720 | 0.6945 |
+| rain_sum_3m | 1.6869 | 0.2584 |
+| api_30d | 42.4343 | 1.0989 |
+| dry_days_count | 2.8522 | 0.0812 |
+| temp_mean_1w | 0.8703 | 0.6682 |
+| temp_max_1w | 2.0157 | 0.4687 |
+| temp_min_1w | 1.8656 | 2.3565 |
+| pet_sum_1w | 0.6780 | 0.1506 |
+| pet_sum_1m | 0.7664 | 0.6862 |
+| water_deficit_1w | 3.5283 | 0.0790 |
+| water_deficit_1m | 1.9140 | 1.2436 |
+| sin_week | 0.1106 | 1.5182 |
+| cos_week | 1.1584 | 76.8100 |
 
-### 10.3.1 Drought Severity Sensitivity: Mild (Q80) vs Moderate (Q90) vs Severe (Q95)
+| index | H1_dMSE_over_MSE | H8_dMSE_over_MSE |
+| --- | --- | --- |
+| Streamflow Memory | 0.2384 | -0.0055 |
+| Precipitation & Recharge | 0.7249 | 0.0041 |
+| Atmospheric Demand | 0.0091 | 0.0105 |
+| Climatic Water Deficit | 0.0362 | 0.0007 |
+| Calendar Seasonality | 0.0063 | 1.0608 |
 
-Thresholds are empirical percentiles fit strictly on each station's purged training fold (1980–2010): Mild ($Q_{80}$, 20th percentile), Moderate ($Q_{90}$, 10th percentile), and Severe ($Q_{95}$, 5th percentile). CSI is the median over stations where it is defined (*n* in brackets). Pooled PR-AUC is average precision across all evaluated test weeks.
+### 10.7 Cross-basin transfer
 
-| Lead | Severity Level | Pooled base rate (events / weeks) | Median CSI M0 | Median CSI M1 | Median CSI M2 | Pooled PR-AUC M0 / M1 / M2 |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| **1w** | Mild ($Q_{80}$) | 0.181 (882 / 4880) | 0.615 (n=11) | 0.000 (n=11) | 0.000 (n=12) | 0.752 / 0.433 / 0.413 |
-|  | Moderate ($Q_{90}$) | 0.105 (514 / 4880) | 0.585 (n=9) | 0.000 (n=10) | 0.000 (n=10) | 0.671 / 0.264 / 0.256 |
-|  | Severe ($Q_{95}$) | 0.065 (319 / 4880) | 0.529 (n=9) | 0.000 (n=10) | 0.000 (n=10) | 0.561 / 0.159 / 0.154 |
-| **2w** | Mild ($Q_{80}$) | 0.179 (863 / 4819) | 0.494 (n=11) | 0.042 (n=11) | 0.000 (n=11) | 0.643 / 0.433 / 0.411 |
-|  | Moderate ($Q_{90}$) | 0.104 (501 / 4819) | 0.422 (n=10) | 0.032 (n=10) | 0.000 (n=10) | 0.540 / 0.292 / 0.268 |
-|  | Severe ($Q_{95}$) | 0.064 (308 / 4819) | 0.379 (n=8) | 0.029 (n=9) | 0.000 (n=9) | 0.409 / 0.197 / 0.187 |
-| **4w** | Mild ($Q_{80}$) | 0.182 (858 / 4725) | 0.159 (n=11) | 0.029 (n=12) | 0.000 (n=12) | 0.467 / 0.402 / 0.336 |
-|  | Moderate ($Q_{90}$) | 0.106 (503 / 4725) | 0.000 (n=9) | 0.036 (n=12) | 0.000 (n=12) | 0.303 / 0.263 / 0.207 |
-|  | Severe ($Q_{95}$) | 0.066 (313 / 4725) | 0.000 (n=9) | 0.014 (n=12) | 0.000 (n=11) | 0.193 / 0.175 / 0.139 |
-| **8w** | Mild ($Q_{80}$) | 0.184 (839 / 4552) | 0.165 (n=11) | 0.127 (n=12) | 0.016 (n=11) | 0.470 / 0.400 / 0.399 |
-|  | Moderate ($Q_{90}$) | 0.107 (488 / 4552) | 0.000 (n=9) | 0.152 (n=12) | 0.000 (n=9) | 0.305 / 0.289 / 0.278 |
-|  | Severe ($Q_{95}$) | 0.067 (305 / 4552) | 0.000 (n=9) | 0.111 (n=12) | 0.000 (n=9) | 0.194 / 0.216 / 0.181 |
+| station | horizon | n_eval | m0_nse_fixed | p2_gbt_nse | p2_lstm_nse |
+| --- | --- | --- | --- | --- | --- |
+| Bamni (Ballarsha) | 1w | 507 | 0.1261 | 0.1291 | 0.4049 |
+| Bamni (Ballarsha) | 2w | 504 | -0.2938 | -0.5863 | 0.1317 |
+| Bamni (Ballarsha) | 4w | 500 | 0.2233 | -0.3139 | -0.0795 |
+| Bamni (Ballarsha) | 8w | 496 | 0.2161 | -0.1928 | -0.7337 |
+| Kantamal | 1w | 496 | 0.3568 | 0.5095 | 0.5912 |
+| Kantamal | 2w | 492 | -0.0096 | 0.4279 | 0.4469 |
+| Kantamal | 4w | 485 | 0.4862 | 0.4617 | 0.4194 |
+| Kantamal | 8w | 477 | 0.4863 | 0.4427 | 0.3877 |
+| Haralahalli | 1w | 118 | 0.5398 | 0.1390 | 0.0498 |
+| Haralahalli | 2w | 107 | 0.1792 | 0.0907 | 0.0555 |
+| Haralahalli | 4w | 152 | -0.0601 | 0.0917 | 0.0473 |
+| Haralahalli | 8w | 122 | -0.0619 | 0.0269 | -0.0141 |
 
-### 10.4 Protocol 2: Zero-Shot Transfer to Held-Out Basins (NSE)
+Each transfer baseline uses the held-out station's own history. This is transfer to an unseen gauged catchment, not a proof of operational forecasting at an ungauged site. A positive NSE alone does not imply that the transferred model beats that baseline.
 
-M0 uses the held-out station's own record. Ridge and GBT are flow-only models pooled over the state's other three stations in specific runoff; the HydroLSTM adds weather inputs.
+## 11. Errors, uncertainty and robustness
 
-| Held-out basin | Lead | M0 | Pooled Ridge | Pooled GBT | HydroLSTM | LSTM − M0 |
-| :-- | :-- | --: | --: | --: | --: | --: |
-| Bamni (Ballarsha) | 1w | +0.250 | +0.241 | +0.248 | +0.417 | +0.167 |
-|  | 2w | -0.256 | -0.301 | -0.438 | +0.061 | +0.317 |
-|  | 4w | +0.234 | -0.530 | -0.427 | +0.054 | -0.180 |
-|  | 8w | +0.233 | -0.871 | -0.308 | -0.275 | -0.508 |
-| Kantamal | 1w | +0.388 | +0.529 | +0.536 | +0.558 | +0.171 |
-|  | 2w | -0.030 | +0.362 | +0.437 | +0.427 | +0.456 |
-|  | 4w | +0.483 | +0.348 | +0.459 | +0.444 | -0.040 |
-|  | 8w | +0.481 | +0.326 | +0.432 | +0.426 | -0.055 |
-| Haralahalli | 1w | -0.149 | +0.156 | +0.172 | +0.260 | +0.409 |
-|  | 2w | -0.469 | +0.076 | +0.036 | -0.191 | +0.277 |
-|  | 4w | +0.210 | +0.254 | +0.103 | -0.302 | -0.512 |
-|  | 8w | +0.206 | +0.151 | -0.009 | -1.942 | -2.148 |
+Previous station bootstrap inference withdrawn: it compressed calendar gaps and can produce degenerate intervals for short series. Point-forecast scores are unaffected. The replacement analysis retains every weekly calendar position, including excluded or missing observations, and resamples observations, both models and their shared mask together. The original CSVs and algorithm are preserved as superseded provenance in data/processed/validation_reports/uncertainty_baseline_2026-11-16/.
 
-### 10.5 What the M2 Model Uses (Permutation Importance)
+The primary analysis uses 52-calendar-week moving blocks, with 26- and 13-week sensitivity checks, 2,000 draws and fixed seeds. Intervals are withheld for sparse informative coverage, too few finite draws, degeneracy, or a direction that changes with block length. The effective-bin screen and 95% finite-draw screen are practical diagnostics, not a proof of confidence-interval coverage. Any retained percentile interval is exploratory and conditional on the fitted models and observed scoring pattern; it does not include model-training or source uncertainty. Portfolio station-bootstrap intervals are withheld because shared drainage and nested gauges invalidate an independent-station interpretation. See docs/UNCERTAINTY_METHOD.md for exact screens and uncertainty_block_sensitivity.csv for all settings.
 
-Computed on the scored test weeks of the 8 stations with complete low-flow records. *Group* = increase in MSE (as a fraction of the baseline MSE, station median) when every feature in the family is shuffled together, which avoids correlated features hiding each other's contribution.
+Representative errors can be inspected in the forecast replay using the saved issue and target dates. Compare missed droughts, false alarms, peak underprediction and excluded measurement gaps rather than only portfolio averages.
 
-| Feature family | Group ΔMSE/MSE at 1w | at 8w |
-| :-- | --: | --: |
-| Streamflow Memory | +28% | +2% |
-| Precipitation & Recharge | +114% | +2% |
-| Atmospheric Demand | +3% | +2% |
-| Climatic Water Deficit | +1% | +0% |
-| Calendar Seasonality | +2% | +88% |
+### 11.1 Calendar-bootstrap diagnostics
 
-Single-feature shares at 1 week: `api_30d` 59.5%, current flow `flow_lag_0` 3.8%, all ten flow features 19.2%. At 8 weeks the calendar harmonics take 87.4%. Permutation importance of atmospheric demand (temperature, PET, and water deficit) is only 3.1% at 1 week (0.031 ΔMSE/MSE), demonstrating that precipitation recharge drives nearly all meteorological skill.
+| station | horizon | n_scored | coverage_fraction | B_eff | finite_draw_fraction | status | reason | ci_lo | ci_hi |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Anandpur | 1w | 513 | 0.9828 | 10.0282 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0398 | 0.2035 |
+| Anandpur | 2w | 510 | 0.9770 | 9.9839 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0197 | 0.0804 |
+| Anandpur | 4w | 506 | 0.9693 | 9.9687 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0984 | 0.0866 |
+| Anandpur | 8w | 502 | 0.9617 | 9.9480 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0520 | 0.0833 |
+| Ashti | 1w | 511 | 0.9789 | 10.0281 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0707 | 0.2666 |
+| Ashti | 2w | 508 | 0.9732 | 9.9839 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0361 | 0.0419 |
+| Ashti | 4w | 504 | 0.9655 | 9.9755 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0630 | 0.0582 |
+| Ashti | 8w | 500 | 0.9579 | 9.9681 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0343 | 0.0478 |
+| Bamni (Ballarsha) | 1w | 507 | 0.9713 | 10.0085 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0396 | 0.1611 |
+| Bamni (Ballarsha) | 2w | 504 | 0.9655 | 9.9598 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0121 | 0.1583 |
+| Bamni (Ballarsha) | 4w | 500 | 0.9579 | 9.9491 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0320 | 0.0528 |
+| Bamni (Ballarsha) | 8w | 496 | 0.9502 | 9.9425 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0084 | 0.0637 |
+| Gomlai | 1w | 505 | 0.9674 | 9.9600 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0414 | 0.1487 |
+| Gomlai | 2w | 503 | 0.9636 | 9.9496 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0503 | 0.0615 |
+| Gomlai | 4w | 499 | 0.9559 | 9.9247 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0745 | 0.0120 |
+| Gomlai | 8w | 495 | 0.9483 | 9.8828 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0155 | 0.0759 |
+| Haralahalli | 1w | 118 | 0.2261 | 3.0737 | 0.9995 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| Haralahalli | 2w | 107 | 0.2050 | 2.6570 | 0.9740 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| Haralahalli | 4w | 152 | 0.2912 | 5.2319 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0076 | 0.1473 |
+| Haralahalli | 8w | 122 | 0.2337 | 3.9025 | 1.0000 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| Huvinhedigi | 1w | 178 | 0.3410 | 6.0420 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.2599 | 0.3380 |
+| Huvinhedigi | 2w | 114 | 0.2184 | 2.9766 | 0.9840 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| Huvinhedigi | 4w | 228 | 0.4368 | 8.1276 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1849 | -0.0116 |
+| Huvinhedigi | 8w | 194 | 0.3716 | 7.1989 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.9990 | -0.2534 |
+| KUDIGE | 1w | 188 | 0.3602 | 4.4380 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.4412 | 0.0890 |
+| KUDIGE | 2w | 152 | 0.2912 | 3.0328 | 0.9825 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| KUDIGE | 4w | 230 | 0.4406 | 6.2031 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0923 | 0.0710 |
+| KUDIGE | 8w | 201 | 0.3851 | 5.2408 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.2601 | 0.1017 |
+| Kantamal | 1w | 496 | 0.9502 | 9.9144 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0611 | 0.1639 |
+| Kantamal | 2w | 492 | 0.9425 | 9.8432 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0111 | 0.1477 |
+| Kantamal | 4w | 485 | 0.9291 | 9.7632 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0279 | 0.1593 |
+| Kantamal | 8w | 477 | 0.9138 | 9.6407 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1317 | 0.0109 |
+| Karad | 1w | 138 | 0.2644 | 8.2800 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1851 | 0.2362 |
+| Karad | 2w | 127 | 0.2433 | 8.0766 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.2263 | 0.1935 |
+| Karad | 4w | 109 | 0.2088 | 7.6701 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.3271 | 0.0124 |
+| Karad | 8w | 77 | 0.1475 | 6.6394 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | 0.0709 | 0.6165 |
+| Kashinagar | 1w | 511 | 0.9789 | 10.0043 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0908 | 0.1241 |
+| Kashinagar | 2w | 508 | 0.9732 | 9.9500 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0802 | 0.0267 |
+| Kashinagar | 4w | 504 | 0.9655 | 9.9318 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1759 | -0.0440 |
+| Kashinagar | 8w | 500 | 0.9579 | 9.9238 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1895 | 0.0018 |
+| Warunji | 1w | 131 | 0.2510 | 8.5251 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0550 | 0.2434 |
+| Warunji | 2w | 123 | 0.2356 | 8.5717 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.0935 | 0.2417 |
+| Warunji | 4w | 105 | 0.2011 | 8.1849 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1390 | 0.1296 |
+| Warunji | 8w | 72 | 0.1379 | 6.8031 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.1491 | 0.3287 |
+| Yadgir | 1w | 71 | 0.1360 | 6.1551 | 1.0000 | inference_withheld | block_sensitive | undefined | undefined |
+| Yadgir | 2w | 34 | 0.0651 | 2.7524 | 0.9780 | inference_withheld | B_eff_below_4_heuristic | undefined | undefined |
+| Yadgir | 4w | 132 | 0.2529 | 9.2681 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -0.2313 | 0.0289 |
+| Yadgir | 8w | 93 | 0.1782 | 8.6750 | 1.0000 | exploratory_interval | Passed prespecified heuristic screens; conditional exploratory interval only | -1.3628 | 0.5476 |
 
-### 10.6 CAMELS-Era Robustness Benchmark (1980–2010 Historical Record)
+Blank/undefined interval bounds mean inference was withheld, not that the point difference was zero. No station winner-count claim is made from these exploratory diagnostics.
 
-To evaluate whether conclusions hold independently of dataset stitching, CWC operational shifts, or ERA5-Land boundary harmonization, we executed an independent 31-year temporal benchmark strictly within the published CAMELS-IND historical dataset (Train: 1980–2000, Val: 2001–2004, Test: 2005–2010; 6 out-of-sample years, ~3,500 total test weeks, 223 pooled severe-drought events).
+Historical-period sensitivity uses its separately documented chronological split; it is not the primary 2016–2025 test.
 
-| Lead | Test Weeks / Q95 Events | M0 (Baseline) | M1 (Flow GBT) | M2 (Coupled GBT) | M2-log (Log GBT) | Paired ΔNSE (M2−M1), *p* | Log-NSE M0 / M1 / M2 / M2-log | Q95 Pooled CSI M0 / M1 / M2 / M2-log |
-| :-- | :-- | --: | --: | --: | --: | :-- | :-- | :-- |
-| **1w** | 3513 / 223 | +0.186 | +0.443 | +0.493 | +0.530 | +0.087, <0.001 | 0.771 / 0.508 / 0.655 / 0.792 | 0.512 / 0.004 / 0.000 / 0.150 |
-| **2w** | 3502 / 223 | -0.262 | +0.327 | +0.339 | +0.330 | +0.017, 0.266 | 0.555 / 0.383 / 0.418 / 0.665 | 0.365 / 0.053 / 0.013 / 0.087 |
-| **4w** | 3483 / 223 | +0.293 | +0.310 | +0.330 | +0.292 | -0.005, 0.910 | 0.561 / 0.361 / 0.405 / 0.606 | 0.000 / 0.028 / 0.008 / 0.026 |
-| **8w** | 3444 / 223 | +0.293 | +0.274 | +0.288 | +0.233 | -0.036, 0.077 | 0.581 / -0.067 / 0.170 / 0.536 | 0.000 / 0.097 / 0.123 / 0.025 |
+| horizon | n_eval | delta_NSE_M2_M1 | delta_NSE_M2_M1_pval | M0_median_NSE | M1_median_NSE | M2_median_NSE | M0_Q95_pooled_CSI | M1_Q95_pooled_CSI | M2_Q95_pooled_CSI |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1w | 3527 | 0.0771 | 0.0005 | 0.0225 | 0.4050 | 0.4263 | 0.4480 | 0.0294 | 0.0000 |
+| 2w | 3499 | 0.0189 | 0.0771 | -0.3705 | 0.2326 | 0.2515 | 0.3200 | 0.0000 | 0.0000 |
+| 4w | 3525 | 0.0260 | 0.5693 | 0.2409 | 0.2531 | 0.2988 | 0.0000 | 0.0258 | 0.0686 |
+| 8w | 3486 | -0.0463 | 0.0771 | 0.2386 | 0.1843 | 0.1623 | 0.0000 | 0.1094 | 0.0782 |
 
-**Key Findings from CAMELS-Era Robustness:**
-1. **Coupled meteorology delivers a statistically significant 1-week gain:** Paired median ΔNSE is **+0.087** (*p* = 0.0005, Wilcoxon signed-rank), confirming that meteorological inputs add decisive predictive value during short lead times.
-2. **Climatology dominance beyond 2 weeks:** At 4–8 weeks, weekly climatology matches or exceeds trained ML models (M0 = +0.293 at 8w vs M1 = +0.274 and M2 = +0.288), corroborating the memory-decay finding.
-3. **Persistence remains the short-lead drought benchmark:** Persistence CSI for severe drought is 0.512 at 1w and 0.365 at 2w, while standard squared-error GBT collapses (CSI = 0.000–0.013). Log-target regression restores low-flow sensitivity (Q95 CSI = 0.150 at 1w).
+## 12. Conclusions and limitations
 
-## 11. Answers to the Research Sub-Questions
+Judge each model against the appropriate baseline, lead, severity and scored rows in the tables above. Weather inputs, log-target fitting and recurrent architecture do not guarantee a gain in both flow accuracy and warning skill.
 
-### 11.1 Forecast horizon decay
-Persistence has a median NSE of +0.284 at 1 week and -0.185 at 2 weeks, so it is no longer useful beyond one week for continuous flow. The trained models keep positive skill at 2 weeks (M1 +0.282, M2 +0.331). From 4 weeks the station's weekly climatology is the strongest model (median NSE +0.364 and +0.353), beating M2 at 9 and 11 of 12 stations.
-
-### 11.2 Value of meteorological inputs
-Across the full 10-year test block, M2 achieves a paired median gain over M1 of +0.045 at 1 week (*p* = 0.027) and +0.034 at 2 weeks (*p* = 0.007). When isolating the 2021–2025 sub-period where rainfall was reconstructed as exact catchment area-weighted means, M2 has a higher NSE than M1 at 1 week in that sub-period: paired median ΔNSE = **+0.069** (*p* = **0.003**). In the historical CAMELS-IND robustness test (1980–2000 train, 2005–2010 test; 223 pooled Q95 events), this 1-week coupled gain is **+0.087** (*p* = **0.0005**). At 4 and 8 weeks, weekly climatology exceeds M2 at most stations.
-
-### 11.3 Drought warning reliability and severity
-Standard regression models trained under squared-error loss exhibit severe threshold collapse on low flows (M2 median Q95 CSI is 0.000 at 1–4w). Persistence provides a strong severe-drought reference (median CSI: 1w 0.529 (n=9), 2w 0.379 (n=8); pooled CSI: 1w 0.48, 2w 0.37, the additional 4w lagged-persistence diagnostic 0.251 vs M2 0.043). Official M0 at 4w is climatology. While log-target models (M1-log, M2-log) dramatically recover low-flow skill over raw regression (1w Q95 CSI reaches 0.229 vs 0.000, Log-NSE reaches 0.844), three key trade-offs apply: (1) persistence still outperforms M2-log on drought alerts (median CSI 0.529 vs 0.229; pooled 0.48 vs 0.20), (2) persistence's low-flow accuracy (Log-NSE 0.829) is comparable to M2-log (0.844), and (3) training on log-scale targets degrades general hydrograph tracking across the full flow range (median NSE drops from 0.486 to 0.464 at 1w, and from 0.292 to 0.208 at 4w).
-
-Sensitivity analysis across mild ($Q_{80}$, 20th percentile) and moderate ($Q_{90}$, 10th percentile) drought confirms these findings. At 1 and 2 weeks, persistence strongly outperforms standard ML models across all three severity levels (mild $Q_{80}$ median CSI 0.615 (n=11) and 0.494 (n=11); moderate $Q_{90}$ CSI 0.585 (n=9) and 0.422 (n=10)). Log-target regression bridges this gap, achieving moderate-drought ($Q_{90}$) CSI of 0.428 at 1w and mild-drought ($Q_{80}$) CSI of 0.533.
-
-### 11.4 Zero-shot spatial transfer
-The pooled HydroLSTM beats each held-out station's own baseline at 1 and 2 weeks (Kantamal +0.558 vs +0.388 at 1 week). At 4 and 8 weeks climatology wins at all three basins (Kantamal +0.483 / +0.481 vs +0.444 / +0.426; Bamni +0.234 vs +0.054 at 4 weeks), and at Bamni the LSTM fails badly at 8 weeks (NSE -0.275). At Kantamal the pooled three-feature flow-only GBT matches the LSTM: NSE differs by only 0.01–0.03 (GBT higher at every lead), within sampling noise at 1–4 weeks on a 52-week block bootstrap, and the LSTM has the higher KGE at 1 and 4 weeks. The weather inputs and the recurrent model therefore add no clear gain there. At Haralahalli the 2-week advantage is between two negative scores (-0.191 vs -0.469). A positive zero-shot NSE should therefore not be read as skill. The held-out basins are gauged, so the baseline uses their own history; an ungauged basin would have no such baseline.
-
-## 12. Conclusions and Limitations
-
-1. **Baselines are hard to beat.** Persistence wins at 1–2 weeks for drought warnings, and climatology wins at 4–8 weeks for continuous flow. Sub-seasonal forecasting benchmarks should always report against both.
-2. **Coupled meteorology provides short-range NSE gains.** Separate sub-period and historical comparisons report a +0.069 to +0.087 NSE advantage at 1 week (uncorrected *p* < 0.01). Full-test NSE comparisons are exploratory and retain the multiple-comparison and station-dependence caveats above.
-3. **Severe-drought skill requires loss function re-weighting, but introduces trade-offs.** Standard squared-error regression collapses on low flows, while log-target regression (M2-log) restores severe-drought warning skill (Q95 CSI = 0.229 at 1w) without artificial classification balancing. However, persistence still outperforms M2-log on drought warnings (0.529 vs 0.229), persistence matches M2-log on low-flow tracking (Log-NSE 0.829 vs 0.844), and log models sacrifice continuous hydrograph accuracy (NSE drops 0.486 → 0.464 at 1w and 0.292 → 0.208 at 4w).
-4. **Zero-shot transfer works only at 1–2 weeks** relative to the held-out station's own baseline.
-
-**Limitations.**
-- At Karad, Warunji and Yadgir, unmeasured zeros leave only 75–180 scored weeks and few severe-drought events.
-- Even among the 8 basins with complete low-flow monitoring, test-period continuity is not uniform across all 521 potential test weeks (actual scored weeks: Haralahalli 415, KUDIGE 489, Kantamal 507, Gomlai 510; Ashti, Anandpur, Bamni, Kashinagar each 521). Observed test-period Q95 severe-drought event counts vary widely across these 8 stations: Ashti 52, Haralahalli 42, KUDIGE 41, Anandpur 34, Bamni 32, Gomlai 21, Kashinagar 9, Kantamal 0. Short-lead persistence dominance holds strictly for drought CSI; on continuous NSE, ML models beat persistence at 1–2 weeks.
-- **Forcing Resolution:** 2021–2025 precipitation was reconstructed as exact area-weighted catchment means from IMD 0.25° grids, whereas ERA5-Land temperature and PET remain gauge-point extractions. Feature importance analysis confirms that shuffling the atmospheric-demand group increases 1-week MSE by only +3.1% (versus +114% when shuffling precipitation features; single-feature share ~2.6%), rendering the spatial aggregation effect negligible.
-- Models were retrained with zero-flow masking enforced on training (1980–2010) and validation (2011–2015) folds, preventing hyperparameter tuning from fitting to artificial unmeasured zeros.
-- There are 12 gauges, including a nested cascade and gauges sharing Godavari and Krishna drainages. Shared drainage limits treating the station tests as independent replicates.
-- Bootstrap intervals (`scripts/uncertainty_tests.py`) confirm that station-by-station, M2 is clearly better in 11 of 48 station-lead cases and M1 in 2.
+- This is a retrospective hindcast; publication latency and operational availability have not been reproduced.
+- The new source is Open-Meteo default Best Match, so a homogeneous reanalysis-model claim is not supported.
+- Reference ET0 scaled to historical PET remains a different physical formulation.
+- Missing daily discharge is preserved. The approved <15% raw missingness rule retains twelve gauges; actual weekly coverage and rare drought-event counts vary.
+- Shared drainages and the nested cascade limit station-level statistical independence.
+- Source replacement, timing correction, interpolation removal and retraining occurred together. The before/after comparison is not an isolated causal ablation.
+- Saved model bundles include fitted preprocessing and hashes of the tensors used. Full retraining can vary, especially for the LSTM; committed-output reproducibility differs from bitwise retraining reproducibility.
 
 <!-- REPORT_RESULTS:END -->
 
@@ -480,19 +390,22 @@ The pooled HydroLSTM beats each held-out station's own baseline at 1 and 2 weeks
 
 ## 13. Interactive Visualization & Web Deployment Architecture
 
-To communicate the multi-horizon forecasts and spatial transfer results without exposing the Python backend or raw datasets, the project utilizes a static web architecture that is completely isolated from the computational pipeline.
+The website presents exported forecasts, metrics and plots. It does not run Python, retrain models or query the raw datasets in the visitor's browser.
 
 ### 13.1 Standalone Interactive Widgets
-Instead of static PNGs, the evaluation pipeline generates self-contained, interactive Plotly `.html` widgets. These include:
-* **Interactive Hydrographs:** Featuring zoom sliders to isolate specific drought events (e.g., the 2018–2019 monsoon failure).
+The evaluation pipeline generates chart sources and standalone interactive HTML views. Browser rendering still depends on its JavaScript resources. These include:
+* **Interactive Hydrographs:** Zoom and scored-week selection for inspecting observed discharge, saved forecasts and warning outcomes.
 * **Precision-Recall (PR) Curves:** Featuring hover data mapping the tradeoff dynamics for Severe Drought ($Q_{95}$) thresholds.
 * **KGE Component Decomposition:** Visualizing the trajectories of correlation ($r$), variability ($\alpha$), and bias ($\beta$) across the $H$-week horizons.
 
 ### 13.2 Orphaned Branch Deployment Isolation
 The website is a static page on an orphaned `gh-pages` branch that holds only frontend assets: `index.html`, `assets/` (CSS, JS, `benchmark-data.js`, `figdata.js`) and the chart pages in `visualizations/`. Training code, model weights and data stay on `main`.
 
-Data flow, run by `deploy.sh`:
+Local data flow:
 1. `scripts/audit_metrics.py` scores every saved model on the shared mask and writes `audited_metrics_recomputed.csv` and `test_predictions.csv`.
 2. `scripts/export_benchmark_data.py` writes `assets/benchmark-data.js` (station metrics, paired medians, Wilcoxon tests).
 3. `scripts/generate_interactive_plots.py` writes the Plotly chart sources to `visualizations/source/`.
-4. On `gh-pages`, `tools/build_site_data.py` decodes those sources into `assets/figdata.js`, writes the standalone chart pages and regenerates the benchmark table in `index.html`. The page renders every chart from these two data files with `assets/charts.js`.
+4. Explorer and replay exporters produce five-model comparisons and weekly forecast chunks from the same corrected predictions.
+5. In the site worktree, `tools/build_site_data.py` decodes chart sources into `assets/figdata.js`, writes standalone pages and regenerates the benchmark table. The browser uses the generated assets and replay chunks with `assets/charts.js`.
+
+The local build, scientific checks and browser review precede any publication. `deploy.sh` also performs Git commits and a push; it is not used for preview-only work. Never copy new tables beside stale chart or replay data.

@@ -5,8 +5,11 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import statistics
 from pathlib import Path
+
+from eval_config import ZERO_AS_MISSING_STATIONS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,18 +30,33 @@ FLOW_COLUMNS = {
 
 
 def number(value):
-    return float(value) if value else None
+    parsed = float(value) if value else None
+    return parsed if parsed is not None and math.isfinite(parsed) else None
 
 
 def source(path):
     return {"path": path.relative_to(ROOT).as_posix(), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
+def drought_availability(station, threshold, events):
+    """Describe whether scored weeks can assess detection; never change raw metrics."""
+    if threshold == 0 and station in ZERO_AS_MISSING_STATIONS:
+        return {"assessment": "unavailable_zero_threshold", "assessment_note":
+                "Detection cannot be assessed: the frozen threshold is zero and recorded-zero targets are excluded by the shared scoring rule. No scored target can meet this event definition."}
+    if events == 0:
+        return {"assessment": "no_observed_events", "assessment_note":
+                "No drought events occurred in the scored weeks at this threshold. Detection cannot be assessed; false-alarm counts remain observable."}
+    return {"assessment": "observed_events", "assessment_note":
+            "Detection is assessed on the observed drought weeks shown here; small event counts limit interpretation."}
+
+
 def load_results():
     stations = {}
+    names = {}
     with FLOW.open(newline="") as file:
         for row in csv.DictReader(file):
             gauge, lead = row["gauge_id"], row["horizon"]
+            names[gauge] = row["station"]
             horizons = stations.setdefault(gauge, {})
             if lead in horizons:
                 raise ValueError(f"Duplicate flow row for {gauge}, {lead}")
@@ -63,6 +81,7 @@ def load_results():
             if (int(row["n_eval"]) != entry["n_eval"] or group["threshold"] != threshold or
                     group["events"] != events or model in group["models"]):
                 raise ValueError(f"Conflicting drought row for {gauge}, {lead}, {severity}, {model}")
+            group.update(drought_availability(names[gauge], threshold, events))
             group["models"][model] = {
                 "hits": int(row["Hits"]), "misses": int(row["Miss"]), "false_alarms": int(row["FA"]),
                 "csi": number(row["CSI"]), "pod": number(row["POD"]), "far": number(row["FAR"]),
@@ -83,6 +102,7 @@ def load_results():
 
 
 def load_uncertainty(stations):
+    """Export checked diagnostics, never the superseded bootstrap inference."""
     with FLOW.open(newline="") as file:
         audited = {(row["station"], row["horizon"]): row for row in csv.DictReader(file)}
     seen = set()
@@ -91,15 +111,22 @@ def load_uncertainty(stations):
             key = row["station"], row["horizon"]
             audit = audited[key]
             delta = float(audit["m2_nse"]) - float(audit["m1_nse"])
-            low, high = float(row["ci_lo"]), float(row["ci_hi"])
-            verdict = "M2 better" if low > 0 else "M1 better" if high < 0 else "not distinguishable"
-            if (key in seen or f"{delta:.4f}" != f"{float(row['dNSE']):.4f}" or
-                    int(audit["n_eval"]) != int(row["n_scored"]) or low > high or row["verdict"] != verdict):
-                raise ValueError(f"Uncertainty results do not match the audit for {key}")
+            status = row["status"]
+            low, high = number(row["ci_lo"]), number(row["ci_hi"])
+            if (key in seen or abs(delta - float(row["dNSE"])) > 1e-10 or
+                    int(audit["n_eval"]) != int(row["n_scored"]) or
+                    status not in {"exploratory_interval", "inference_withheld"}):
+                raise ValueError(f"Uncertainty diagnostics do not match the audit for {key}")
+            if status == "inference_withheld" and (low is not None or high is not None):
+                raise ValueError(f"Withheld inference has public interval bounds for {key}")
+            if status == "exploratory_interval" and (low is None or high is None or low > high):
+                raise ValueError(f"Invalid exploratory interval for {key}")
             seen.add(key)
             stations[audit["gauge_id"]][row["horizon"]]["uncertainty"] = {
-                "delta": float(row["dNSE"]), "low": low, "high": high,
-                "n_scored": int(row["n_scored"]), "verdict": verdict,
+                "delta": delta, "low": low, "high": high, "status": status, "reason": row["reason"],
+                "n_scored": int(row["n_scored"]), "calendar_weeks": int(row["calendar_weeks"]),
+                "coverage_fraction": float(row["coverage_fraction"]),
+                "finite_draw_fraction": float(row["finite_draw_fraction"]), "B_eff": float(row["B_eff"]),
             }
     if seen != audited.keys():
         raise ValueError("Station uncertainty coverage does not match the audit")
@@ -108,11 +135,12 @@ def load_uncertainty(stations):
         for row in csv.DictReader(file):
             lead = row["horizon"]
             deltas = [float(a["m2_nse"]) - float(a["m1_nse"]) for a in audited.values() if a["horizon"] == lead]
-            if (lead in portfolio or f"{statistics.median(deltas):.4f}" != f"{float(row['median_paired_dNSE']):.4f}" or
-                    sum(d > 0 for d in deltas) != int(row["n_m2_better"])):
-                raise ValueError(f"Portfolio uncertainty does not match the audit for {lead}")
-            portfolio[lead] = {"delta": float(row["median_paired_dNSE"]), "low": float(row["boot_ci_lo"]),
-                               "high": float(row["boot_ci_hi"]), "n_stations": len(deltas)}
+            if (lead in portfolio or abs(statistics.median(deltas) - float(row["median_paired_dNSE"])) > 1e-10 or
+                    row["status"] != "inference_withheld" or number(row["boot_ci_lo"]) is not None or
+                    number(row["boot_ci_hi"]) is not None):
+                raise ValueError(f"Portfolio diagnostics do not match the audit for {lead}")
+            portfolio[lead] = {"delta": float(row["median_paired_dNSE"]), "n_stations": len(deltas),
+                               "status": row["status"], "reason": row["reason"]}
     if portfolio.keys() != LEADS:
         raise ValueError("Portfolio uncertainty coverage does not match the audit")
     return portfolio
@@ -141,7 +169,7 @@ def main():
     path = parser.parse_args().out
     stations = load_results()
     portfolio = load_uncertainty(stations)
-    data = {"schema": 1, "sources": {"flow": source(FLOW), "drought": source(DROUGHT),
+    data = {"schema": 2, "uncertainty_note": "Exploratory percentile intervals are conditional on fitted models and the scoring pattern. Screening is heuristic and does not guarantee 95% coverage. No uncertainty widget is displayed.", "sources": {"flow": source(FLOW), "drought": source(DROUGHT),
             "station_uncertainty": source(STATION_UNCERTAINTY), "portfolio_uncertainty": source(PORTFOLIO_UNCERTAINTY),
             "uncertainty_method": source(ROOT / "scripts/uncertainty_tests.py")},
             "stations": stations, "portfolio_uncertainty": portfolio, "guided_examples": guided_examples(stations)}

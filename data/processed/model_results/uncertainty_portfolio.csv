@@ -1,5 +1,5 @@
-horizon,median_paired_dNSE,diff_of_medians,wilcoxon_W,wilcoxon_p,n_m2_better,boot_ci_lo,boot_ci_hi
-1w,0.0446,0.0281,11.0000,0.0269,9,0.0060,0.1105
-2w,0.0338,0.0489,6.0000,0.0068,10,0.0073,0.0807
-4w,-0.0067,0.0191,33.0000,0.6772,6,-0.0231,0.0188
-8w,-0.0139,0.0346,31.0000,0.5693,5,-0.0486,0.0314
+horizon,median_paired_dNSE,diff_of_medians,wilcoxon_W,wilcoxon_p,n_m2_better,n_stations,boot_ci_lo,boot_ci_hi,status,reason,test_scope,prediction_sha256,sampler_sha256
+1w,0.04982181331677624,0.1015255230298614,20.0,0.1513671875,9,12,,,inference_withheld,Shared drainage and nested gauges; independent-station bootstrap inference not justified,Raw exploratory Wilcoxon; four-horizon Bonferroni reference 0.0125; station dependence remains,8bd5513ac4ec7175f35ce8b3571d11a513d00abc164160798a08a4888327ad06,e09d3857ff0db0b8305c5ca6b7215dfffe9dc7c110702c86d40ed2186a3d91ca
+2w,0.022103327874617905,0.023218152489009547,24.0,0.26611328125,7,12,,,inference_withheld,Shared drainage and nested gauges; independent-station bootstrap inference not justified,Raw exploratory Wilcoxon; four-horizon Bonferroni reference 0.0125; station dependence remains,8bd5513ac4ec7175f35ce8b3571d11a513d00abc164160798a08a4888327ad06,e09d3857ff0db0b8305c5ca6b7215dfffe9dc7c110702c86d40ed2186a3d91ca
+4w,-0.013678224700315184,-0.032058383507679866,20.0,0.1513671875,4,12,,,inference_withheld,Shared drainage and nested gauges; independent-station bootstrap inference not justified,Raw exploratory Wilcoxon; four-horizon Bonferroni reference 0.0125; station dependence remains,8bd5513ac4ec7175f35ce8b3571d11a513d00abc164160798a08a4888327ad06,e09d3857ff0db0b8305c5ca6b7215dfffe9dc7c110702c86d40ed2186a3d91ca
+8w,0.003737484703322337,-0.013125665847549872,30.0,0.5185546875,6,12,,,inference_withheld,Shared drainage and nested gauges; independent-station bootstrap inference not justified,Raw exploratory Wilcoxon; four-horizon Bonferroni reference 0.0125; station dependence remains,8bd5513ac4ec7175f35ce8b3571d11a513d00abc164160798a08a4888327ad06,e09d3857ff0db0b8305c5ca6b7215dfffe9dc7c110702c86d40ed2186a3d91ca
