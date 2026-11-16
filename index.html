@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css?v=644117764feff60c">
+<link rel="stylesheet" href="assets/site.css?v=c8d847d6b9f6bfa7">
 <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
@@ -260,16 +260,57 @@
     <div class="section-head" data-reveal>
       <span class="section-no">01</span>
       <h2>Introduction</h2>
+      <details class="hydro-glossary-inline" style="grid-column: 1 / -1; margin: 4px 0 0;">
+        <summary style="cursor: pointer; font-size: 13.5px; font-style: italic; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 6px; user-select: none;">
+          <span style="border-bottom: 1px dashed var(--line-2);">Some hydrology definitions that would help ▾</span>
+        </summary>
+        <div style="margin-top: 14px; padding: 18px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;">
+          <dl class="metric-definitions" style="margin: 0;">
+            <div>
+              <dt>Discharge (Q)</dt>
+              <dd>Streamflow volume passing a gauge per second (m³/s). In machine learning terms, this is our continuous regression target variable (y).</dd>
+            </div>
+            <div>
+              <dt>Specific Runoff (q)</dt>
+              <dd>Discharge normalised by upstream catchment area (q = Q × 604.8 / Area in mm/week). Expresses river flow as depth of water over the entire watershed, allowing catchments with a 300-fold size disparity (388 to 115,200 km²) to be pooled and compared on the same scale.</dd>
+            </div>
+            <div>
+              <dt>PET &amp; Reference ET₀</dt>
+              <dd>Potential / Reference Evapotranspiration: theoretical maximum water that heat, solar radiation, and wind would evaporate from soil and plants if water were unlimited. Measures atmospheric moisture demand (the negative counterpart to rainfall).</dd>
+            </div>
+            <div>
+              <dt>Water Deficit (P − ET₀)</dt>
+              <dd>Precipitation minus evapotranspiration demand. Positive values indicate net water surplus entering the basin; negative values indicate dry, drought-inducing atmospheric moisture deficit.</dd>
+            </div>
+            <div>
+              <dt>API₃₀d · Antecedent Precipitation Index</dt>
+              <dd>A 30-day exponentially decayed rolling rainfall sum (decay factor 0.85). Acts as a proxy feature for ground wetness and soil moisture memory without requiring an expensive physical groundwater simulation.</dd>
+            </div>
+            <div>
+              <dt>Catchment &amp; Drainage Basin</dt>
+              <dd>The geographic land area upstream of a river gauge where all precipitation drains toward that gauge. Used as the spatial boundary for area-weighting weather features.</dd>
+            </div>
+            <div>
+              <dt>Baseflow &amp; Recession</dt>
+              <dd>Baseflow is sustained dry-weather river flow fed by groundwater between storm events. Recession rate is the post-storm decay rate (autoregressive memory floor).</dd>
+            </div>
+            <div>
+              <dt>Hydrograph</dt>
+              <dd>A time-series plot of river discharge over time (evaluating observed ground truth y<sub>t</sub> against model predictions ŷ<sub>t</sub>).</dd>
+            </div>
+          </dl>
+        </div>
+      </details>
     </div>
     <div class="prose intro-prose" data-reveal>
-      <p>Weekly river-flow forecasts can help readers examine water availability across the Maharashtra, Odisha and Karnataka catchments in this benchmark. The practical question is whether recent flow alone is enough, or whether antecedent rainfall, temperature and evaporative demand add useful predictive information.</p>
+      <p>Weekly river-flow forecasts can help readers examine water availability across the Maharashtra, Odisha and Karnataka <abbr class="gloss-term" tabindex="0" data-def="Catchment / Basin: the geographic land area upstream draining into a river gauge.">catchments</abbr> in this benchmark. The practical question is whether recent flow alone is enough, or whether antecedent rainfall, temperature and <abbr class="gloss-term" tabindex="0" data-def="Evaporative demand (PET / ET₀): atmospheric water demand driven by heat and solar radiation.">evaporative demand</abbr> add useful predictive information.</p>
       <p>We compare simple baselines, flow-only models and models with weather inputs at 1, 2, 4 and 8 weeks. Drought warnings are checked separately because a reduction in discharge error need not improve detection of rare low-flow weeks. Chronological validation, explicit source timing and shared scoring rules make these comparisons easier to inspect.</p>
     </div>
     <div class="grid g2 intro-tracks" data-stagger>
       <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="activity"></i></span><span class="chip blue">Track A</span></div>
           <h3>Multi-Horizon Streamflow Prediction</h3>
-          <p>Evaluating continuous weekly discharge accuracy (Q in m³/s and specific runoff q in mm/week) across lead times of 1, 2, 4, and 8 weeks ahead.</p>
+          <p>Evaluating continuous weekly <abbr class="gloss-term" tabindex="0" data-def="Discharge (Q): volume of streamflow passing the gauge per second (m³/s). Our regression target y.">discharge accuracy (Q in m³/s)</abbr> and <abbr class="gloss-term" tabindex="0" data-def="Specific runoff (q = Q × 604.8 / Area in mm/week): discharge normalised by watershed area so basins of different sizes can be compared.">specific runoff (q in mm/week)</abbr> across lead times of 1, 2, 4, and 8 weeks ahead.</p>
           <ul class="ticks">
             <li><span><strong>Persistence Decay:</strong> Identify the lead time at which persistence falls below NSE = 0.</span></li>
             <li><span><strong>Value of Weather Inputs:</strong> Test whether, and at which lead, adding rainfall and evaporative-demand inputs improves on flow history alone.</span></li>
@@ -303,8 +344,8 @@
       <div>
         <h4><strong>Unit of Analysis: What One Row of Data Represents</strong></h4>
         <p>Each row in our dataset represents <strong>one river gauging station at a single Monday forecast issue time (00:00 UTC)</strong>. Across all 12 gauges over 1980–2025, each station has 2,394 weekly issue rows (28,728 total station-weeks).</p>
-        <p><strong>Predictor features (preceding 7 days):</strong> Inputs aggregate observations from the Monday-to-Sunday window immediately preceding the issue date (strictly excluding issue-day Monday flow to eliminate look-ahead leakage). Predictors include recent weekly mean discharge, within-week extremes, and recession rates; catchment-averaged rainfall, temperature extrema, reference ET₀, water deficit (P − ET₀), and 30-day antecedent precipitation index (API<sub>30d</sub>, decay 0.85); plus annual calendar harmonics (sin, cos).</p>
-        <p><strong>Target labels (future horizons):</strong> For each lead horizon H ∈ {1, 2, 4, 8} weeks ahead, the target is the future weekly mean streamflow over the 7-day period ending H weeks later. Targets are evaluated as both volumetric discharge (Q in m³/s) and catchment-normalised specific runoff (q in mm/week). A target is scored only if it contains at least 4 original daily measurements.</p>
+        <p><strong>Predictor features (preceding 7 days):</strong> Inputs aggregate observations from the Monday-to-Sunday window immediately preceding the issue date (strictly excluding issue-day Monday flow to eliminate look-ahead leakage). Predictors include recent weekly mean discharge, within-week extremes, and recession rates; catchment-averaged rainfall, temperature extrema, reference <abbr class="gloss-term" tabindex="0" data-def="Reference Evapotranspiration: atmospheric moisture demand calculated via the FAO-56 Penman-Monteith equation.">ET₀</abbr>, water deficit <abbr class="gloss-term" tabindex="0" data-def="Precipitation minus reference ET₀. Negative values indicate atmospheric moisture deficit.">(P − ET₀)</abbr>, and 30-day antecedent precipitation index (<abbr class="gloss-term" tabindex="0" data-def="Antecedent Precipitation Index: 30-day exponentially decayed rainfall acting as a proxy feature for soil moisture memory.">API<sub>30d</sub></abbr>, decay 0.85); plus annual calendar harmonics (sin, cos).</p>
+        <p><strong>Target labels (future horizons):</strong> For each lead horizon H ∈ {1, 2, 4, 8} weeks ahead, the target is the future weekly mean streamflow over the 7-day period ending H weeks later. Targets are evaluated as both volumetric <abbr class="gloss-term" tabindex="0" data-def="Discharge (Q): volume of river water passing the gauge per second (m³/s). Our regression target y.">discharge (Q in m³/s)</abbr> and catchment-normalised <abbr class="gloss-term" tabindex="0" data-def="Specific runoff (q = Q × 604.8 / Area in mm/week): streamflow depth per unit catchment area.">specific runoff (q in mm/week)</abbr>. A target is scored only if it contains at least 4 original daily measurements.</p>
         <p><strong>Concrete example:</strong> For a forecast issued on Monday, 4 January 2016 at Kantamal, predictors use observed flow and weather from 28 December 2015 through 3 January 2016. Its 1-week target (H = 1) is the mean measured discharge over 4–10 January 2016 (labelled Monday, 11 January).</p>
       </div>
     </div>
@@ -339,7 +380,7 @@
     <div class="grid g2" data-stagger>
       <article class="card source" data-reveal>
         <span class="icon-tile it-blue"><i data-lucide="waves"></i></span>
-        <div><h3>1. Streamflow Discharge (Q)</h3><p>CAMELS-IND and CWC daily discharge records are combined, with missing measurements retained. Karnataka CWC records are recovered from the derived daily archive with documented provenance. Discharge is converted to specific runoff (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/week).</p></div>
+        <div><h3>1. Streamflow Discharge (Q)</h3><p>CAMELS-IND and CWC daily discharge records are combined, with missing measurements retained. Karnataka CWC records are recovered from the derived daily archive with documented provenance. Discharge is converted to <abbr class="gloss-term" tabindex="0" data-def="Specific runoff (q = Q × 604.8 / Area in mm/week): discharge normalised by watershed area so basins of different sizes can be compared.">specific runoff</abbr> (<span class="metric-pill">q = Q × 604.8 / Area</span> in mm/week).</p></div>
       </article>
       <article class="card source" data-reveal>
         <span class="icon-tile it-teal"><i data-lucide="cloud-rain"></i></span>
@@ -347,7 +388,7 @@
       </article>
       <article class="card source" data-reveal>
         <span class="icon-tile it-ochre"><i data-lucide="thermometer-sun"></i></span>
-        <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>Historical temperature and GLEAM PET are joined to Open-Meteo default Best Match temperature and FAO-56 reference ET0 for 2021–2025. Offsets and scale factors are fitted on 2001–2010 only. Best Match can combine model products and is not verified pure ERA5-Land. Scaling adjusts magnitude, not physical formulation or temporal agreement; Kudige PET has near-zero weekly agreement in the calibration overlap.</p></div>
+        <div><h3>3. Thermal &amp; Evaporative Demand</h3><p>Historical temperature and <abbr class="gloss-term" tabindex="0" data-def="Potential Evapotranspiration: theoretical maximum water that heat and wind would evaporate from soil and plants if water were unlimited.">GLEAM PET</abbr> are joined to Open-Meteo default Best Match temperature and <abbr class="gloss-term" tabindex="0" data-def="FAO-56 reference evapotranspiration: atmospheric water demand calculated from temperature, humidity, and solar radiation.">FAO-56 reference ET₀</abbr> for 2021–2025. Offsets and scale factors are fitted on 2001–2010 only. Best Match can combine model products and is not verified pure ERA5-Land. Scaling adjusts magnitude, not physical formulation or temporal agreement; Kudige PET has near-zero weekly agreement in the calibration overlap.</p></div>
       </article>
       <article class="card source" data-reveal>
         <span class="icon-tile it-blue"><i data-lucide="layers"></i></span>
@@ -520,10 +561,10 @@
         <div class="feats">
           <span class="feat inherit">Tier M1 inputs +</span>
           <span class="feat met">IMD Rainfall sums: P<sub>1w</sub>, P<sub>2w</sub>, P<sub>1m</sub>, P<sub>2m</sub>, P<sub>3m</sub></span>
-          <span class="feat met">Normalized rainfall index: API<sub>30d</sub></span>
+          <span class="feat met">Normalized rainfall index: <abbr class="gloss-term" tabindex="0" data-def="Antecedent Precipitation Index: 30-day decayed rainfall proxying soil moisture memory.">API<sub>30d</sub></abbr></span>
           <span class="feat met">Weekly dry days count (&lt;1mm)</span>
-          <span class="feat met">Temperature T<sub>avg</sub>, T<sub>max</sub>, T<sub>min</sub>; PET<sub>1w</sub>, PET<sub>1m</sub></span>
-          <span class="feat met">Water Deficit: (P - PET)<sub>1w</sub>, (P - PET)<sub>1m</sub></span>
+          <span class="feat met">Temperature T<sub>avg</sub>, T<sub>max</sub>, T<sub>min</sub>; <abbr class="gloss-term" tabindex="0" data-def="Potential Evapotranspiration: atmospheric moisture demand.">PET<sub>1w</sub>, PET<sub>1m</sub></abbr></span>
+          <span class="feat met"><abbr class="gloss-term" tabindex="0" data-def="Precipitation minus Potential Evapotranspiration. Negative values represent drought stress.">Water Deficit: (P - PET)<sub>1w</sub>, (P - PET)<sub>1m</sub></abbr></span>
         </div>
         <div class="tier-foot"><i data-lucide="brain-circuit"></i>M2 GBT &amp; PyTorch HydroLSTM</div>
       </article>
@@ -639,7 +680,8 @@
         <div>
           <span class="kicker">Forecast Replay</span>
           <h3>How do saved weekly forecasts compare with observations?</h3>
-          <p class="takeaway"><strong>Takeaway:</strong> An overall score can hide missed peaks and low-flow weeks. Inspect how the saved forecasts compare with observations.</p>
+          <p style="margin: 4px 0 6px; font-size: 14px; color: var(--muted);">An overall score can hide missed peaks and low-flow weeks; inspect how saved forecasts track observed hydrographs across individual seasons.</p>
+          <p class="takeaway"><strong>Takeaway:</strong> Forecasts track the seasonal monsoon rise and fall, but consistently compress extremes—shaving off high storm peaks and floating above severe low-flow drought troughs (variance compression).</p>
         </div>
         <a class="fs-link" id="fullscreen-replay" href="visualizations/interactive_hydrographs_dashboard.html" target="_blank" rel="noopener" aria-label="Open forecast replay fullscreen"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
       </header>
@@ -705,7 +747,7 @@
       <div class="card" data-reveal>
         <span class="kicker">Station Comparison</span>
         <h3>Where do weather inputs help and where do they hurt?</h3>
-        <p class="takeaway"><strong>Takeaway:</strong> Weather inputs help some stations and hurt others.</p>
+        <p class="takeaway"><strong>Takeaway:</strong> Weather inputs help primarily in flashy, rain-fed catchments at 1–2 weeks (9 of 12 stations improve at 1w, e.g. Kantamal +0.117, Warunji +0.017), but hurt or add nothing in arid/regulated basins (e.g. Haralahalli, Yadgir) and at longer leads (decaying to 6 positive and 6 negative stations at 8w, where climatology wins).</p>
         <div class="heat" id="heat" role="group" aria-label="Heatmap of M2 minus M1 NSE by station and lead time"></div>
         <div class="heat-legend"><span>M1 better</span><span class="ramp"></span><span>M2 better</span><span>(colour saturates at ±0.40)</span></div>
         <details class="chart-details" style="margin-top:14px">
@@ -784,7 +826,7 @@
         <div>
           <span class="kicker">Error Decomposition</span>
           <h3>Where does prediction error originate? (Correlation, Variability, Bias)</h3>
-          <p class="takeaway"><strong>Takeaway:</strong> Kling–Gupta Efficiency (KGE) decomposes performance into linear correlation (r), relative variability (α), and volume bias (β). Higher correlation does not guarantee matched flow variability.</p>
+          <p class="takeaway"><strong>Takeaway:</strong> Prediction error originates primarily from severe variability compression (α ≈ 0.59–0.75), not volume bias (β ≈ 0.90–1.01). Kling–Gupta Efficiency (KGE) decomposes performance to show that models accurately capture total volume, but squared-error training compresses flow variance by 25%–40%, smoothing out peak flows and missing extreme drought troughs.</p>
         </div>
         <a class="fs-link" href="visualizations/interactive_kge_component_decomposition.html" target="_blank" rel="noopener"><i data-lucide="maximize-2"></i><span>Open Fullscreen</span></a>
       </header>
@@ -794,8 +836,8 @@
         <div>
           <span><b>Decomposition insight:</b> KGE combines correlation, variability and mean-volume agreement. Inspect all three components: higher NSE does not establish an improvement in each one. Curves are medians across stations, not a decomposition of one pooled hydrograph.<span class="artifact">Source: KGE component export.</span></span>
           <details class="chart-details">
-            <summary>KGE component breakdown and mathematical definitions</summary>
-            <p>KGE decomposes skill into Pearson correlation (r), variability ratio (α = σ<sub>pred</sub> / σ<sub>obs</sub>), and volume bias ratio (β = μ<sub>pred</sub> / μ<sub>obs</sub>). Across the 12 stations, M1 and M2 sustain moderate correlation at 1–2 weeks (median r spans approximately 0.58–0.71), while variability ratios remain below 1.0 (median α spans approximately 0.59–0.75). Persistence maintains α near 1.0. Inspecting all three components shows whether an improvement in overall score reflects higher correlation, better variability scaling, or lower volume bias.</p>
+            <summary>Why variability compression drives prediction error</summary>
+            <p>KGE decomposes prediction error into Pearson correlation (r), variability ratio (α = σ<sub>pred</sub> / σ<sub>obs</sub>), and volume bias ratio (β = μ<sub>pred</sub> / μ<sub>obs</sub>). Across all 12 stations, volume bias is near-optimal (median β ≈ 0.90–1.01), proving models do not systematically over- or under-predict total streamflow. Correlation is moderate at 1–2 weeks (median r spans approximately 0.58–0.71). Instead, error originates almost entirely in variability collapse: median α falls to 0.59–0.75 for M1 and M2. Under squared-error loss, regression hedges toward the conditional mean, severely dampening flood peaks and failing to descend into severe drought thresholds. Persistence maintains α near 1.0 because carrying forward recent observations preserves natural river variance.</p>
           </details>
         </div>
       </footer>
@@ -840,7 +882,7 @@
   <div class="wrap stack">
     <div class="section-head" data-reveal>
       <span class="section-no">06</span>
-      <h2>What the Study Shows</h2>
+      <h2>Conclusion</h2>
       <p>An empirical synthesis of sub-seasonal streamflow forecasting and drought early warning across 12 peninsular Indian catchments (1980–2025):</p>
     </div>
 

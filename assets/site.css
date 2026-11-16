@@ -768,3 +768,53 @@ select {
 }
 .dark-panel h4 { display: block; }
 .dark-panel h4 .icon { margin-right: 8px; vertical-align: -0.2em; }
+
+/* ---------------- glossary micro-tooltips & inline guide ---------------- */
+.gloss-term {
+  position: relative;
+  display: inline;
+  cursor: help;
+  text-decoration: underline dotted var(--ochre-ink);
+  text-underline-offset: 3px;
+  font-weight: inherit;
+}
+
+.gloss-term:hover::after,
+.gloss-term:focus-visible::after {
+  content: attr(data-def);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111a24;
+  color: #f1f5f9;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font: 400 12.5px/1.4 var(--sans);
+  text-align: left;
+  white-space: normal;
+  width: max-content;
+  max-width: 280px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.12);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 1;
+}
+
+.gloss-term:hover::before,
+.gloss-term:focus-visible::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #111a24;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.hydro-glossary-inline summary:hover span {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
