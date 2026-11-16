@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css?v=eeb544862c2defec">
+<link rel="stylesheet" href="assets/site.css?v=644117764feff60c">
 <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
@@ -261,13 +261,12 @@
       <span class="section-no">01</span>
       <h2>Introduction</h2>
     </div>
-    <div class="grid g-split">
-      <div class="prose" data-reveal>
-        <p>Weekly river-flow forecasts can help readers examine water availability across the Maharashtra, Odisha and Karnataka catchments in this benchmark. The practical question is whether recent flow alone is enough, or whether antecedent rainfall, temperature and evaporative demand add useful predictive information.</p>
-        <p>We compare simple baselines, flow-only models and models with weather inputs at 1, 2, 4 and 8 weeks. Drought warnings are checked separately because a reduction in discharge error need not improve detection of rare low-flow weeks. Chronological validation, explicit source timing and shared scoring rules make these comparisons easier to inspect.</p>
-      </div>
-      <div class="grid" data-stagger>
-        <article class="card hover" data-reveal>
+    <div class="prose intro-prose" data-reveal>
+      <p>Weekly river-flow forecasts can help readers examine water availability across the Maharashtra, Odisha and Karnataka catchments in this benchmark. The practical question is whether recent flow alone is enough, or whether antecedent rainfall, temperature and evaporative demand add useful predictive information.</p>
+      <p>We compare simple baselines, flow-only models and models with weather inputs at 1, 2, 4 and 8 weeks. Drought warnings are checked separately because a reduction in discharge error need not improve detection of rare low-flow weeks. Chronological validation, explicit source timing and shared scoring rules make these comparisons easier to inspect.</p>
+    </div>
+    <div class="grid g2 intro-tracks" data-stagger>
+      <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-blue"><i data-lucide="activity"></i></span><span class="chip blue">Track A</span></div>
           <h3>Multi-Horizon Streamflow Prediction</h3>
           <p>Evaluating continuous weekly discharge accuracy (Q in m³/s and specific runoff q in mm/week) across lead times of 1, 2, 4, and 8 weeks ahead.</p>
@@ -276,7 +275,7 @@
             <li><span><strong>Value of Weather Inputs:</strong> Test whether, and at which lead, adding rainfall and evaporative-demand inputs improves on flow history alone.</span></li>
           </ul>
         </article>
-        <article class="card hover" data-reveal>
+      <article class="card hover" data-reveal>
           <div class="card-top"><span class="icon-tile it-ochre"><i data-lucide="siren"></i></span><span class="chip ochre">Track B</span></div>
           <h3>Hydrological Drought Early Warning</h3>
           <p>Drought warnings are evaluated separately at mild, moderate, and severe training-period thresholds. At severe drought (Q<sub>95</sub>), persistence has median CSI 0.500 at 1 week and 0.286 at 2 weeks. Compare each severity and its event counts in the explorer.</p>
@@ -286,7 +285,6 @@
             <div class="rung"><span class="lvl sev">Q<sub>95</sub></span><span class="txt"><b>Severe Drought (Q<sub>95</sub>):</b> Weekly discharge at or below the training-period 5th percentile.</span></div>
           </div>
         </article>
-      </div>
     </div>
   </div>
 </section>
@@ -329,6 +327,43 @@
         </article>
       </div>
     </div>
+
+    <section class="card catchment-map" id="catchment-map" aria-labelledby="catchment-map-heading" data-reveal>
+      <div class="catchment-map-heading">
+        <span class="kicker">Catchments in geographic context</span>
+        <h3 id="catchment-map-heading">Explore the 12 stations and their upstream catchments</h3>
+        <p id="catchment-map-help">Hover over a catchment or station pin to highlight it. Select one to keep it highlighted and inspect its details. Use Fit catchments for a closer view, or the station list to reach overlapping catchments.</p>
+      </div>
+      <div class="catchment-map-layout">
+        <div class="catchment-map-canvas">
+          <div class="catchment-map-toolbar" aria-label="Map zoom controls">
+            <button type="button" id="catchment-zoom-in" aria-label="Zoom in on the map">+</button>
+            <button type="button" id="catchment-zoom-out" aria-label="Zoom out on the map">−</button>
+            <button type="button" id="catchment-fit">Fit catchments</button>
+            <button type="button" id="catchment-reset">Reset map</button>
+          </div>
+          <svg id="catchment-map-svg" viewBox="0 0 760 760" role="group" aria-label="Map of central and southern India with twelve station catchments" aria-describedby="catchment-map-help"></svg>
+          <div class="catchment-map-legend" aria-label="Catchment colours by gauge state">
+            <span>Gauge state:</span>
+            <span><i class="catchment-key key-mh"></i>Maharashtra</span>
+            <span><i class="catchment-key key-od"></i>Odisha</span>
+            <span><i class="catchment-key key-ka"></i>Karnataka</span>
+            <span><i class="catchment-marker-key"></i>Gauge station</span>
+            <span><i class="catchment-country-key"></i>India boundary</span>
+            <span><i class="catchment-state-key"></i>State / territory boundary</span>
+          </div>
+        </div>
+        <div class="catchment-map-inspector">
+          <label for="catchment-station">Station catchment</label>
+          <select id="catchment-station" aria-describedby="catchment-map-help"></select>
+          <div id="catchment-selection" aria-live="polite" aria-atomic="true"></div>
+          <p class="catchment-map-note">Shapes show the drainage area upstream of each gauge, not the entire named river basin. Nested and neighbouring catchments can overlap; the Warunji–Karad–Huvinhedigi sequence is shown separately.</p>
+          <a id="catchment-explore" class="selection-link" href="#explorer">Inspect this station’s results</a>
+        </div>
+      </div>
+      <p class="catchment-map-source">Catchments and gauge locations: <a href="https://doi.org/10.5281/zenodo.7563600" target="_blank" rel="noopener">Goteti (2023), GHI</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), via <a href="https://essd.copernicus.org/articles/17/461/2025/" target="_blank" rel="noopener">CAMELS-IND</a>. Catchment boundaries are simplified for display. Central and southern India context: <a href="https://github.com/datameet/maps" target="_blank" rel="noopener">DataMeet Maps</a> (country: <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0</a>; states: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>), simplified for display. Geographic context only; not an authoritative boundary map. Grid coordinates are longitude and latitude.</p>
+      <noscript><p>Enable JavaScript to explore the map. The complete station portfolio is listed in the table below.</p></noscript>
+    </section>
 
     <div class="card table-card" data-reveal>
       <div class="table-head">
@@ -736,15 +771,22 @@
     <div class="section-head" data-reveal>
       <span class="section-no">06</span>
       <h2>What the Study Shows</h2>
-      <p>A rigorous, empirical synthesis of sub-seasonal streamflow forecasting and drought early warning across 12 peninsular Indian catchments (1980–2025):</p>
+      <p>An empirical synthesis of sub-seasonal streamflow forecasting and drought early warning across 12 peninsular Indian catchments (1980–2025):</p>
     </div>
 
-    <div class="card prose-conclusion" data-reveal>
-      <p><strong>Flow forecasting:</strong> Adding weather inputs produces modest observed accuracy gains over flow history alone at one- and two-week horizons, but these gains vary across catchments and do not establish a statistically consistent improvement. By four and eight weeks, weather benefits fade: historical weekly climatology outperforms the weather-coupled model (M2) at most individual stations (7 of 12 at 4w, 8 of 12 at 8w), even though M2's portfolio median appears higher. Aggregated portfolio medians differ from paired station gains.</p>
-
-      <p><strong>Drought early warnings:</strong> Better continuous flow accuracy did not produce better drought warnings. Raw-target M2 yielded a median severe-drought (Q<sub>95</sub>) Critical Success Index of zero at every lead time. Training on log-transformed runoff recovered some warning skill—M2-log reached a median CSI of 0.154 at one week—but still lagged one-week persistence (0.500). Warning skill cannot be inferred from continuous flow metrics or threshold-swept precision–recall curves; it requires evaluation on fixed operational thresholds.</p>
-
-      <p><strong>Transfer and practical meaning:</strong> Regional zero-shot transfer beat local baselines at one and two weeks at Bamni and Kantamal, but underperformed climatology at longer leads. At Haralahalli, transfer lagged persistence at short leads and beat its baseline at longer leads, but its eight-week NSE remained negative. Negative NSE reflects performance worse than predicting the evaluation-period mean; beating a negative baseline does not demonstrate useful skill. Because these hindcasts require local records to evaluate baselines, use unverified Best Match weather, and omit real-time reporting delays, they do not establish operational readiness or forecasting in ungauged basins.</p>
+    <div class="grid g3 conclusion-cards" data-stagger>
+      <article class="card conclusion-card" data-reveal>
+        <h3>Weather inputs show modest short-lead gains.</h3>
+        <p><strong>Flow forecasting:</strong> Adding weather inputs produces <strong>modest observed accuracy gains</strong> over flow history alone at <strong>one- and two-week horizons</strong>, but these gains vary across catchments and <strong>do not establish a statistically consistent improvement</strong>. By four and eight weeks, weather benefits fade: historical weekly <strong>climatology outperforms</strong> the weather-coupled model (M2) at most individual stations (7 of 12 at 4w, 8 of 12 at 8w), even though M2's portfolio median appears higher. Aggregated portfolio medians differ from paired station gains.</p>
+      </article>
+      <article class="card conclusion-card" data-reveal>
+        <h3>Better flow forecasts do not guarantee better drought warnings.</h3>
+        <p><strong>Drought early warnings:</strong> Better continuous flow accuracy <strong>did not produce better drought warnings</strong>. Raw-target M2 yielded a median severe-drought (Q<sub>95</sub>) <strong>Critical Success Index of zero</strong> at every lead time. Training on log-transformed runoff recovered some warning skill—M2-log reached a median CSI of 0.154 at one week—but <strong>still lagged one-week persistence</strong> (0.500). Warning skill cannot be inferred from continuous flow metrics or threshold-swept precision–recall curves; it requires evaluation on fixed operational thresholds.</p>
+      </article>
+      <article class="card conclusion-card" data-reveal>
+        <h3>Transfer success depends on the station and lead.</h3>
+        <p><strong>Transfer and practical meaning:</strong> Regional zero-shot transfer <strong>beat local baselines at one and two weeks</strong> at Bamni and Kantamal, but <strong>underperformed climatology at longer leads</strong>. At Haralahalli, transfer lagged persistence at short leads and beat its baseline at longer leads, but its <strong>eight-week NSE remained negative</strong>. Negative NSE reflects performance worse than predicting the evaluation-period mean; beating a negative baseline does not demonstrate useful skill. Because these hindcasts require local records to evaluate baselines, use unverified Best Match weather, and omit real-time reporting delays, they <strong>do not establish operational readiness</strong> or forecasting in ungauged basins.</p>
+      </article>
     </div>
 
     <div class="card table-card" id="benchmark-matrix" data-reveal>
@@ -815,7 +857,7 @@
       <h2>Reproducibility</h2>
       <p>The charts, tables and replay use the same 12-station experiment with training-only preprocessing, explicit weekly windows and original-observation coverage. Saved models include their fitted preprocessing and dataset fingerprints. The data-access notes document Open-Meteo Best Match weather and derived Karnataka discharge provenance. The README gives the reproduction commands; the report explains methods, results and limitations.</p>
     </div>
-    <div class="grid g2">
+    <div class="grid reproducibility-stack">
       <div data-reveal style="min-width:0">
         <h3 style="display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:17px"><i data-lucide="folder-tree"></i>Project Artifact Hierarchy</h3>
         <p style="margin:0 0 14px;color:var(--muted);font-size:14px">Repository Root: <code>ML Project/</code></p>
@@ -898,6 +940,9 @@
 <script src="assets/replay-manifest.js?v=d48b304bab804006"></script>
 <script src="assets/figdata.js?v=59c98f1fcb0b4363"></script>
 <script src="assets/charts.js?v=4b53801785aac414"></script>
+<script src="assets/india-map-context.js?v=9ab4ab517f0c14bf"></script>
+<script src="assets/station-map-data.js?v=e2e3d1f738104d64"></script>
+<script src="assets/station-map.js?v=8b2332f958baf204"></script>
 <script src="assets/site.js?v=bcf40859ef136890"></script>
 </body>
 </html>
