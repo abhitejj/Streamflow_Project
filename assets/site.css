@@ -163,7 +163,7 @@ section[id], header[id], .section[id] {
   flex: none; background: var(--surface); transition: transform .25s var(--ease), box-shadow .25s var(--ease);
 }
 .author-photo.photo-abhitej { object-position: center 22%; }
-.author-photo.photo-dhruv { object-position: center 18%; }
+.author-photo.photo-dhruv { object-position: center 30%; }
 .author-photo:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(22, 32, 43, .18), 0 0 0 1.5px var(--teal); }
 .author-info strong { display: block; font-weight: 600; color: var(--ink); font-size: 15.5px; }
 .author-info small { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
