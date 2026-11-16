@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES 335 Hydro-ML Study — Interactive Visualizations Gallery</title>
+    <style>
+        :root {
+            --primary: #1E40AF;
+            --accent: #DC2626;
+            --bg: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #4B5563;
+            --border: #E5E7EB;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+        }
+        p.subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        .badge {
+            display: inline-block;
+            background: #EEF2FF;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            border-color: #CBD5E1;
+        }
+        .card h2 {
+            font-size: 17px;
+            margin: 0 0 8px 0;
+            color: var(--primary);
+        }
+        .card p {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            margin: 0 0 16px 0;
+            flex-grow: 1;
+        }
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: #FFFFFF;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .btn:hover {
+            background: #1D4ED8;
+        }
+        footer {
+            margin-top: 40px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            text-align: center;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Streamflow & Hydrological Drought Early Warning (ES 335)</h1>
+            <p class="subtitle">Interactive Plotly Suite: Multi-Horizon Forecasts, Precision-Recall Alert Dynamics, and Spatial Generalization</p>
+            <div class="badge">Audited Out-of-Sample Test Folds (2016–2025)</div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <div>
+                    <h2>1. Interactive Hydrographs Dashboard</h2>
+                    <p>Zoomable 4-panel dashboard with Plotly rangeslider comparing Observed Q vs M1 Flow-Only vs M2 Hydro-Met across Karad and Kantamal at H=1w & H=4w.</p>
+                </div>
+                <a href="interactive_hydrographs_dashboard.html" class="btn" target="_blank">Launch Dashboard &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>2. Karad Hydrograph (H=1w)</h2>
+                    <p>High-resolution zoomable streamflow hydrograph for Karad (Upper Krishna Basin) at 1-week lead time with Q95 severe drought warning threshold.</p>
+                </div>
+                <a href="interactive_hydrograph_karad_h1w.html" class="btn" target="_blank">View Karad H=1w &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>3. Kantamal Hydrograph (H=4w)</h2>
+                    <p>4-week ahead streamflow predictions and drought tracking for Kantamal (Mahanadi Basin) showing volume deficit capture under M2.</p>
+                </div>
+                <a href="interactive_hydrograph_kantamal_h4w.html" class="btn" target="_blank">View Kantamal H=4w &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>4. Precision-Recall Curves (Q95 Drought)</h2>
+                    <p>Interactive PR curves with hover inspection of operational discharge cutoffs, probability of detection (recall), and false alarm ratios at H=2w & H=4w.</p>
+                </div>
+                <a href="interactive_pr_curves_severe_drought.html" class="btn" target="_blank">Inspect PR Curves &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>5. KGE Component Decomposition</h2>
+                    <p>Tracks correlation (r), variability ratio (α), and volume bias ratio (β) degradation against the 1.0 benchmark from H=1w to H=8w.</p>
+                </div>
+                <a href="interactive_kge_component_decomposition.html" class="btn" target="_blank">Explore KGE Dynamics &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>6. Feature Importance Transition</h2>
+                    <p>Grouped horizontal bar chart showing the fundamental physical transition from short-term flow memory (H=1w) to meteorological memory (H=8w).</p>
+                </div>
+                <a href="interactive_feature_importance_shift.html" class="btn" target="_blank">Inspect Feature Shift &rarr;</a>
+            </div>
+
+            <div class="card">
+                <div>
+                    <h2>7. Zero-Shot Spatial Transfer</h2>
+                    <p>Grouped bar charts comparing out-of-basin transfer to held-out sub-basins (Kantamal, Bamni, Haralahalli) across M0, M1 GBT, and M2 PyTorch HydroLSTM.</p>
+                </div>
+                <a href="interactive_spatial_transfer_grouped_bars.html" class="btn" target="_blank">View Spatial Generalization &rarr;</a>
+            </div>
+        </div>
+
+        <footer>
+            ES 335 Machine Learning Course Project &bull; Verified under Gate AG-TS-04 & AG-TS-05 &bull; Standalone HTML Visualizations
+        </footer>
+    </div>
+</body>
+</html>

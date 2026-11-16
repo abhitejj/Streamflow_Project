@@ -67,7 +67,7 @@ def nse_from_label(name: str):
 
 def hydrographs() -> dict:
     out: dict = {}
-    for st in ("karad", "kantamal"):
+    for st in ("karad", "kantamal", "anandpur"):
         out[st] = {}
         for h in ("1w", "4w"):
             f = load_fig(f"interactive_hydrograph_{st}_h{h}")

@@ -163,7 +163,7 @@
   (function hero() {
     var svg = $('#river-svg');
     if (!svg || !window.FIGDATA) return;
-    var d = FIGDATA.hydro.kantamal['1w'];
+    var d = FIGDATA.hydro.anandpur ? FIGDATA.hydro.anandpur['1w'] : FIGDATA.hydro.kantamal['1w'];
     var ys = d.obs.map(function (v) { return v === null ? null : Math.sqrt(Math.max(0, v)); });
     var max = Math.max.apply(null, ys.filter(Number.isFinite)), W = 1000, H = 200, top = 34;
     var segments = [], segment = [];
