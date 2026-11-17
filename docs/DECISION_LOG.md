@@ -22,4 +22,4 @@ The experiment uses explicit preceding-week windows, no daily interpolation, tra
 
 The weather-product mixture, missing observations, few drought events, related gauges and unverified real-time data availability remain limitations. Comparisons between different pipeline versions cannot isolate the effect of one methodological change.
 
-See the [report](PROJECT_REPORT_DOCUMENTATION.md) for methods and evidence, and the [README reproduction instructions](../README.md#reproduction-and-validation) for the command sequence.
+See the [report](PROJECT_REPORT_DOCUMENTATION.md) for methods and evidence, and the [README reproduction instructions](https://github.com/abhitejj/Streamflow_Project#reproduction-and-validation) for the command sequence.

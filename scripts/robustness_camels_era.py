@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-CAMELS-Era Robustness Experiment (1980–2010)
+Historical-Period Sensitivity Experiment (1980–2010)
 
 Evaluates whether the empirical findings from the primary 2016–2025 test block
-transfer to the historical CAMELS-IND record (1980–2010), where streamflow and
-all meteorological forcings are 100% sourced from CAMELS-IND.
+also occur in the historical period (1980–2010). Historical meteorological
+forcings use CAMELS-IND; discharge retains the weekly tensor builder’s CWC
+precedence where available from 2001. This is not a CAMELS-only source ablation.
 
 Experimental Protocol:
 - Train fold: 1980-01-01 to 2000-12-31 (purged terminal H weeks)
 - Val fold:   2001-01-01 to 2004-12-31 (purged terminal H weeks)
-- Test fold:  2005-01-01 to 2010-12-31 (unpurged out-of-sample block, 6 years)
+- Test issue dates: 2005-01-01 to 2010-12-31 (unpurged; targets may extend into early 2011).
+- Supplemental Log-NSE uses log(Q + 0.01), unlike primary Log-NSE’s log1p(Q).
 - Zero-as-missing masking at Karad, Warunji, Yadgir, Huvinhedigi enforced.
 - Models: M0 (Baseline), M1 GBT (Flow-only), M2 GBT (Coupled),
           M1-log GBT (Log-target), M2-log GBT (Log-target Coupled).
@@ -194,7 +196,7 @@ def fit_tune_gbt(X_tr, y_tr, X_val, y_val_vol, target_mode='raw', area_km2=1000.
 
 def run_experiment():
     print("=" * 80)
-    print("CAMELS-Era Robustness Experiment: Train 1980-2000, Val 2001-2004, Test 2005-2010")
+    print("Historical sensitivity: train 1980-2000, val 2001-2004, test issue dates 2005-2010")
     print("=" * 80)
     
     all_station_results = []

@@ -111,9 +111,11 @@ Errors should be read alongside the replay, baseline, lead time, number of obser
 
 The primary limitations are incomplete low-flow observation, possible nonrandom missingness, heterogeneous weather products, gauge-point temperature/ET₀, differing PET definitions, a small dependent portfolio and retrospective data availability. A pinned-product sensitivity study and further independent periods are useful future work, not implied completed experiments.
 
+The supplemental historical-period sensitivity uses training issue dates in 1980–2000, validation in 2001–2004 and testing in 2005–2010. Training and validation are purged by H weeks; the test issue-date block is not purged, so its final targets can extend into early 2011. Historical meteorological features use CAMELS-IND, but discharge retains CWC precedence from 2001 where available; this is not a CAMELS-only source ablation. Its `log_nse` column uses log(Q + 0.01), unlike the primary log(1 + Q) score, and must not be directly compared with primary Log-NSE. The supplemental results are separate from the primary 2016–2025 evaluation.
+
 ## 9. Reproduction, integrity and assistance
 
-Use the [README reproduction section](../README.md#reproduction-and-validation) for the ordered commands and verification criteria. The root requirements file records the environment used; it is not a guaranteed cross-platform lock. Raw-source access details are in [DATA_ACCESS.md](DATA_ACCESS.md).
+Use the [README reproduction section](https://github.com/abhitejj/Streamflow_Project#reproduction-and-validation) for the ordered commands and verification criteria. The root requirements file records the environment used; it is not a guaranteed cross-platform lock. Raw-source access details are in [DATA_ACCESS.md](DATA_ACCESS.md).
 
 The reproduction order is: verify sources; build all tensors; train raw and log variants and pooled models; audit saved models; recompute severity, uncertainty, feature importance and historical robustness; export benchmark/explorer/replay assets; render the report; rebuild the static site locally. A complete run manifest must bind these artifacts. Audits reject legacy or mismatched model/tensor combinations rather than silently refitting preprocessing.
 

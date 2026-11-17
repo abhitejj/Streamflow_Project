@@ -145,8 +145,8 @@ def validate_protocol2_holdout(test_station, metric_scaled=False):
 # ==============================================================================
 def calc_daily_api(series, gamma=0.85, window=30):
     """
-    Decayed Antecedent Precipitation Index: gamma=0.85 decayed 30-day sum,
-    with chronological decay (day t has weight 1.0, decaying backwards).
+    Normalised, exponentially weighted 30-day rainfall average (gamma=0.85).
+    Recent days receive greater weight; the full-window weights sum to one.
     """
     weights = gamma ** np.arange(window)
     weights_chronological = (weights / weights.sum())[::-1]
@@ -497,7 +497,7 @@ def build_station_weekly_dataset(station_name, gauge_id, cwc_csv_name, ds_imd_la
     daily_roll_60d = df_daily['rainfall_mm'].rolling(60, min_periods=60).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
     daily_roll_90d = df_daily['rainfall_mm'].rolling(90, min_periods=90).sum().resample('W-MON', closed='left', label='right').last(skipna=False)
     
-    # Decayed Antecedent Precipitation Index (API: gamma=0.85 decayed 30-day sum, chronological decay)
+    # API: normalised 30-day rainfall weights (gamma=0.85), most recent day weighted highest
     daily_api = calc_daily_api(df_daily['rainfall_mm']).resample('W-MON', closed='left', label='right').last(skipna=False)
     
     # Temperature aggregations

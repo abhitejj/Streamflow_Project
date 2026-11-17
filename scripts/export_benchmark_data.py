@@ -7,8 +7,8 @@ and outputs precomputed JSON structures for window.STATIONS and window.MEDIANS.
 
 Key Audit Rules Implemented:
 1. Strict Paired Contingency Evaluation: Paired FAR and CSI differences (M2 vs M1)
-   are calculated strictly on the subset of catchments where BOTH models produced alerts
-   (avoiding undefined 0/0 division).
+   are calculated only where both compared scores are finite. FAR requires alerts;
+   CSI can also be defined when observed events occurred but no alerts were issued.
 2. Explicit Sample Support: Reports sample size (n=...) alongside all contingency medians
    and paired reductions.
 3. Accurate Unit Scaling: Reflects verified zero-shot PyTorch HydroLSTM metrics.

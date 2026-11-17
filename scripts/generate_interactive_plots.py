@@ -13,7 +13,8 @@ the project web interface and deliverables:
 All numbers come from data/processed/model_results/test_predictions.csv and audited_metrics_recomputed.csv,
 written by scripts/audit_metrics.py. Run that script first.
 
-All plots are exported as standalone, self-contained HTML files using fig.write_html().
+All plots are exported as standalone HTML files using fig.write_html();
+Plotly is loaded from its CDN, so these HTML files still require network access.
 """
 
 import os
@@ -407,9 +408,9 @@ def _station_importance(stn_name, gid, H, preds, n_repeats=10, seed=42):
 
 def generate_interactive_feature_importance(out_dir):
     """
-    M2 GBT permutation importance at H=1w vs H=8w, averaged over the 8 stations with
-    complete low-flow records (Karad, Warunji, Yadgir and Huvinhedigi excluded because
-    their test weeks are dominated by unmeasured zeros).
+    M2 GBT permutation importance at H=1w vs H=8w, averaged over the eight stations
+    outside the recorded-zero exclusion policy. This selection does not establish
+    that the remaining station records are complete.
     """
     print("[*] Generating Plot 4: Feature Importance (pooled, H=1w vs H=8w)...")
     preds = _load_predictions()

@@ -94,7 +94,19 @@ Dataset and model stages overwrite processed artifacts; preserve a previous run 
 
 The validator binds the input/tensor/model/output hashes and checks all 48 station–lead targets and scoring counts. Regression tests cover week boundaries, missing observation counts, calibration-period isolation, frozen preprocessing, model reload parity, sequence continuity, source opt-in, model/tensor mismatch rejection, calendar-bootstrap screening and drought-assessment availability. Browser tests and screenshots remain local under ignored `browser-tests/`.
 
-The static website is maintained in the separate `gh-pages` worktree at `site/`. Build its data locally from the saved evaluation outputs. The `deploy.sh` script commits and pushes changes, so use the individual generation commands when preparing a local preview.
+The static website is maintained in the separate `gh-pages` worktree at `site/`. After the saved outputs above are available and that worktree exists, prepare a local preview with:
+
+```sh
+mkdir -p site/assets site/tools site/visualizations/source
+cp assets/benchmark-data.js assets/explorer-data.js site/assets/
+python3 scripts/export_replay_data.py --assets-dir site/assets
+cp visualizations/source/interactive_*.html site/visualizations/source/
+cp tools/build_site_data.py site/tools/
+python3 site/tools/build_site_data.py
+python3 -m http.server 8000 --directory site
+```
+
+The website helper uses the staged chart sources and static replay chunks, including the default Anandpur series; it does not require copying raw inputs or the prediction CSV into the public website. Existing static map assets remain in the website worktree; rebuilding them from geographic sources is described in the [data-access notes](docs/DATA_ACCESS.md). The `deploy.sh` script commits and pushes changes, so do not run it merely to prepare a local preview.
 
 ## Limitations and interpretation
 
